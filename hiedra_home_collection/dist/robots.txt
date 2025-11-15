@@ -1,0 +1,44 @@
+# robots.txt for Hiedra Perde
+# SEO Optimized - 2024-12-02
+
+User-agent: *
+# Allow tüm ana sayfalar
+Allow: /
+Allow: /product/
+Allow: /hakkimizda
+Allow: /iletisim
+Allow: /sss
+Allow: /siparis-sorgula
+
+# Özel sayfalar - Botlar için kapalı
+Disallow: /checkout
+Disallow: /cart
+Disallow: /payment/
+Disallow: /odeme-basarisiz
+Disallow: /siparis-onayi
+Disallow: /payment-success
+Disallow: /payment-failed
+Disallow: /api/
+
+# Crawl-delay (aşırı istekleri önlemek için)
+Crawl-delay: 1
+
+# Sitemap konumu
+Sitemap: https://hiedra.com/sitemap.xml
+
+# Host bilgisi
+Host: https://hiedra.com
+
+# Özel bot kuralları
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Yandex
+Allow: /
+Crawl-delay: 1
+

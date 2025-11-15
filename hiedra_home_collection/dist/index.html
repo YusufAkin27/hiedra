@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Perde Satış - Türkiye'nin en kaliteli perde satış sitesi. Zebra perde, Klasik perde, Stor perde ve Jaluzi perde modelleri. Hızlı teslimat, uygun fiyat garantisi. Perde satış için doğru adres!" />
+    <meta name="keywords" content="perde satış, online perde satış, perde satın al, perdeler, zebra perde satış, klasik perde, stor perde, jaluzi perde, perde fiyatları, uygun perde, kaliteli perde satış, türkiye perde satış" />
+    <meta name="author" content="Hiedra Perde" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="googlebot" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Hiedra Perde - Perde Satış" />
+    <meta property="og:locale" content="tr_TR" />
+    <meta property="og:locale:alternate" content="en_US" />
+    
+    <!-- Theme -->
+    <meta name="theme-color" content="#667eea" />
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <link rel="apple-touch-icon" href="/logo.png" />
+    
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+    
+    <!-- Cache Control Meta -->
+    <meta http-equiv="Cache-Control" content="public, max-age=31536000, immutable" />
+    
+    <title>Hiedra - Modern ve Şık Perde Koleksiyonları</title>
+    <script type="module" crossorigin src="/assets/index-CugviV4X.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-CmaEDexg.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-DdcGM4Ap.css">
+  </head>
+  <body>
+    <div id="root"></div>
+    <!-- 3D Secure Callback Handler - Backend'den gelen JSON'u yakala ve API'ye istek at -->
+    <script>
+      // Backend URL'sine yönlendirilmişse JSON response'u yakala veya API'ye istek at
+      (function() {
+        const currentUrl = window.location.href;
+        const isBackendUrl = currentUrl.includes('172.20.10.2:8080') || 
+                             currentUrl.includes('/api/payment/3d-callback') ||
+                             (currentUrl.includes('8080') && currentUrl.includes('/api/'));
+        
+        if (isBackendUrl) {
+          console.log('Backend URL detected, processing payment callback...');
+          
+          const BACKEND_BASE_URL = 'http://172.20.10.2:8080';
+          const API_BASE_URL = BACKEND_BASE_URL + '/api/payment';
+          
+          // Frontend base URL'i al
+          function getFrontendBaseUrl() {
+            const isBackendDomain = currentUrl.includes('172.20.10.2:8080');
+            if (isBackendDomain) {
+              const savedFrontendUrl = sessionStorage.getItem('frontendUrl');
+              return savedFrontendUrl || 'http://localhost:3000';
+            }
+            return window.location.origin;
+          }
+          
+          // Ödeme response'unu handle et
+          function handlePaymentResponse(jsonData) {
+            if (jsonData.success || jsonData.isSuccess) {
+              // Başarılı
+              const orderNumber = jsonData.data || jsonData.orderNumber || null;
+              const sessionData = JSON.parse(sessionStorage.getItem('checkoutData') || '{}');
+              
+              const orderData = {
+                orderNumber: orderNumber || 'SİPARİŞ-' + Date.now(),
+                contactInfo: sessionData.contactInfo || {},
+                addressInfo: sessionData.addressInfo || {},
+                cardInfo: sessionData.cardInfo || {},
+                items: sessionData.items || [],
+                totalPrice: sessionData.totalPrice || 0
+              };
+              
+              sessionStorage.removeItem('checkoutData');
+              sessionStorage.setItem('lastOrderData', JSON.stringify(orderData));
+              
+              const frontendBaseUrl = getFrontendBaseUrl();
+              console.log('Redirecting to frontend success page:', frontendBaseUrl + '/siparis-onayi');
+              window.location.replace(frontendBaseUrl + '/siparis-onayi');
+              return true;
+            } else {
+              // Başarısız
+              sessionStorage.setItem('paymentError', jsonData.message || 'Ödeme işlemi başarısız oldu.');
+              const frontendBaseUrl = getFrontendBaseUrl();
+              console.log('Redirecting to error page:', frontendBaseUrl + '/odeme-basarisiz');
+              window.location.replace(frontendBaseUrl + '/odeme-basarisiz');
+              return true;
+            }
+          }
+          
+          // Sayfa içeriğinde JSON ara
+          function checkForJsonInPage() {
+            if (!document.body) {
+              return null;
+            }
+            
+            const bodyText = document.body.textContent?.trim() || document.body.innerText?.trim() || '';
+            const bodyHTML = document.body.innerHTML?.trim() || '';
+            
+            // Body'de JSON var mı kontrol et
+            const jsonText = (bodyHTML.startsWith('{') && !bodyHTML.includes('<html') && !bodyHTML.includes('<!DOCTYPE')) ? bodyHTML : 
+                            (bodyText.startsWith('{') && !bodyText.includes('<') ? bodyText : null);
+            
+            if (jsonText) {
+              try {
+                const jsonData = JSON.parse(jsonText);
+                if (jsonData.success !== undefined || jsonData.isSuccess !== undefined || jsonData.message) {
+                  console.log('JSON response found in backend page:', jsonData);
+                  return jsonData;
+                }
+              } catch (e) {
+                console.log('JSON parse error:', e);
+              }
+            }
+            return null;
+          }
+          
+          // URL parametrelerinden paymentId ve conversationId'i al
+          function getUrlParams() {
+            try {
+              const urlObj = new URL(currentUrl);
+              const paymentId = urlObj.searchParams.get('paymentId');
+              const conversationId = urlObj.searchParams.get('conversationId');
+              return { paymentId, conversationId };
+            } catch (e) {
+              // URL parse edilemediyse search string'i direkt kullan
+              const searchParams = new URLSearchParams(window.location.search);
+              const paymentId = searchParams.get('paymentId');
+              const conversationId = searchParams.get('conversationId');
+              return { paymentId, conversationId };
+            }
+          }
+          
+          // Backend API'ye POST isteği at
+          async function callBackendAPI(paymentId, conversationId) {
+            try {
+              const url = API_BASE_URL + '/3d-callback?paymentId=' + encodeURIComponent(paymentId) + 
+                         '&conversationId=' + encodeURIComponent(conversationId);
+              
+              console.log('Calling backend API:', url);
+              
+              const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                mode: 'cors'
+              });
+              
+              const responseText = await response.text();
+              console.log('Backend API response:', responseText);
+              
+              // Response JSON mu kontrol et
+              if (responseText.trim().startsWith('{')) {
+                try {
+                  const jsonData = JSON.parse(responseText);
+                  if (jsonData.success !== undefined || jsonData.isSuccess !== undefined || jsonData.message) {
+                    console.log('Payment response from API:', jsonData);
+                    return handlePaymentResponse(jsonData);
+                  }
+                } catch (e) {
+                  console.error('API response JSON parse error:', e);
+                }
+              }
+              
+              // JSON değilse veya parse edilemediyse hata
+              sessionStorage.setItem('paymentError', 'Ödeme işlemi sırasında bir hata oluştu.');
+              const frontendBaseUrl = getFrontendBaseUrl();
+              window.location.replace(frontendBaseUrl + '/odeme-basarisiz');
+              return true;
+            } catch (err) {
+              console.error('Backend API call error:', err);
+              sessionStorage.setItem('paymentError', 'Sunucuya bağlanılamadı. Lütfen tekrar deneyiniz.');
+              const frontendBaseUrl = getFrontendBaseUrl();
+              window.location.replace(frontendBaseUrl + '/odeme-basarisiz');
+              return true;
+            }
+          }
+          
+          // Ana işlem fonksiyonu
+          function processPaymentCallback() {
+            // ÖNCE: Backend redirect ile gönderilmiş order parametresi var mı kontrol et
+            // Backend ModelAndView redirect ile gönderebilir: redirect:http://localhost:3002/payment/3d-callback?order=ORD-123
+            try {
+              const urlParams = new URLSearchParams(window.location.search);
+              const orderNumber = urlParams.get('order');
+              if (orderNumber) {
+                console.log('Backend redirect ile order numarası geldi:', orderNumber);
+                const sessionData = JSON.parse(sessionStorage.getItem('checkoutData') || '{}');
+                const orderData = {
+                  orderNumber: orderNumber,
+                  contactInfo: sessionData.contactInfo || {},
+                  addressInfo: sessionData.addressInfo || {},
+                  cardInfo: sessionData.cardInfo || {},
+                  items: sessionData.items || [],
+                  totalPrice: sessionData.totalPrice || 0
+                };
+                sessionStorage.removeItem('checkoutData');
+                sessionStorage.setItem('lastOrderData', JSON.stringify(orderData));
+                const frontendBaseUrl = getFrontendBaseUrl();
+                window.location.replace(frontendBaseUrl + '/siparis-onayi');
+                return true;
+              }
+            } catch (e) {
+              console.log('Order parameter check error:', e);
+            }
+            
+            // İKİNCİ: Sayfa içeriğinde JSON var mı kontrol et
+            const jsonData = checkForJsonInPage();
+            if (jsonData) {
+              return handlePaymentResponse(jsonData);
+            }
+            
+            // ÜÇÜNCÜ: URL parametrelerini kontrol et (paymentId ve conversationId)
+            const { paymentId, conversationId } = getUrlParams();
+            if (paymentId && conversationId) {
+              console.log('URL parameters found, calling backend API:', { paymentId, conversationId });
+              
+              // Parametreleri sessionStorage'a kaydet (eğer API çağrısı başarısız olursa tekrar kullanmak için)
+              sessionStorage.setItem('pendingPaymentId', paymentId);
+              sessionStorage.setItem('pendingConversationId', conversationId);
+              
+              // API'ye istek at (async, ama redirect olacağı için return true)
+              callBackendAPI(paymentId, conversationId);
+              return true; // İşlem başlatıldı
+            }
+            
+            // DÖRDÜNCÜ: Eğer URL parametreleri yoksa, sessionStorage'da bekleyen parametreler var mı kontrol et
+            const pendingPaymentId = sessionStorage.getItem('pendingPaymentId');
+            const pendingConversationId = sessionStorage.getItem('pendingConversationId');
+            if (pendingPaymentId && pendingConversationId) {
+              console.log('Pending payment parameters found in sessionStorage, calling backend API:', { 
+                paymentId: pendingPaymentId, 
+                conversationId: pendingConversationId 
+              });
+              callBackendAPI(pendingPaymentId, pendingConversationId);
+              // Parametreleri temizle (tekrar kullanılmasın)
+              sessionStorage.removeItem('pendingPaymentId');
+              sessionStorage.removeItem('pendingConversationId');
+              return true;
+            }
+            
+            return false; // Henüz işlem yapılamadı
+          }
+          
+          // Anında kontrol et
+          if (document.readyState === 'complete') {
+            if (!processPaymentCallback()) {
+              // Eğer sayfa yüklenmiş ama JSON/parametre yoksa, biraz bekle ve tekrar kontrol et
+              setTimeout(() => {
+                if (!processPaymentCallback()) {
+                  console.log('No payment data found, waiting for page load...');
+                }
+              }, 500);
+            }
+          } else {
+            window.addEventListener('load', () => {
+              if (!processPaymentCallback()) {
+                setTimeout(() => processPaymentCallback(), 500);
+              }
+            });
+            document.addEventListener('DOMContentLoaded', () => {
+              if (!processPaymentCallback()) {
+                setTimeout(() => processPaymentCallback(), 500);
+              }
+            });
+            
+            // Her 200ms'de bir kontrol et (max 5 saniye)
+            let checkCount = 0;
+            const maxChecks = 25;
+            const interval = setInterval(() => {
+              checkCount++;
+              if (processPaymentCallback() || checkCount >= maxChecks) {
+                clearInterval(interval);
+              }
+            }, 200);
+          }
+        }
+      })();
+    </script>
+  </body>
+</html>
+

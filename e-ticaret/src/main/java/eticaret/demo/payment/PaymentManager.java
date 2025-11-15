@@ -1,0 +1,1312 @@
+package eticaret.demo.payment;
+
+import com.iyzipay.Options;
+import com.iyzipay.model.*;
+import com.iyzipay.request.CreatePaymentRequest;
+import com.iyzipay.request.CreateRefundRequest;
+import com.iyzipay.request.RetrievePaymentRequest;
+import eticaret.demo.cart.CartRepository;
+import eticaret.demo.coupon.CouponService;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import eticaret.demo.address.Address;
+import eticaret.demo.address.AdresRepository;
+import eticaret.demo.mail.EmailMessage;
+import eticaret.demo.mail.MailService;
+import eticaret.demo.guest.GuestUser;
+import eticaret.demo.guest.GuestUserRepository;
+import eticaret.demo.product.Product;
+import eticaret.demo.product.ProductRepository;
+import eticaret.demo.response.DataResponseMessage;
+import eticaret.demo.response.ResponseMessage;
+import eticaret.demo.order.Order;
+import eticaret.demo.order.OrderItem;
+import eticaret.demo.order.OrderRepository;
+import eticaret.demo.order.OrderStatus;
+import eticaret.demo.cart.Cart;
+import eticaret.demo.cart.CartService;
+import eticaret.demo.cart.CartStatus;
+import eticaret.demo.admin.AdminNotificationService;
+import eticaret.demo.auth.AppUser;
+import eticaret.demo.auth.AppUserRepository;
+import eticaret.demo.config.AppUrlConfig;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+@RequiredArgsConstructor
+@Service
+@Slf4j
+public class PaymentManager implements PaymentService {
+    private final Options iyzicoOptions;
+    private final TopUpSessionCache topUpSessionCache;
+    private final RefundSessionCache refundSessionCache;
+    private final OrderRepository orderRepository;
+    private final AdresRepository adresRepository;
+    private final ProductRepository productRepository;
+    private final MailService mailService;
+    private final GuestUserRepository guestUserRepository;
+    private final CartRepository cartRepository;
+    private final CartService cartService;
+    private final AppUserRepository appUserRepository;
+    private final CouponService couponService;
+    private final AppUrlConfig appUrlConfig;
+    private final AdminNotificationService adminNotificationService;
+    private final PaymentRecordRepository paymentRecordRepository;
+    private final RefundRecordRepository refundRecordRepository;
+
+
+
+    @Override
+    public ResponseMessage complete3DPayment(
+            String paymentId,
+            String conversationId,
+            HttpServletRequest httpServletRequest) {
+
+        log.info("3D Callback alındı - paymentId: {}, conversationId: {}", paymentId, conversationId);
+
+        if (paymentId == null || paymentId.isEmpty() || conversationId == null || conversationId.isEmpty()) {
+            log.warn("Eksik parametreler: paymentId veya conversationId boş.");
+            return new ResponseMessage("Eksik parametreler gönderildi.", false);
+        }
+
+        RetrievePaymentRequest retrieveRequest = new RetrievePaymentRequest();
+        retrieveRequest.setPaymentId(paymentId);
+        retrieveRequest.setConversationId(conversationId);
+        retrieveRequest.setLocale("tr");
+
+        try {
+            Payment payment = Payment.retrieve(retrieveRequest, iyzicoOptions);
+            log.info("İyzico payment status: {}", payment.getStatus());
+
+            // 🔹 Payment Record oluştur (başarısız olsa bile kayıt tutulur)
+            PaymentRecord paymentRecord = null;
+            try {
+                String ipAddress = getClientIpAddress(httpServletRequest);
+                String userAgent = httpServletRequest != null ? httpServletRequest.getHeader("User-Agent") : null;
+                
+                TopUpSessionData sessionDataForRecord = topUpSessionCache.get(conversationId);
+                
+                paymentRecord = PaymentRecord.builder()
+                        .iyzicoPaymentId(paymentId)
+                        .conversationId(conversationId)
+                        .amount(sessionDataForRecord != null ? sessionDataForRecord.getAmount() : BigDecimal.ZERO)
+                        .status("success".equalsIgnoreCase(payment.getStatus()) ? PaymentStatus.SUCCESS : PaymentStatus.FAILED)
+                        .paymentMethod("CREDIT_CARD")
+                        .is3DSecure(true)
+                        .iyzicoStatus(payment.getStatus())
+                        .iyzicoErrorMessage(payment.getErrorMessage())
+                        .iyzicoErrorCode(payment.getErrorCode())
+                        .customerEmail(sessionDataForRecord != null ? sessionDataForRecord.getUsername() : null)
+                        .customerName(sessionDataForRecord != null ? sessionDataForRecord.getFullName() : null)
+                        .customerPhone(sessionDataForRecord != null ? sessionDataForRecord.getPhone() : null)
+                        .ipAddress(ipAddress)
+                        .userAgent(userAgent != null && userAgent.length() > 500 ? userAgent.substring(0, 500) : userAgent)
+                        .iyzicoRawResponse(null) // Iyzico Payment sınıfında getRawResult() metodu yok
+                        .build();
+                
+                if (sessionDataForRecord != null) {
+                    paymentRecord.setUser(sessionDataForRecord.getUserId() != null ? 
+                            appUserRepository.findById(sessionDataForRecord.getUserId()).orElse(null) : null);
+                    paymentRecord.setGuestUserId(sessionDataForRecord.getGuestUserId());
+                }
+            } catch (Exception e) {
+                log.error("PaymentRecord oluşturulurken hata: {}", e.getMessage());
+            }
+
+            if (!"success".equalsIgnoreCase(payment.getStatus())) {
+                log.warn("3D ödeme başarısız: {}", payment.getErrorMessage());
+                
+                // Başarısız ödeme kaydını kaydet
+                if (paymentRecord != null) {
+                    try {
+                        paymentRecord.setCompletedAt(LocalDateTime.now());
+                        paymentRecordRepository.save(paymentRecord);
+                        log.info("Başarısız PaymentRecord kaydedildi: PaymentId={}", paymentId);
+                    } catch (Exception e) {
+                        log.error("Başarısız PaymentRecord kaydedilirken hata: {}", e.getMessage());
+                    }
+                }
+                
+                return new ResponseMessage("3D ödeme başarısız: " + payment.getErrorMessage(), false);
+            }
+
+            // ✅ Ödeme başarılı
+            TopUpSessionData sessionData = topUpSessionCache.get(conversationId);
+            if (sessionData == null) {
+                log.error("TopUpSessionCache içinde '{}' için veri bulunamadı.", conversationId);
+                return new ResponseMessage("Ödeme oturum bilgisi bulunamadı.", false);
+            }
+
+            String orderNumber = generateOrderNumber();
+            
+            // 🔹 Sipariş oluştur
+            Order order = new Order();
+            order.setOrderNumber(orderNumber);
+            order.setTotalAmount(sessionData.getAmount());
+            order.setStatus(OrderStatus.ODENDI);
+            order.setCreatedAt(LocalDateTime.now());
+            order.setCustomerEmail(sessionData.getUsername());
+            order.setCustomerName(sessionData.getFullName() != null ? sessionData.getFullName() : "Misafir Kullanıcı");
+            order.setCustomerPhone(sessionData.getPhone() != null ? sessionData.getPhone() : "Bilinmiyor");
+            
+            // Kullanıcı bağlantısı
+            if (sessionData.getUserId() != null) {
+                Optional<AppUser> userOpt = appUserRepository.findById(sessionData.getUserId());
+                if (userOpt.isPresent()) {
+                    order.setUser(userOpt.get());
+                    log.info("Sipariş kullanıcıya bağlandı - userId: {}", sessionData.getUserId());
+                }
+            }
+            
+            // Guest kullanıcı ID'si
+            if (sessionData.getGuestUserId() != null) {
+                order.setGuestUserId(sessionData.getGuestUserId());
+                log.info("Sipariş guest kullanıcıya bağlandı - guestUserId: {}", sessionData.getGuestUserId());
+            }
+            
+            // 🔹 Payment ID'yi kaydet (İyzico'dan - iade için gerekli)
+            // Payment.retrieve'dan gelen paymentId'yi kullan (callback'ten gelen değil)
+            String iyzicoPaymentId = payment.getPaymentId();
+            if (iyzicoPaymentId != null && !iyzicoPaymentId.isEmpty()) {
+                order.setPaymentId(iyzicoPaymentId);
+                log.info("İyzico PaymentId kaydedildi (retrieve'dan): {}", iyzicoPaymentId);
+            } else {
+                // Fallback: callback'ten gelen paymentId'yi kullan
+                order.setPaymentId(paymentId);
+                log.warn("Payment.retrieve'dan paymentId alınamadı, callback'ten gelen kullanılıyor: {}", paymentId);
+            }
+            
+            // 🔹 Payment Transaction ID'yi al ve kaydet (İyzico'dan)
+            String paymentTransactionId = null;
+            if (payment.getPaymentItems() != null && !payment.getPaymentItems().isEmpty()) {
+                // PaymentItems listesinden ilk item'ın transaction ID'sini al
+                PaymentItem firstItem = payment.getPaymentItems().get(0);
+                paymentTransactionId = firstItem.getPaymentTransactionId();
+                
+                if (paymentTransactionId != null && !paymentTransactionId.isEmpty()) {
+                    order.setPaymentTransactionId(paymentTransactionId);
+                    log.info("İyzico PaymentTransactionId kaydedildi: {}", paymentTransactionId);
+                } else {
+                    log.warn("PaymentTransactionId boş veya null, paymentId kullanılacak: {}", iyzicoPaymentId != null ? iyzicoPaymentId : paymentId);
+                    // Fallback: paymentId'yi transaction ID olarak kullan
+                    String fallbackId = iyzicoPaymentId != null ? iyzicoPaymentId : paymentId;
+                    order.setPaymentTransactionId(fallbackId);
+                    paymentTransactionId = fallbackId;
+                }
+            } else {
+                // PaymentItems yoksa paymentId'yi kullan
+                log.warn("PaymentItems bulunamadı, paymentId kullanılacak: {}", iyzicoPaymentId != null ? iyzicoPaymentId : paymentId);
+                String fallbackId = iyzicoPaymentId != null ? iyzicoPaymentId : paymentId;
+                order.setPaymentTransactionId(fallbackId);
+                paymentTransactionId = fallbackId;
+            }
+            
+            // Conversation ID'yi de kaydet (iade için gerekli olabilir)
+            if (conversationId != null && !conversationId.isEmpty()) {
+                log.info("ConversationId kaydedildi: {}", conversationId);
+            }
+            
+            // 🔹 Payment Record kaydet (güvenlik ve audit için)
+            try {
+                String ipAddress = getClientIpAddress(httpServletRequest);
+                String userAgent = httpServletRequest != null ? httpServletRequest.getHeader("User-Agent") : null;
+                
+                // Kart bilgilerini extract et (güvenlik için sadece son 4 hane)
+                String cardLastFour = null;
+                String cardBrand = null;
+                if (payment.getCardType() != null) {
+                    cardBrand = payment.getCardType();
+                }
+                
+                PaymentRecord paymentRecordToSave = PaymentRecord.builder()
+                        .iyzicoPaymentId(iyzicoPaymentId != null ? iyzicoPaymentId : paymentId)
+                        .paymentTransactionId(paymentTransactionId)
+                        .conversationId(conversationId)
+                        .orderNumber(orderNumber)
+                        .amount(sessionData.getAmount())
+                        .status(PaymentStatus.SUCCESS)
+                        .paymentMethod("CREDIT_CARD")
+                        .is3DSecure(true)
+                        .iyzicoStatus(payment.getStatus())
+                        .user(sessionData.getUserId() != null ? 
+                                appUserRepository.findById(sessionData.getUserId()).orElse(null) : null)
+                        .guestUserId(sessionData.getGuestUserId())
+                        .customerEmail(sessionData.getUsername())
+                        .customerName(sessionData.getFullName())
+                        .customerPhone(sessionData.getPhone())
+                        .ipAddress(ipAddress)
+                        .userAgent(userAgent != null && userAgent.length() > 500 ? userAgent.substring(0, 500) : userAgent)
+                        .cardLastFour(cardLastFour)
+                        .cardBrand(cardBrand)
+                        .iyzicoRawResponse(null) // Iyzico Payment sınıfında getRawResult() metodu yok
+                        .completedAt(LocalDateTime.now())
+                        .build();
+                
+                paymentRecordRepository.save(paymentRecordToSave);
+                log.info("PaymentRecord kaydedildi: PaymentId={}, OrderNumber={}", iyzicoPaymentId, orderNumber);
+            } catch (Exception e) {
+                log.error("PaymentRecord kaydedilirken hata (ödeme başarılı): {}", e.getMessage(), e);
+                // PaymentRecord hatası ödeme işlemini engellemez
+            }
+
+            Address address = new Address();
+            // Eğer sessionData'da addressId varsa, o adresi kullan
+            if (sessionData.getAddressId() != null && sessionData.getUserId() != null) {
+                Optional<Address> userAddress = adresRepository.findById(sessionData.getAddressId());
+                if (userAddress.isPresent() && userAddress.get().getUser() != null 
+                        && userAddress.get().getUser().getId().equals(sessionData.getUserId())) {
+                    Address selectedAddress = userAddress.get();
+                    address.setFullName(selectedAddress.getFullName());
+                    address.setPhone(selectedAddress.getPhone());
+                    address.setAddressLine(selectedAddress.getAddressLine());
+                    address.setAddressDetail(selectedAddress.getAddressDetail());
+                    address.setCity(selectedAddress.getCity());
+                    address.setDistrict(selectedAddress.getDistrict());
+                    log.info("3D ödeme sonrası login kullanıcı seçili adresi kullanılıyor: addressId={}, userId={}", 
+                            sessionData.getAddressId(), sessionData.getUserId());
+                } else {
+                    // Adres bulunamadı, sessionData'dan al
+                    address.setFullName(order.getCustomerName());
+                    address.setPhone(order.getCustomerPhone());
+                    address.setAddressLine(sessionData.getAddress() != null ? sessionData.getAddress() : "Adres Belirtilmedi");
+                    address.setCity(sessionData.getCity() != null ? sessionData.getCity() : "Bilinmiyor");
+                    address.setDistrict(sessionData.getDistrict() != null ? sessionData.getDistrict() : "Bilinmiyor");
+                    log.warn("Seçilen adres bulunamadı, sessionData'dan alınıyor");
+                }
+            } else {
+                // Guest kullanıcı veya adres seçilmemiş, sessionData'dan al
+                address.setFullName(order.getCustomerName());
+                address.setPhone(order.getCustomerPhone());
+                address.setAddressLine(sessionData.getAddress() != null ? sessionData.getAddress() : "Adres Belirtilmedi");
+                address.setCity(sessionData.getCity() != null ? sessionData.getCity() : "Bilinmiyor");
+                address.setDistrict(sessionData.getDistrict() != null ? sessionData.getDistrict() : "Bilinmiyor");
+            }
+            address.setOrder(order);
+
+            // Sipariş öğelerini oluştur
+            List<OrderItem> orderItems = new ArrayList<>();
+            if (sessionData.getOrderDetails() != null && !sessionData.getOrderDetails().isEmpty()) {
+                // SessionData'dan orderDetails kullan
+                for (OrderDetail detail : sessionData.getOrderDetails()) {
+                    OrderItem item = new OrderItem();
+                    item.setProductName(detail.getProductName());
+                    item.setWidth(detail.getWidth());
+                    item.setHeight(detail.getHeight());
+                    item.setPleatType(detail.getPleatType() != null ? detail.getPleatType() : "1x1");
+                    item.setQuantity(detail.getQuantity());
+                    
+                    // Fiyat hesaplama - unitPrice ve totalPrice
+                    Product product = productRepository.findById(detail.getProductId()).orElse(null);
+                    BigDecimal unitPrice = product != null ? product.getPrice() : detail.getPrice();
+                    item.setUnitPrice(unitPrice);
+                    
+                    // Toplam fiyatı hesapla
+                    BigDecimal totalPrice = item.calculateTotalPrice();
+                    if (totalPrice.compareTo(BigDecimal.ZERO) == 0) {
+                        // Hesaplama başarısız olursa detail'den al
+                        totalPrice = detail.getPrice();
+                    }
+                    item.setTotalPrice(totalPrice);
+                    
+                    item.setProductId(detail.getProductId());
+                    item.setOrder(order);
+                    orderItems.add(item);
+                }
+            } else {
+                // Fallback: Eğer orderDetails yoksa (eski sistem uyumluluğu için)
+                log.warn("OrderDetails bulunamadı, fallback kullanılıyor");
+                OrderItem item = new OrderItem();
+                item.setProductName("Genel Ürün");
+                item.setWidth(1.0);
+                item.setHeight(1.0);
+                item.setPleatType("1x1");
+                item.setQuantity(1);
+                item.setUnitPrice(sessionData.getAmount());
+                item.setTotalPrice(sessionData.getAmount());
+                item.setOrder(order);
+                orderItems.add(item);
+            }
+
+            // Sipariş ilişkilerini ayarla
+            order.setAddresses(List.of(address));
+            order.setOrderItems(orderItems);
+            
+            // OrderItem'ları kaydet (cascade ile otomatik kaydedilir ama emin olmak için)
+            for (OrderItem item : orderItems) {
+                item.setOrder(order);
+            }
+
+            // Siparişi kaydet (cascade ile address ve orderItems da kaydedilir)
+            order = orderRepository.save(order);
+            
+            log.info("Sipariş kaydedildi - OrderNumber: {}, ItemCount: {}, TotalAmount: {} TL", 
+                    orderNumber, orderItems.size(), order.getTotalAmount());
+
+            // Admin bildirimi gönder
+            try {
+                adminNotificationService.sendOrderNotification(
+                    order.getOrderNumber(),
+                    order.getCustomerEmail(),
+                    order.getCustomerName(),
+                    order.getTotalAmount()
+                );
+            } catch (Exception e) {
+                log.error("Sipariş bildirimi gönderilemedi: {}", e.getMessage(), e);
+            }
+
+            // Stoktan düş (metre cinsinden)
+            try {
+                for (OrderItem item : orderItems) {
+                    if (item.getProductId() != null) {
+                        Optional<Product> productOpt = productRepository.findById(item.getProductId());
+                        if (productOpt.isPresent()) {
+                            Product product = productOpt.get();
+                            
+                            // Kullanılan stok miktarını hesapla (metre cinsinden)
+                            // Formül: (width / 100) * pleatType çarpanı * quantity
+                            double widthInMeters = item.getWidth() != null ? item.getWidth() / 100.0 : 0.0;
+                            
+                            // PleatType çarpanını hesapla (örn: "1x2.5" → 2.5)
+                            double pleatMultiplier = 1.0;
+                            if (item.getPleatType() != null && !item.getPleatType().isEmpty()) {
+                                try {
+                                    String[] parts = item.getPleatType().split("x");
+                                    if (parts.length == 2) {
+                                        pleatMultiplier = Double.parseDouble(parts[1]);
+                                    }
+                                } catch (Exception e) {
+                                    log.warn("PleatType parse edilemedi: {}, varsayılan 1.0 kullanılıyor", item.getPleatType());
+                                }
+                            }
+                            
+                            // Kullanılan stok = metre * pile çarpanı * adet
+                            double usedStock = widthInMeters * pleatMultiplier * item.getQuantity();
+                            
+                            // Stoktan düş
+                            if (product.getQuantity() != null) {
+                                int currentStock = product.getQuantity();
+                                int newStock = (int) Math.max(0, currentStock - usedStock);
+                                product.setQuantity(newStock);
+                                productRepository.save(product);
+                                
+                                log.info("Stok güncellendi - ProductId: {}, ProductName: {}, Eski Stok: {} m, Kullanılan: {} m, Yeni Stok: {} m", 
+                                        product.getId(), product.getName(), currentStock, usedStock, newStock);
+                            } else {
+                                log.warn("Product stok bilgisi yok - ProductId: {}, ProductName: {}", 
+                                        product.getId(), product.getName());
+                            }
+                        } else {
+                            log.warn("Product bulunamadı - ProductId: {}", item.getProductId());
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                // Stok güncelleme hatası sipariş işlemini engellemez, sadece log'a yaz
+                log.error("Stok güncellenirken hata oluştu (sipariş kaydedildi): {}", e.getMessage(), e);
+            }
+
+            // Guest kullanıcı kaydı oluştur veya güncelle
+            try {
+                String ipAddress = httpServletRequest.getRemoteAddr();
+                String userAgent = httpServletRequest.getHeader("User-Agent");
+                
+                GuestUser guestUser = guestUserRepository.findByEmailIgnoreCase(order.getCustomerEmail())
+                        .orElse(null);
+                
+                if (guestUser == null) {
+                    // Yeni guest kullanıcı oluştur
+                    guestUser = GuestUser.builder()
+                            .email(order.getCustomerEmail())
+                            .fullName(order.getCustomerName())
+                            .phone(order.getCustomerPhone())
+                            .ipAddress(ipAddress)
+                            .userAgent(userAgent != null ? (userAgent.length() > 500 ? userAgent.substring(0, 500) : userAgent) : null)
+                            .firstSeenAt(LocalDateTime.now())
+                            .lastSeenAt(LocalDateTime.now())
+                            .orderCount(1)
+                            .viewCount(0)
+                            .build();
+                } else {
+                    // Mevcut guest kullanıcıyı güncelle
+                    guestUser.setLastSeenAt(LocalDateTime.now());
+                    guestUser.setOrderCount(guestUser.getOrderCount() + 1);
+                    if (guestUser.getFullName() == null || guestUser.getFullName().isEmpty()) {
+                        guestUser.setFullName(order.getCustomerName());
+                    }
+                    if (guestUser.getPhone() == null || guestUser.getPhone().isEmpty()) {
+                        guestUser.setPhone(order.getCustomerPhone());
+                    }
+                }
+                
+                guestUserRepository.save(guestUser);
+            } catch (Exception e) {
+                // Guest kullanıcı kaydı hatası sipariş işlemini engellemez
+                log.warn("Guest kullanıcı kaydı hatası: {}", e.getMessage());
+            }
+
+            // 📌 İADE BİLGİLERİNİ BELLEKTE SAKLA (Hem paymentId hem de orderNumber ile)
+            RefundSessionData refundData = new RefundSessionData();
+            refundData.setPaymentId(paymentId);
+            refundData.setConversationId(conversationId);
+            
+            // İsim bilgilerini düzgün ayır
+            String[] nameParts = sessionData.getFullName() != null ? 
+                sessionData.getFullName().split(" ", 2) : new String[]{"Misafir", "Kullanıcı"};
+            refundData.setFirstName(nameParts.length > 0 ? nameParts[0] : "Misafir");
+            refundData.setLastName(nameParts.length > 1 ? nameParts[1] : "Kullanıcı");
+            
+            refundData.setEmail(sessionData.getUsername());
+            refundData.setPaymentTransactionId(paymentTransactionId); // ✅ İyzico transaction ID
+            refundData.setPhone(sessionData.getPhone() != null ? sessionData.getPhone() : "");
+            refundData.setAddress(address.getAddressLine() != null ? address.getAddressLine() : 
+                (sessionData.getAddress() != null ? sessionData.getAddress() : ""));
+            refundData.setCity(address.getCity() != null ? address.getCity() : 
+                (sessionData.getCity() != null ? sessionData.getCity() : ""));
+            refundData.setDistrict(address.getDistrict() != null ? address.getDistrict() : 
+                (sessionData.getDistrict() != null ? sessionData.getDistrict() : ""));
+            refundData.setAddressDetail(address.getAddressDetail() != null ? address.getAddressDetail() : 
+                (sessionData.getAddressDetail() != null ? sessionData.getAddressDetail() : ""));
+            refundData.setAmount(sessionData.getAmount());
+            refundData.setPaymentDate(LocalDateTime.now());
+            refundData.setOrderNumber(orderNumber);
+            refundData.setIp(httpServletRequest != null ? httpServletRequest.getRemoteAddr() : "127.0.0.1");
+            
+            // Kart bilgisi yoksa boş bırak (güvenlik için)
+            refundData.setCardNumber(null);
+
+            // Cache'e hem paymentId hem de orderNumber ile kaydet
+            refundSessionCache.put(paymentId, refundData);
+            // orderNumber ile de erişim için ayrıca kaydet
+            if (!orderNumber.equals(paymentId)) {
+                refundSessionCache.put(orderNumber, refundData);
+            }
+            
+            log.info("İade bilgileri cache'e kaydedildi - paymentId: {}, orderNumber: {}, transactionId: {}", 
+                    paymentId, orderNumber, paymentTransactionId);
+
+            // Sepeti temizle (ödeme başarılı olduğunda)
+            try {
+                if (sessionData.getCartId() != null) {
+                    // Sepet ID'si varsa direkt temizle
+                    cartService.clearCart(sessionData.getCartId());
+                    log.info("Sepet temizlendi - cartId: {}", sessionData.getCartId());
+                } else if (sessionData.getUserId() != null) {
+                    // Login kullanıcı için sepeti bul ve temizle
+                    Optional<Cart> cartOpt = cartRepository.findByUser_IdAndStatus(sessionData.getUserId(), CartStatus.AKTIF);
+                    if (cartOpt.isPresent()) {
+                        cartService.clearCart(cartOpt.get().getId());
+                        log.info("Login kullanıcı sepeti temizlendi - userId: {}, cartId: {}", 
+                                sessionData.getUserId(), cartOpt.get().getId());
+                    }
+                } else if (sessionData.getGuestUserId() != null) {
+                    // Guest kullanıcı için sepeti bul ve temizle
+                    Optional<Cart> cartOpt = cartRepository.findByGuestUserIdAndStatus(sessionData.getGuestUserId(), CartStatus.AKTIF);
+                    if (cartOpt.isPresent()) {
+                        cartService.clearCart(cartOpt.get().getId());
+                        log.info("Guest kullanıcı sepeti temizlendi - guestUserId: {}, cartId: {}", 
+                                sessionData.getGuestUserId(), cartOpt.get().getId());
+                    }
+                }
+            } catch (Exception e) {
+                // Sepet temizleme hatası sipariş işlemini engellemez, sadece log'a yaz
+                log.warn("Sepet temizlenirken hata oluştu (sipariş kaydedildi): {}", e.getMessage());
+            }
+
+            topUpSessionCache.remove(conversationId);
+            sendOrderConfirmationEmail(order.getCustomerEmail(), order.getCustomerName(), orderNumber, order.getTotalAmount());
+
+            log.info("Sipariş kaydedildi: {} - İade bilgileri bellekte saklandı, sepet temizlendi", orderNumber);
+
+            return new DataResponseMessage<>(
+                    "Ödeme başarılı. Sipariş numaranız: " + orderNumber,
+                    true,
+                    orderNumber
+            );
+
+        } catch (Exception e) {
+            log.error("3D ödeme tamamlama hatası:", e);
+            return new ResponseMessage("3D ödeme tamamlanırken hata oluştu: " + e.getMessage(), false);
+        }
+    }
+
+    private void sendOrderConfirmationEmail(String toEmail, String fullName, String orderNumber, BigDecimal totalAmount) {
+        try {
+            String subject = "Siparişiniz Alındı - #" + orderNumber;
+
+            String body = """
+                <html>
+                <body style="font-family: Arial, sans-serif; background-color: #f8f9fa; padding: 20px;">
+                    <div style="max-width: 600px; margin: auto; background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                        <h2 style="color: #007bff;">Siparişiniz Başarıyla Alındı!</h2>
+                        <p>Merhaba <b>%s</b>,</p>
+                        <p>Siparişiniz başarıyla alındı. Aşağıda sipariş detaylarınızı bulabilirsiniz:</p>
+                        <table style="width:100%%; border-collapse: collapse;">
+                            <tr>
+                                <td style="padding:8px; border-bottom:1px solid #ddd;">Sipariş Numarası:</td>
+                                <td style="padding:8px; border-bottom:1px solid #ddd;"><b>#%s</b></td>
+                            </tr>
+                            <tr>
+                                <td style="padding:8px; border-bottom:1px solid #ddd;">Toplam Tutar:</td>
+                                <td style="padding:8px; border-bottom:1px solid #ddd;"><b>₺%s</b></td>
+                            </tr>
+                        </table>
+                        <p style="margin-top:20px;">Siparişiniz kısa süre içinde hazırlanacaktır. Kargo süreci başladığında size bilgi vereceğiz.</p>
+                        <p style="margin-top:20px;">Bizden alışveriş yaptığınız için teşekkür ederiz 💙</p>
+                        <hr>
+                        <p style="font-size:12px; color:gray;">Bu e-posta otomatik olarak gönderilmiştir. Lütfen yanıtlamayınız.</p>
+                    </div>
+                </body>
+                </html>
+                """.formatted(fullName, orderNumber, totalAmount);
+
+            EmailMessage emailMessage = EmailMessage.builder()
+                    .toEmail(toEmail)
+                    .subject(subject)
+                    .body(body)
+                    .isHtml(true)
+                    .build();
+
+            mailService.queueEmail(emailMessage);  // ✅ mevcut mail kuyruğunu kullanır
+            log.info("Sipariş onay maili gönderildi: {}", toEmail);
+
+        } catch (Exception e) {
+            log.error("Sipariş onay maili gönderilemedi: {}", e.getMessage());
+        }
+    }
+
+    @Override
+    @Transactional
+    public ResponseMessage refundPayment(RefundRequest refundRequest, HttpServletRequest httpServletRequest) {
+        try {
+            log.info("İade talebi alındı - paymentId: {}", refundRequest.getPaymentId());
+
+            // 1️⃣ Önce cache'den dene (hem paymentId hem de orderNumber ile)
+            RefundSessionData sessionData = refundSessionCache.getByPaymentId(refundRequest.getPaymentId());
+            
+            // Eğer paymentId ile bulunamadıysa, orderNumber olarak dene
+            if (sessionData == null) {
+                log.info("PaymentId ile cache'de bulunamadı, orderNumber olarak deneniyor...");
+                sessionData = refundSessionCache.getByOrderNumber(refundRequest.getPaymentId());
+            }
+
+            // 2️⃣ Cache'de yoksa Order tablosundan bilgileri al ve cache'e kaydet
+            if (sessionData == null) {
+                log.warn("Cache'de refund bilgisi bulunamadı, siparişten alınacak...");
+
+                Optional<Order> orderOpt = orderRepository.findByOrderNumber(refundRequest.getPaymentId());
+                if (orderOpt.isEmpty()) {
+                    log.error("OrderNumber '{}' için veri bulunamadı.", refundRequest.getPaymentId());
+                    return new ResponseMessage("İade yapılacak sipariş bulunamadı. Sipariş numarasını kontrol edin.", false);
+                }
+
+                Order order = orderOpt.get();
+                
+                // Order'dan refund bilgilerini oluştur
+                sessionData = new RefundSessionData();
+                // Gerçek paymentId'yi kullan (orderNumber değil)
+                sessionData.setPaymentId(order.getPaymentId() != null ? order.getPaymentId() : 
+                        (order.getPaymentTransactionId() != null && order.getPaymentTransactionId().matches("\\d+") 
+                                ? order.getPaymentTransactionId() : order.getOrderNumber()));
+                sessionData.setOrderNumber(order.getOrderNumber());
+                sessionData.setAmount(order.getTotalAmount());
+                
+                // İsim bilgilerini ayır
+                String[] nameParts = order.getCustomerName() != null ? 
+                    order.getCustomerName().split(" ", 2) : new String[]{"Misafir", "Kullanıcı"};
+                sessionData.setFirstName(nameParts.length > 0 ? nameParts[0] : "Misafir");
+                sessionData.setLastName(nameParts.length > 1 ? nameParts[1] : "Kullanıcı");
+                
+                sessionData.setEmail(order.getCustomerEmail());
+                sessionData.setPhone(order.getCustomerPhone());
+                
+                // Adres bilgilerini al
+                if (order.getAddresses() != null && !order.getAddresses().isEmpty()) {
+                    Address orderAddress = order.getAddresses().get(0);
+                    sessionData.setAddress(orderAddress.getAddressLine() != null ? orderAddress.getAddressLine() : "Bilinmiyor");
+                    sessionData.setCity(orderAddress.getCity() != null ? orderAddress.getCity() : "Bilinmiyor");
+                    sessionData.setDistrict(orderAddress.getDistrict() != null ? orderAddress.getDistrict() : "");
+                    sessionData.setAddressDetail(orderAddress.getAddressDetail() != null ? orderAddress.getAddressDetail() : "");
+                } else {
+                    sessionData.setAddress("Bilinmiyor");
+                    sessionData.setCity("Bilinmiyor");
+                    sessionData.setDistrict("");
+                    sessionData.setAddressDetail("");
+                }
+                
+                sessionData.setConversationId(UUID.randomUUID().toString());
+                sessionData.setPaymentTransactionId(order.getPaymentTransactionId());
+                sessionData.setPaymentDate(order.getCreatedAt());
+                sessionData.setIp(httpServletRequest != null ? httpServletRequest.getRemoteAddr() : "127.0.0.1");
+
+                // Cache'e kaydet (gelecekteki işlemler için)
+                refundSessionCache.put(order.getOrderNumber(), sessionData);
+                
+                log.info("Siparişten refund bilgisi başarıyla alındı ve cache'e kaydedildi: {}", order.getOrderNumber());
+            }
+
+            // 3️⃣ İyzico transaction ID kontrolü ve düzeltme
+            String transactionId = sessionData.getPaymentTransactionId();
+            if (transactionId == null || transactionId.isEmpty()) {
+                log.error("PaymentTransactionId bulunamadı. OrderNumber: {}", sessionData.getOrderNumber());
+                return new ResponseMessage("İade işlemi yapılamadı: geçerli bir paymentTransactionId bulunamadı. Siparişte ödeme bilgisi eksik.", false);
+            }
+            
+            // Transaction ID numerik olmalı (İyzico gereksinimi)
+            if (!transactionId.matches("\\d+")) {
+                log.warn("PaymentTransactionId numerik değil: {}. OrderNumber ile tekrar deneniyor...", transactionId);
+                
+                // Eğer transactionId numerik değilse, Order'dan tekrar kontrol et
+                Optional<Order> orderCheck = orderRepository.findByOrderNumber(sessionData.getOrderNumber());
+                if (orderCheck.isPresent() && orderCheck.get().getPaymentTransactionId() != null 
+                        && orderCheck.get().getPaymentTransactionId().matches("\\d+")) {
+                    transactionId = orderCheck.get().getPaymentTransactionId();
+                    sessionData.setPaymentTransactionId(transactionId);
+                    log.info("Order'dan geçerli transactionId alındı: {}", transactionId);
+                } else {
+                    log.error("Geçerli bir numerik PaymentTransactionId bulunamadı: {}", transactionId);
+                    return new ResponseMessage("İade işlemi yapılamadı: geçerli bir paymentTransactionId bulunamadı. Lütfen müşteri hizmetleri ile iletişime geçin.", false);
+                }
+            }
+
+            // 4️⃣ İade tutarı kontrolü
+            if (refundRequest.getRefundAmount() == null || refundRequest.getRefundAmount().compareTo(BigDecimal.ZERO) <= 0) {
+                return new ResponseMessage("İade tutarı 0'dan büyük olmalıdır.", false);
+            }
+            
+            if (refundRequest.getRefundAmount().compareTo(sessionData.getAmount()) > 0) {
+                return new ResponseMessage(
+                        String.format("İade tutarı, orijinal ödeme tutarından (%.2f TL) fazla olamaz. İstenen: %.2f TL", 
+                                sessionData.getAmount().doubleValue(), refundRequest.getRefundAmount().doubleValue()),
+                        false
+                );
+            }
+
+            // 5️⃣ İyzico'dan ödeme bilgilerini çek ve doğru paymentTransactionId'yi al
+            Optional<Order> orderForRefundOpt = orderRepository.findByOrderNumber(sessionData.getOrderNumber());
+            if (orderForRefundOpt.isEmpty()) {
+                log.error("Order bulunamadı: {}", sessionData.getOrderNumber());
+                return new ResponseMessage("İade işlemi yapılamadı: sipariş bulunamadı.", false);
+            }
+            
+            Order orderForRefund = orderForRefundOpt.get();
+            String paymentIdFromOrder = orderForRefund.getPaymentId();
+            String paymentTransactionIdFromOrder = orderForRefund.getPaymentTransactionId();
+            
+            // İyzico'dan ödeme bilgilerini çek ve doğru paymentId'yi al (iade için)
+            // İyzico'da iade yapmak için Payment.retrieve'dan gelen paymentId kullanılmalı
+            String finalPaymentIdForRefund = null;
+            
+            // Önce paymentId ile İyzico'dan ödeme bilgilerini çek
+            if (paymentIdFromOrder != null && !paymentIdFromOrder.isEmpty()) {
+                try {
+                    RetrievePaymentRequest retrieveRequest = new RetrievePaymentRequest();
+                    retrieveRequest.setPaymentId(paymentIdFromOrder);
+                    retrieveRequest.setLocale("tr");
+                    
+                    Payment payment = Payment.retrieve(retrieveRequest, iyzicoOptions);
+                    
+                    if ("success".equalsIgnoreCase(payment.getStatus()) && payment.getPaymentId() != null) {
+                        // İyzico'dan gelen paymentId'yi kullan (iade için bu gerekli)
+                        finalPaymentIdForRefund = payment.getPaymentId();
+                        log.info("İyzico'dan paymentId alındı: {} (Order'dan paymentId: {})", 
+                                finalPaymentIdForRefund, paymentIdFromOrder);
+                    } else {
+                        log.warn("İyzico'dan ödeme bilgisi alınamadı (paymentId ile). Status: {}, Error: {}", 
+                                payment.getStatus(), payment.getErrorMessage());
+                    }
+                } catch (Exception e) {
+                    log.warn("İyzico'dan ödeme bilgisi çekilirken hata (paymentId ile): {}", e.getMessage());
+                }
+            }
+            
+            // Eğer paymentId ile başarısız olduysa, paymentTransactionId ile dene
+            if (finalPaymentIdForRefund == null && paymentTransactionIdFromOrder != null 
+                    && !paymentTransactionIdFromOrder.isEmpty()) {
+                try {
+                    RetrievePaymentRequest retrieveRequest = new RetrievePaymentRequest();
+                    retrieveRequest.setPaymentId(paymentTransactionIdFromOrder);
+                    retrieveRequest.setLocale("tr");
+                    
+                    Payment payment = Payment.retrieve(retrieveRequest, iyzicoOptions);
+                    
+                    if ("success".equalsIgnoreCase(payment.getStatus()) && payment.getPaymentId() != null) {
+                        // İyzico'dan gelen paymentId'yi kullan
+                        finalPaymentIdForRefund = payment.getPaymentId();
+                        log.info("İyzico'dan paymentId alındı (paymentTransactionId ile): {} (Order'dan: {})", 
+                                finalPaymentIdForRefund, paymentTransactionIdFromOrder);
+                    } else {
+                        log.warn("İyzico'dan ödeme bilgisi alınamadı (paymentTransactionId ile). Status: {}, Error: {}", 
+                                payment.getStatus(), payment.getErrorMessage());
+                    }
+                } catch (Exception e) {
+                    log.warn("İyzico'dan ödeme bilgisi çekilirken hata (paymentTransactionId ile): {}", e.getMessage());
+                }
+            }
+            
+            // Son çare: Order'dan direkt kullan (numerik olanı tercih et)
+            if (finalPaymentIdForRefund == null) {
+                if (paymentTransactionIdFromOrder != null && !paymentTransactionIdFromOrder.isEmpty() 
+                        && paymentTransactionIdFromOrder.matches("\\d+")) {
+                    finalPaymentIdForRefund = paymentTransactionIdFromOrder;
+                    log.warn("İyzico'dan ödeme bilgisi çekilemedi, Order'dan paymentTransactionId kullanılıyor: {}", 
+                            finalPaymentIdForRefund);
+                } else if (paymentIdFromOrder != null && !paymentIdFromOrder.isEmpty() 
+                        && paymentIdFromOrder.matches("\\d+")) {
+                    finalPaymentIdForRefund = paymentIdFromOrder;
+                    log.warn("İyzico'dan ödeme bilgisi çekilemedi, Order'dan paymentId kullanılıyor (numerik): {}", 
+                            finalPaymentIdForRefund);
+                } else if (paymentIdFromOrder != null && !paymentIdFromOrder.isEmpty()) {
+                    finalPaymentIdForRefund = paymentIdFromOrder;
+                    log.warn("İyzico'dan ödeme bilgisi çekilemedi, Order'dan paymentId kullanılıyor: {}", 
+                            finalPaymentIdForRefund);
+                } else {
+                    log.error("İade için geçerli bir payment ID bulunamadı. PaymentId: {}, PaymentTransactionId: {}", 
+                            paymentIdFromOrder, paymentTransactionIdFromOrder);
+                    return new ResponseMessage("İade işlemi yapılamadı: geçerli bir payment ID bulunamadı. Lütfen müşteri hizmetleri ile iletişime geçin.", false);
+                }
+            }
+            
+            // 6️⃣ İyzico'ya iade isteği gönder
+            CreateRefundRequest request = new CreateRefundRequest();
+            request.setLocale(Locale.TR.getValue());
+            request.setConversationId(sessionData.getConversationId() != null ? 
+                    sessionData.getConversationId() : UUID.randomUUID().toString());
+            
+            // İyzico'da iade yapmak için Payment.retrieve'dan gelen paymentId kullanılır
+            // setPaymentTransactionId metodu aslında paymentId bekler (isimlendirme karışıklığı)
+            request.setPaymentTransactionId(finalPaymentIdForRefund);
+            request.setPrice(refundRequest.getRefundAmount());
+            request.setIp(refundRequest.getIp() != null ? refundRequest.getIp() :
+                    (httpServletRequest != null ? httpServletRequest.getRemoteAddr() : "127.0.0.1"));
+            request.setCurrency(Currency.TRY.name());
+
+            log.info("İyzico iade isteği gönderiliyor... OrderNumber: {}, PaymentId: {}, Tutar: {} TL", 
+                    sessionData.getOrderNumber(), finalPaymentIdForRefund, refundRequest.getRefundAmount());
+            
+            Refund refund = Refund.create(request, iyzicoOptions);
+            
+            // 🔹 Refund Record oluştur (başarılı veya başarısız olsa bile kayıt tutulur)
+            RefundRecord refundRecord = null;
+            try {
+                String ipAddress = getClientIpAddress(httpServletRequest);
+                String userAgent = httpServletRequest != null ? httpServletRequest.getHeader("User-Agent") : null;
+                
+                // PaymentRecord'u bul
+                PaymentRecord paymentRecord = null;
+                if (orderForRefund.getPaymentId() != null) {
+                    paymentRecord = paymentRecordRepository.findByIyzicoPaymentId(orderForRefund.getPaymentId())
+                            .orElse(null);
+                }
+                if (paymentRecord == null && orderForRefund.getPaymentTransactionId() != null) {
+                    paymentRecord = paymentRecordRepository.findByPaymentTransactionId(orderForRefund.getPaymentTransactionId())
+                            .orElse(null);
+                }
+                if (paymentRecord == null) {
+                    paymentRecord = paymentRecordRepository.findByOrderNumber(sessionData.getOrderNumber())
+                            .orElse(null);
+                }
+                
+                refundRecord = RefundRecord.builder()
+                        .paymentRecord(paymentRecord)
+                        .paymentTransactionId(transactionId)
+                        .orderNumber(sessionData.getOrderNumber())
+                        .refundAmount(refundRequest.getRefundAmount())
+                        .originalAmount(sessionData.getAmount())
+                        .status("success".equalsIgnoreCase(refund.getStatus()) ? RefundStatus.SUCCESS : RefundStatus.FAILED)
+                        .reason(refundRequest.getReason())
+                        .iyzicoStatus(refund.getStatus())
+                        .iyzicoErrorMessage(refund.getErrorMessage())
+                        .iyzicoErrorCode(refund.getErrorCode())
+                        .refundedBy("ADMIN") // İade admin tarafından yapılıyor
+                        .user(orderForRefund.getUser())
+                        .ipAddress(ipAddress)
+                        .userAgent(userAgent != null && userAgent.length() > 500 ? userAgent.substring(0, 500) : userAgent)
+                        .iyzicoRawResponse(null) // Iyzico Refund sınıfında getRawResult() metodu yok
+                        .build();
+                
+                if ("success".equalsIgnoreCase(refund.getStatus())) {
+                    refundRecord.setRefundTransactionId(refund.getPaymentTransactionId());
+                    refundRecord.setCompletedAt(LocalDateTime.now());
+                }
+            } catch (Exception e) {
+                log.error("RefundRecord oluşturulurken hata: {}", e.getMessage(), e);
+            }
+
+            if ("success".equalsIgnoreCase(refund.getStatus())) {
+                log.info("İade başarılı: {} TL, OrderNumber: {}, TransactionId: {}", 
+                        refundRequest.getRefundAmount(), sessionData.getOrderNumber(), transactionId);
+
+                // 7️⃣ Sipariş durumunu güncelle ve cache'i güncelle
+                Optional<Order> orderOpt = orderRepository.findByOrderNumber(sessionData.getOrderNumber());
+                if (orderOpt.isPresent()) {
+                    Order orderToUpdate = orderOpt.get();
+                    orderToUpdate.updateStatus(OrderStatus.IADE_YAPILDI);
+                    orderToUpdate.setRefundAmount(refundRequest.getRefundAmount());
+                    orderToUpdate.setRefundReason(refundRequest.getReason());
+                    
+                    // İade nedeni ekle
+                    if (refundRequest.getReason() != null && !refundRequest.getReason().isEmpty()) {
+                        String existingReason = orderToUpdate.getCancelReason();
+                        String newReason = "İade: " + refundRequest.getReason();
+                        orderToUpdate.setCancelReason(existingReason != null && !existingReason.isEmpty() 
+                                ? existingReason + "\n" + newReason : newReason);
+                    }
+                    
+                    orderRepository.save(orderToUpdate);
+                    
+                    // Cache'deki refund bilgisini güncelle
+                    sessionData.setPaymentDate(LocalDateTime.now());
+                    refundSessionCache.put(sessionData.getOrderNumber(), sessionData);
+                    
+                    log.info("Sipariş durumu REFUNDED olarak güncellendi: {}", sessionData.getOrderNumber());
+                } else {
+                    log.warn("İade başarılı ancak sipariş bulunamadı: {}", sessionData.getOrderNumber());
+                }
+                
+                // 🔹 Refund Record kaydet
+                if (refundRecord != null) {
+                    try {
+                        refundRecordRepository.save(refundRecord);
+                        log.info("RefundRecord kaydedildi: RefundTransactionId={}, OrderNumber={}", 
+                                refundRecord.getRefundTransactionId(), sessionData.getOrderNumber());
+                    } catch (Exception e) {
+                        log.error("RefundRecord kaydedilirken hata: {}", e.getMessage(), e);
+                    }
+                }
+
+                return new DataResponseMessage<>(
+                        String.format("İade işlemi başarılı. %.2f TL iade edildi.", refundRequest.getRefundAmount().doubleValue()),
+                        true,
+                        String.format("Sipariş No: %s, Müşteri: %s %s, Email: %s, Telefon: %s",
+                                sessionData.getOrderNumber(),
+                                sessionData.getFirstName(), sessionData.getLastName(),
+                                sessionData.getEmail(), sessionData.getPhone())
+                );
+            } else {
+                String errorMessage = refund.getErrorMessage() != null ? refund.getErrorMessage() : "Bilinmeyen hata";
+                log.warn("İade başarısız: {}, OrderNumber: {}, TransactionId: {}", 
+                        errorMessage, sessionData.getOrderNumber(), transactionId);
+                
+                // Başarısız iade kaydını kaydet
+                if (refundRecord != null) {
+                    try {
+                        refundRecord.setCompletedAt(LocalDateTime.now());
+                        refundRecordRepository.save(refundRecord);
+                        log.info("Başarısız RefundRecord kaydedildi: OrderNumber={}", sessionData.getOrderNumber());
+                    } catch (Exception e) {
+                        log.error("Başarısız RefundRecord kaydedilirken hata: {}", e.getMessage());
+                    }
+                }
+                
+                return new ResponseMessage("İade işlemi başarısız: " + errorMessage, false);
+            }
+
+        } catch (Exception e) {
+            log.error("İade işlemi hatası:", e);
+            return new ResponseMessage("İade işlemi sırasında hata oluştu: " + e.getMessage(), false);
+        }
+    }
+
+
+    public static String generateOrderNumber() {
+        String datePart = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        int randomPart = (int) (Math.random() * 9000) + 1000;
+        return "ORD-" + datePart + "-" + randomPart;
+    }
+    
+    /**
+     * Client IP adresini al (güvenlik için)
+     */
+    private String getClientIpAddress(HttpServletRequest request) {
+        if (request == null) {
+            return "UNKNOWN";
+        }
+        
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("X-Real-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("X-Client-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("Proxy-Client-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("WL-Proxy-Client-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        
+        // X-Forwarded-For birden fazla IP içerebilir, ilkini al
+        if (ip != null && ip.contains(",")) {
+            ip = ip.split(",")[0].trim();
+        }
+        
+        return ip != null ? ip : "UNKNOWN";
+    }
+
+    @Override
+    @Transactional
+    public ResponseMessage paymentAsGuest(PaymentRequest paymentRequest, HttpServletRequest httpRequest) {
+        try {
+            log.info("Gelen ödeme isteği: {}", paymentRequest);
+
+            // ✅ GÜVENLİK: orderDetails zorunlu - Frontend'den gelen bilgiler backend'de tekrar hesaplanacak
+            if (paymentRequest.getOrderDetails() == null || paymentRequest.getOrderDetails().isEmpty()) {
+                return new ResponseMessage("Sipariş detayları zorunludur. En az bir ürün seçilmelidir.", false);
+            }
+
+            List<OrderDetail> orderDetailsList = paymentRequest.getOrderDetails();
+            Cart cart = null;
+            BigDecimal toplamTutar = BigDecimal.ZERO;
+            BigDecimal frontendToplamTutar = BigDecimal.ZERO; // Frontend'den gelen toplam (güvenlik kontrolü için)
+
+            // 1️⃣ Sepet kontrolü (opsiyonel - sadece doğrulama için)
+            if (paymentRequest.getCartId() != null) {
+                log.info("Sepet doğrulaması yapılıyor - cartId: {}", paymentRequest.getCartId());
+                
+                cart = cartRepository.findById(paymentRequest.getCartId())
+                        .orElse(null);
+                
+                if (cart != null) {
+                    // Sepet sahibi kontrolü
+                    if (paymentRequest.getUserId() != null) {
+                        if (cart.getUser() == null || !cart.getUser().getId().equals(paymentRequest.getUserId())) {
+                            return new ResponseMessage("Bu sepet size ait değil.", false);
+                        }
+                    } else if (paymentRequest.getGuestUserId() != null) {
+                        if (cart.getGuestUserId() == null || !cart.getGuestUserId().equals(paymentRequest.getGuestUserId())) {
+                            return new ResponseMessage("Bu sepet size ait değil.", false);
+                        }
+                    }
+                }
+            }
+
+            // 2️⃣ GÜVENLİK: Her ürün için backend'de tekrar hesaplama ve doğrulama
+            for (OrderDetail detail : orderDetailsList) {
+                // Ürün veritabanından kontrol et
+                Product product = productRepository.findById(detail.getProductId())
+                        .orElseThrow(() -> new RuntimeException("Ürün bulunamadı: " + detail.getProductId()));
+
+                // ✅ Ürün bilgilerini doğrula
+                if (!product.getName().equals(detail.getProductName())) {
+                    log.warn("Ürün adı uyuşmuyor - DB: {}, Frontend: {}", product.getName(), detail.getProductName());
+                    return new ResponseMessage(
+                            String.format("Ürün bilgisi uyuşmuyor. Ürün adı: %s", product.getName()),
+                            false
+                    );
+                }
+
+                // ✅ Stok kontrolü (metre cinsinden)
+                if (product.getQuantity() != null) {
+                    // Kullanılacak stok miktarını hesapla (metre cinsinden)
+                    double widthInMeters = detail.getWidth() != null ? detail.getWidth() / 100.0 : 0.0;
+                    
+                    // PleatType çarpanını hesapla (örn: "1x2.5" → 2.5)
+                    double pleatMultiplier = 1.0;
+                    if (detail.getPleatType() != null && !detail.getPleatType().isEmpty()) {
+                        try {
+                            String[] parts = detail.getPleatType().split("x");
+                            if (parts.length == 2) {
+                                pleatMultiplier = Double.parseDouble(parts[1]);
+                            }
+                        } catch (Exception e) {
+                            log.warn("PleatType parse edilemedi: {}, varsayılan 1.0 kullanılıyor", detail.getPleatType());
+                        }
+                    }
+                    
+                    // Kullanılacak stok = metre * pile çarpanı * adet
+                    double requiredStock = widthInMeters * pleatMultiplier * detail.getQuantity();
+                    
+                    if (product.getQuantity() < requiredStock) {
+                        return new ResponseMessage(
+                                String.format("Ürün '%s' için yeterli stok yok. Mevcut stok: %d m, İstenen: %.2f m",
+                                        product.getName(), product.getQuantity(), requiredStock),
+                                false
+                        );
+                    }
+                }
+
+                // ✅ Fiyat hesaplama (backend'de tekrar hesapla)
+                // Formül: metre fiyatı * en (cm) * pile sayısı * adet
+                
+                // 1. Pile çarpanı ("1x2" → 2, "1x2.5" → 2.5)
+                double pileCarpani = 1.0;
+                if (detail.getPleatType() != null && !detail.getPleatType().equalsIgnoreCase("pilesiz")) {
+                    try {
+                        String[] parts = detail.getPleatType().split("x");
+                        if (parts.length == 2) {
+                            pileCarpani = Double.parseDouble(parts[1]);
+                        } else {
+                            log.warn("PleatType formatı beklenenden farklı: {}", detail.getPleatType());
+                        }
+                    } catch (Exception e) {
+                        log.warn("PleatType parse hatası: {}", detail.getPleatType());
+                    }
+                }
+
+                // 2. Fiyat hesaplama: metre fiyatı * en (cm) * pile sayısı * adet
+                // En cm cinsinden olduğu için 100'e bölerek metreye çeviriyoruz
+                BigDecimal enMetre = BigDecimal.valueOf(detail.getWidth()).divide(BigDecimal.valueOf(100.0), 4, java.math.RoundingMode.HALF_UP);
+                BigDecimal backendHesaplananFiyat = product.getPrice()
+                        .multiply(enMetre)
+                        .multiply(BigDecimal.valueOf(pileCarpani))
+                        .multiply(BigDecimal.valueOf(detail.getQuantity()))
+                        .setScale(2, java.math.RoundingMode.HALF_UP);
+
+                // ✅ GÜVENLİK: Frontend'den gelen fiyatla backend hesaplamasını karşılaştır
+                BigDecimal frontendFiyat = detail.getPrice();
+                if (frontendFiyat == null) {
+                    return new ResponseMessage(
+                            String.format("Ürün '%s' için fiyat bilgisi eksik.", product.getName()),
+                            false
+                    );
+                }
+
+                // Fiyat farkı kontrolü (0.01 TL tolerans)
+                BigDecimal fark = backendHesaplananFiyat.subtract(frontendFiyat).abs();
+                if (fark.compareTo(BigDecimal.valueOf(0.01)) > 0) {
+                    log.error("Fiyat uyuşmazlığı - Ürün: {}, Backend: {} TL, Frontend: {} TL, Fark: {} TL",
+                            product.getName(), backendHesaplananFiyat, frontendFiyat, fark);
+                    return new ResponseMessage(
+                            String.format("Güvenlik hatası: Ürün '%s' için fiyat uyuşmazlığı tespit edildi. " +
+                                    "Lütfen sayfayı yenileyip tekrar deneyin.", product.getName()),
+                            false
+                    );
+                }
+
+                // ✅ Backend hesaplanan fiyatı kullan (güvenlik için)
+                detail.setPrice(backendHesaplananFiyat);
+                toplamTutar = toplamTutar.add(backendHesaplananFiyat);
+                frontendToplamTutar = frontendToplamTutar.add(frontendFiyat);
+
+                log.debug("Ürün doğrulandı - Ürün: {}, Backend Fiyat: {} TL, Frontend Fiyat: {} TL",
+                        product.getName(), backendHesaplananFiyat, frontendFiyat);
+            }
+
+            // ✅ GÜVENLİK: Toplam tutar kontrolü
+            BigDecimal toplamFark = toplamTutar.subtract(frontendToplamTutar).abs();
+            if (toplamFark.compareTo(BigDecimal.valueOf(0.01)) > 0) {
+                log.error("Toplam tutar uyuşmazlığı - Backend: {} TL, Frontend: {} TL, Fark: {} TL",
+                        toplamTutar, frontendToplamTutar, toplamFark);
+                return new ResponseMessage(
+                        "Güvenlik hatası: Toplam tutar uyuşmazlığı tespit edildi. Lütfen sayfayı yenileyip tekrar deneyin.",
+                        false
+                );
+            }
+
+            // ✅ Sepet onaylama (eğer sepet kullanılıyorsa)
+            if (cart != null && cart.getStatus() == CartStatus.AKTIF) {
+                try {
+                    cartService.confirmCart(cart.getId());
+                    log.info("Sepet onaylandı ve stoklar düşüldü - cartId: {}", cart.getId());
+                } catch (Exception e) {
+                    log.error("Sepet onaylanırken hata: {}", e.getMessage());
+                    return new ResponseMessage("Sepet onaylanırken hata oluştu: " + e.getMessage(), false);
+                }
+            }
+
+            // 3️⃣ Toplam tutar kontrolü
+            if (toplamTutar.compareTo(BigDecimal.ZERO) <= 0) {
+                return new ResponseMessage("Toplam tutar 0'dan büyük olmalıdır.", false);
+            }
+
+            if (toplamTutar.compareTo(BigDecimal.valueOf(20)) < 0) {
+                return new ResponseMessage("Toplam tutar minimum 20 TL olmalıdır.", false);
+            }
+
+            // ✅ Backend hesaplanan tutarı kullan (güvenlik için)
+            paymentRequest.setAmount(toplamTutar);
+            log.info("✅ Güvenlik doğrulaması tamamlandı - Backend hesaplanan toplam: {} TL, Frontend toplam: {} TL",
+                    toplamTutar, frontendToplamTutar);
+
+            // 8️⃣ Kart bilgilerini hazırla
+            PaymentCard paymentCard = new PaymentCard();
+            paymentCard.setCardHolderName(paymentRequest.getFirstName() + " " + paymentRequest.getLastName());
+            paymentCard.setCardNumber(paymentRequest.getCardNumber());
+            paymentCard.setExpireMonth(paymentRequest.getCardExpiry().split("/")[0].trim());
+            paymentCard.setExpireYear("20" + paymentRequest.getCardExpiry().split("/")[1].trim());
+            paymentCard.setCvc(paymentRequest.getCardCvc());
+            paymentCard.setRegisterCard(0);
+
+            // 9️⃣ Buyer bilgileri
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            Buyer buyer = new Buyer();
+            buyer.setId(UUID.randomUUID().toString());
+            buyer.setName(paymentRequest.getFirstName());
+            buyer.setSurname(paymentRequest.getLastName());
+            buyer.setGsmNumber(paymentRequest.getPhone());
+            buyer.setEmail(paymentRequest.getEmail());
+            buyer.setIdentityNumber("00000000000");
+            buyer.setLastLoginDate(LocalDateTime.now().format(formatter));
+            buyer.setRegistrationDate(LocalDateTime.now().format(formatter));
+            buyer.setRegistrationAddress(paymentRequest.getAddress());
+            buyer.setIp("0.0.0.0");
+            buyer.setCity(paymentRequest.getCity());
+            buyer.setCountry("Turkey");
+            buyer.setZipCode("34000");
+
+            // 🔟 Adres bilgileri - Login kullanıcı için seçilen adresi kullan
+            com.iyzipay.model.Address address = new com.iyzipay.model.Address();
+            String addressLine;
+            String city;
+            String district;
+            String fullName;
+            
+            // Eğer kullanıcı login olmuş ve addressId göndermişse, o adresi kullan
+            if (paymentRequest.getAddressId() != null && paymentRequest.getUserId() != null) {
+                Optional<Address> userAddress = adresRepository.findById(paymentRequest.getAddressId());
+                if (userAddress.isPresent() && userAddress.get().getUser() != null 
+                        && userAddress.get().getUser().getId().equals(paymentRequest.getUserId())) {
+                    Address selectedAddress = userAddress.get();
+                    addressLine = selectedAddress.getAddressLine() + 
+                            (selectedAddress.getAddressDetail() != null ? " - " + selectedAddress.getAddressDetail() : "");
+                    city = selectedAddress.getCity();
+                    district = selectedAddress.getDistrict();
+                    fullName = selectedAddress.getFullName();
+                    log.info("Login kullanıcı seçili adresi kullanıyor: addressId={}, userId={}", 
+                            paymentRequest.getAddressId(), paymentRequest.getUserId());
+                } else {
+                    // Adres bulunamadı veya kullanıcıya ait değil, request'ten al
+                    addressLine = paymentRequest.getAddress() +
+                            (paymentRequest.getAddressDetail() != null ? " - " + paymentRequest.getAddressDetail() : "");
+                    city = paymentRequest.getCity();
+                    district = paymentRequest.getDistrict();
+                    fullName = paymentRequest.getFirstName() + " " + paymentRequest.getLastName();
+                    log.warn("Seçilen adres bulunamadı veya kullanıcıya ait değil, request'ten alınıyor");
+                }
+            } else {
+                // Guest kullanıcı veya adres seçilmemiş, request'ten al
+                addressLine = paymentRequest.getAddress() +
+                        (paymentRequest.getAddressDetail() != null ? " - " + paymentRequest.getAddressDetail() : "");
+                city = paymentRequest.getCity();
+                district = paymentRequest.getDistrict();
+                fullName = paymentRequest.getFirstName() + " " + paymentRequest.getLastName();
+            }
+            
+            address.setContactName(fullName);
+            address.setCity(city);
+            address.setCountry("Turkey");
+            address.setAddress(addressLine);
+            address.setZipCode("34000");
+
+            // 4️⃣ Sepet detaylarını oluştur (İyzico için)
+            List<BasketItem> basketItems = new ArrayList<>();
+            int index = 1;
+            for (OrderDetail detail : orderDetailsList) {
+                BasketItem item = new BasketItem();
+                item.setId("ITEM-" + index++);
+                item.setName(detail.getProductName());
+                item.setCategory1("Perde");
+                item.setCategory2(detail.getPleatType());
+                item.setItemType(BasketItemType.PHYSICAL.name());
+                item.setPrice(detail.getPrice()); // BasketItem için (İyzico)
+                basketItems.add(item);
+            }
+
+            // 1️⃣2️⃣ Ödeme isteği oluştur
+            String conversationId = UUID.randomUUID().toString();
+
+            CreatePaymentRequest request = new CreatePaymentRequest();
+            request.setLocale(Locale.TR.getValue());
+            request.setConversationId(conversationId);
+            request.setPrice(toplamTutar);
+            request.setPaidPrice(toplamTutar);
+            request.setCurrency(Currency.TRY.name());
+            request.setInstallment(1);
+            request.setBasketId("ORDER-" + conversationId);
+            request.setPaymentChannel(PaymentChannel.WEB.name());
+            request.setPaymentGroup(PaymentGroup.PRODUCT.name());
+
+            // Callback URL'i application.properties'ten al
+            String backendUrl = appUrlConfig.getBackendUrl();
+            request.setCallbackUrl(backendUrl + "/api/payment/3d-callback");
+            request.setPaymentCard(paymentCard);
+            request.setBuyer(buyer);
+            request.setShippingAddress(address);
+            request.setBillingAddress(address);
+            request.setBasketItems(basketItems);
+
+            // 🔹 Payment Record oluştur (pending durumunda - 3D Secure başlatılmadan önce)
+            try {
+                String ipAddress = getClientIpAddress(httpRequest);
+                String userAgent = httpRequest != null ? httpRequest.getHeader("User-Agent") : null;
+                
+                PaymentRecord pendingPaymentRecord = PaymentRecord.builder()
+                        .conversationId(conversationId)
+                        .amount(toplamTutar)
+                        .status(PaymentStatus.PENDING)
+                        .paymentMethod("CREDIT_CARD")
+                        .is3DSecure(true)
+                        .user(paymentRequest.getUserId() != null ? 
+                                appUserRepository.findById(paymentRequest.getUserId()).orElse(null) : null)
+                        .guestUserId(paymentRequest.getGuestUserId())
+                        .customerEmail(paymentRequest.getEmail())
+                        .customerName(paymentRequest.getFirstName() + " " + paymentRequest.getLastName())
+                        .customerPhone(paymentRequest.getPhone())
+                        .ipAddress(ipAddress)
+                        .userAgent(userAgent != null && userAgent.length() > 500 ? userAgent.substring(0, 500) : userAgent)
+                        .build();
+                
+                paymentRecordRepository.save(pendingPaymentRecord);
+                log.info("Pending PaymentRecord kaydedildi: ConversationId={}", conversationId);
+            } catch (Exception e) {
+                log.error("Pending PaymentRecord kaydedilirken hata: {}", e.getMessage(), e);
+                // PaymentRecord hatası ödeme işlemini engellemez
+            }
+            
+            // 1️⃣3️⃣ 3D Secure başlat
+            ThreedsInitialize threedsInitialize = ThreedsInitialize.create(request, iyzicoOptions);
+
+            if ("success".equalsIgnoreCase(threedsInitialize.getStatus())) {
+                // Müşteri bilgilerini cache'e yaz
+                TopUpSessionData sessionData = new TopUpSessionData();
+                sessionData.setUsername(buyer.getEmail());
+                sessionData.setFullName(fullName);
+                sessionData.setPhone(paymentRequest.getPhone());
+                sessionData.setAddress(addressLine);
+                sessionData.setCity(city);
+                sessionData.setDistrict(district);
+                sessionData.setAddressDetail(paymentRequest.getAddressDetail());
+                sessionData.setAmount(toplamTutar);
+                // Login kullanıcı için adres bilgileri
+                sessionData.setAddressId(paymentRequest.getAddressId());
+                sessionData.setUserId(paymentRequest.getUserId());
+                // Sepet bilgileri
+                sessionData.setCartId(cart != null ? cart.getId() : null);
+                sessionData.setGuestUserId(paymentRequest.getGuestUserId());
+                sessionData.setOrderDetails(orderDetailsList);
+
+                topUpSessionCache.put(conversationId, sessionData);
+
+                return new DataResponseMessage<>(
+                        "3D doğrulama başlatıldı. Yönlendirme yapılıyor.",
+                        true,
+                        threedsInitialize.getHtmlContent()
+                );
+            } else {
+                return new ResponseMessage(
+                        "3D başlatma başarısız: " + threedsInitialize.getErrorMessage(),
+                        false
+                );
+            }
+
+        } catch (Exception e) {
+            log.error("Ödeme hatası:", e);
+            return new ResponseMessage("3D başlatma hatası: " + e.getMessage(), false);
+        }
+    }
+
+
+}
