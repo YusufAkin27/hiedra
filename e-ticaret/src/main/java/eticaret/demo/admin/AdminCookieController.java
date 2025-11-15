@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import eticaret.demo.auth.AppUser;
 import eticaret.demo.cookie.CookiePreference;
 import eticaret.demo.cookie.CookiePreferenceRepository;
-import eticaret.demo.response.DataResponseMessage;
+import eticaret.demo.common.response.DataResponseMessage;
 
 import java.util.HashMap;
 import java.util.List;

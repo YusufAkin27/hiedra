@@ -9,7 +9,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import eticaret.demo.audit.AuditLogService;
-import eticaret.demo.response.ResponseMessage;
+import eticaret.demo.common.response.ResponseMessage;
 
 @RestController
 @RequestMapping("/bize_ulaşın")

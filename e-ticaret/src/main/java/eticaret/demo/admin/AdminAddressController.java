@@ -11,7 +11,7 @@ import eticaret.demo.address.Address;
 import eticaret.demo.address.AdresRepository;
 import eticaret.demo.audit.AuditLogService;
 import eticaret.demo.auth.AppUserRepository;
-import eticaret.demo.response.DataResponseMessage;
+import eticaret.demo.common.response.DataResponseMessage;
 
 import java.util.List;
 import java.util.Map;

@@ -26,9 +26,20 @@ public class AdminInitializer implements CommandLineRunner {
     private void updateAdminIfNecessary(AppUser admin) {
         boolean needsUpdate = false;
 
+        // Email değiştirmeden önce, hedef email'in başka bir kullanıcıda olup olmadığını kontrol et
         if (!admin.getEmail().equalsIgnoreCase(ADMIN_EMAIL)) {
-            admin.setEmail(ADMIN_EMAIL);
-            needsUpdate = true;
+            // Eğer hedef email başka bir kullanıcıda varsa, email'i değiştirme
+            boolean emailExists = appUserRepository.findByEmailIgnoreCase(ADMIN_EMAIL)
+                    .map(existingUser -> !existingUser.getId().equals(admin.getId()))
+                    .orElse(false);
+            
+            if (!emailExists) {
+                admin.setEmail(ADMIN_EMAIL);
+                needsUpdate = true;
+            } else {
+                log.warn("Admin email güncellenemedi: {} email adresi zaten başka bir kullanıcıda mevcut. Mevcut admin email'i korunuyor: {}", 
+                        ADMIN_EMAIL, admin.getEmail());
+            }
         }
 
         if (!admin.isEmailVerified()) {
@@ -47,21 +58,64 @@ public class AdminInitializer implements CommandLineRunner {
         }
 
         if (needsUpdate) {
-            appUserRepository.save(admin);
-            log.info("Varsayılan admin kullanıcısı güncellendi (email: {})", ADMIN_EMAIL);
+            try {
+                appUserRepository.save(admin);
+                log.info("Varsayılan admin kullanıcısı güncellendi (email: {})", admin.getEmail());
+            } catch (Exception e) {
+                log.error("Admin kullanıcısı güncellenirken hata oluştu: {}", e.getMessage(), e);
+            }
         }
     }
 
     private void createAdminIfMissing() {
-        AppUser adminUser = AppUser.builder()
-                .email(ADMIN_EMAIL)
-                .role(UserRole.ADMIN)
-                .emailVerified(true)
-                .active(true)
-                .build();
+        // Email'in zaten başka bir kullanıcıda olup olmadığını kontrol et
+        if (appUserRepository.findByEmailIgnoreCase(ADMIN_EMAIL).isPresent()) {
+            log.warn("Admin oluşturulamadı: {} email adresi zaten mevcut. Mevcut kullanıcı admin yapılıyor.", ADMIN_EMAIL);
+            
+            // Mevcut kullanıcıyı admin yap
+            appUserRepository.findByEmailIgnoreCase(ADMIN_EMAIL).ifPresent(existingUser -> {
+                boolean needsUpdate = false;
+                
+                if (existingUser.getRole() != UserRole.ADMIN) {
+                    existingUser.setRole(UserRole.ADMIN);
+                    needsUpdate = true;
+                }
+                
+                if (!existingUser.isEmailVerified()) {
+                    existingUser.setEmailVerified(true);
+                    needsUpdate = true;
+                }
+                
+                if (!existingUser.isActive()) {
+                    existingUser.setActive(true);
+                    needsUpdate = true;
+                }
+                
+                if (needsUpdate) {
+                    try {
+                        appUserRepository.save(existingUser);
+                        log.info("Mevcut kullanıcı admin yapıldı (email: {})", ADMIN_EMAIL);
+                    } catch (Exception e) {
+                        log.error("Kullanıcı admin yapılırken hata oluştu: {}", e.getMessage(), e);
+                    }
+                }
+            });
+            return;
+        }
 
-        appUserRepository.save(adminUser);
-        log.info("Varsayılan admin kullanıcısı oluşturuldu (email: {})", ADMIN_EMAIL);
+        try {
+            AppUser adminUser = AppUser.builder()
+                    .email(ADMIN_EMAIL)
+                    .role(UserRole.ADMIN)
+                    .emailVerified(true)
+                    .active(true)
+                    .build();
+
+            appUserRepository.save(adminUser);
+            log.info("Varsayılan admin kullanıcısı oluşturuldu (email: {})", ADMIN_EMAIL);
+        } catch (Exception e) {
+            log.error("Admin kullanıcısı oluşturulurken hata oluştu: {}", e.getMessage(), e);
+        }
     }
 }
 

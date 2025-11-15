@@ -14,7 +14,7 @@ import eticaret.demo.product.Product;
 import eticaret.demo.product.ProductRepository;
 import eticaret.demo.product.ProductReviewRepository;
 import eticaret.demo.product.ProductViewRepository;
-import eticaret.demo.response.DataResponseMessage;
+import eticaret.demo.common.response.DataResponseMessage;
 import eticaret.demo.audit.AuditLogService;
 import jakarta.servlet.http.HttpServletRequest;
 

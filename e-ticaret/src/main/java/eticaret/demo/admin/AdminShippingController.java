@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import eticaret.demo.response.DataResponseMessage;
+import eticaret.demo.common.response.DataResponseMessage;
 import eticaret.demo.order.Order;
 import eticaret.demo.order.OrderRepository;
 import eticaret.demo.order.OrderStatus;

@@ -27,7 +27,8 @@ import {
   FaHistory,
   FaFileContract,
   FaCookie,
-  FaUserCircle
+  FaUserCircle,
+  FaUserShield
 } from 'react-icons/fa'
 import type { AuthUser } from '../services/authService'
 
@@ -45,6 +46,7 @@ type Page =
   | 'productAdd'
   | 'shipping'
   | 'messages'
+  | 'bulkMail'
   | 'carts'
   | 'reviews'
   | 'productViews'
@@ -58,6 +60,7 @@ type Page =
   | 'userAnalytics'
   | 'contracts'
   | 'categories'
+  | 'adminManagement'
 
 type SidebarProps = {
   user: AuthUser
@@ -291,7 +294,7 @@ function Sidebar({ user, currentPage, onNavigate, isOpen, onToggle, notification
           <div className="sidebar__nav-section">
             <button
               type="button"
-              className={`sidebar__nav-item sidebar__nav-item--section ${isActive(['shipping', 'messages', 'productViews']) ? 'sidebar__nav-item--active' : ''}`}
+              className={`sidebar__nav-item sidebar__nav-item--section ${isActive(['shipping', 'messages', 'bulkMail', 'productViews']) ? 'sidebar__nav-item--active' : ''}`}
               onClick={() => toggleSection('operations')}
             >
               <FaEllipsisH className="sidebar__nav-icon" />
@@ -323,6 +326,14 @@ function Sidebar({ user, currentPage, onNavigate, isOpen, onToggle, notification
                 </button>
                 <button
                   type="button"
+                  className={`sidebar__nav-subitem ${isActive('bulkMail') ? 'sidebar__nav-subitem--active' : ''}`}
+                  onClick={() => onNavigate('bulkMail')}
+                >
+                  <FaEnvelope className="sidebar__nav-icon sidebar__nav-icon--sub" />
+                  Toplu Mail
+                </button>
+                <button
+                  type="button"
                   className={`sidebar__nav-subitem ${isActive('productViews') ? 'sidebar__nav-subitem--active' : ''}`}
                   onClick={() => onNavigate('productViews')}
                 >
@@ -337,7 +348,7 @@ function Sidebar({ user, currentPage, onNavigate, isOpen, onToggle, notification
           <div className="sidebar__nav-section">
             <button
               type="button"
-              className={`sidebar__nav-item sidebar__nav-item--section ${isActive(['system', 'auditLogs', 'cookiePreferences', 'settings', 'contracts']) ? 'sidebar__nav-item--active' : ''}`}
+              className={`sidebar__nav-item sidebar__nav-item--section ${isActive(['system', 'auditLogs', 'cookiePreferences', 'settings', 'contracts', 'adminManagement']) ? 'sidebar__nav-item--active' : ''}`}
               onClick={() => toggleSection('system')}
             >
               <FaCog className="sidebar__nav-icon" />
@@ -379,6 +390,14 @@ function Sidebar({ user, currentPage, onNavigate, isOpen, onToggle, notification
                 >
                   <FaCookie className="sidebar__nav-icon sidebar__nav-icon--sub" />
                   Çerezler
+                </button>
+                <button
+                  type="button"
+                  className={`sidebar__nav-subitem ${isActive('adminManagement') ? 'sidebar__nav-subitem--active' : ''}`}
+                  onClick={() => onNavigate('adminManagement')}
+                >
+                  <FaUserShield className="sidebar__nav-icon sidebar__nav-icon--sub" />
+                  Admin Yönetimi
                 </button>
               </div>
             )}

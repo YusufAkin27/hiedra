@@ -8,8 +8,8 @@ import org.springframework.transaction.annotation.Transactional;
 import eticaret.demo.address.Address;
 import eticaret.demo.payment.PaymentService;
 import eticaret.demo.payment.RefundRequest;
-import eticaret.demo.response.DataResponseMessage;
-import eticaret.demo.response.ResponseMessage;
+import eticaret.demo.common.response.DataResponseMessage;
+import eticaret.demo.common.response.ResponseMessage;
 
 
 import java.time.LocalDateTime;

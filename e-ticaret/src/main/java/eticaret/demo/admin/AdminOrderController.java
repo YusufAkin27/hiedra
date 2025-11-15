@@ -20,13 +20,17 @@ import eticaret.demo.order.OrderRepository;
 import eticaret.demo.order.OrderStatus;
 import eticaret.demo.payment.PaymentService;
 import eticaret.demo.payment.RefundRequest;
-import eticaret.demo.response.DataResponseMessage;
-import eticaret.demo.response.ResponseMessage;
+import eticaret.demo.common.response.DataResponseMessage;
+import eticaret.demo.common.response.ResponseMessage;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin/orders")
@@ -726,6 +730,78 @@ public class AdminOrderController {
     public static class RejectRefundRequest {
         private String reason;
         private String adminNotes;
+    }
+
+    /**
+     * Kazanç hesaplama endpoint'i
+     * GET /api/admin/orders/revenue
+     */
+    @GetMapping("/revenue")
+    public ResponseEntity<DataResponseMessage<RevenueCalculation>> calculateRevenue(
+            HttpServletRequest request) {
+        try {
+            // Başarılı siparişleri al (TESLIM_EDILDI, TAMAMLANDI, KARGOYA_VERILDI)
+            List<Order> successfulOrders = orderRepository.findAll().stream()
+                    .filter(order -> order.getStatus() == OrderStatus.TESLIM_EDILDI ||
+                                   order.getStatus() == OrderStatus.TAMAMLANDI ||
+                                   order.getStatus() == OrderStatus.KARGOYA_VERILDI)
+                    .collect(Collectors.toList());
+
+            // Toplam gelir (tüm başarılı siparişlerin totalAmount toplamı)
+            BigDecimal totalRevenue = successfulOrders.stream()
+                    .map(Order::getTotalAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            // İyzico kesintisi (%4.29)
+            BigDecimal iyzicoFeeRate = new BigDecimal("0.0429");
+            BigDecimal iyzicoFee = totalRevenue.multiply(iyzicoFeeRate)
+                    .setScale(2, RoundingMode.HALF_UP);
+
+            // Kargo maliyeti (her sipariş için 100 TL)
+            BigDecimal shippingCostPerOrder = new BigDecimal("100.00");
+            BigDecimal totalShippingCost = shippingCostPerOrder
+                    .multiply(new BigDecimal(successfulOrders.size()))
+                    .setScale(2, RoundingMode.HALF_UP);
+
+            // Net kazanç
+            BigDecimal netProfit = totalRevenue
+                    .subtract(iyzicoFee)
+                    .subtract(totalShippingCost)
+                    .setScale(2, RoundingMode.HALF_UP);
+
+            RevenueCalculation calculation = RevenueCalculation.builder()
+                    .totalOrders(successfulOrders.size())
+                    .totalRevenue(totalRevenue)
+                    .iyzicoFee(iyzicoFee)
+                    .iyzicoFeeRate(iyzicoFeeRate.multiply(new BigDecimal("100")))
+                    .totalShippingCost(totalShippingCost)
+                    .shippingCostPerOrder(shippingCostPerOrder)
+                    .netProfit(netProfit)
+                    .build();
+
+            auditLogService.logSimple("CALCULATE_REVENUE", "Order", null,
+                    "Kazanç hesaplaması yapıldı - Net Kazanç: " + netProfit + " ₺", request);
+
+            return ResponseEntity.ok(DataResponseMessage.success("Kazanç hesaplaması başarıyla yapıldı", calculation));
+        } catch (Exception e) {
+            log.error("Kazanç hesaplaması yapılırken hata: ", e);
+            auditLogService.logError("CALCULATE_REVENUE", "Order", null,
+                    "Kazanç hesaplaması yapılırken hata: " + e.getMessage(), e.getMessage(), request);
+            return ResponseEntity.badRequest()
+                    .body(DataResponseMessage.error("Kazanç hesaplanamadı: " + e.getMessage()));
+        }
+    }
+
+    @Data
+    @lombok.Builder
+    public static class RevenueCalculation {
+        private int totalOrders;
+        private BigDecimal totalRevenue;
+        private BigDecimal iyzicoFee;
+        private BigDecimal iyzicoFeeRate;
+        private BigDecimal totalShippingCost;
+        private BigDecimal shippingCostPerOrder;
+        private BigDecimal netProfit;
     }
 }
 

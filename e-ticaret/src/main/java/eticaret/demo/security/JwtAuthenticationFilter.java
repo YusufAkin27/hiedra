@@ -104,7 +104,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         if (shouldLog) {
                             log.info("Oluşturulan authorities: {}", authorities);
                         }
-                        
+
                         
                         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                                 user,

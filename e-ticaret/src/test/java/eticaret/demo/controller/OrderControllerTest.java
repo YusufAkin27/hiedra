@@ -6,7 +6,7 @@ import eticaret.demo.guest.GuestUserService;
 import eticaret.demo.order.OrderController;
 import eticaret.demo.order.OrderQueryRequest;
 import eticaret.demo.order.OrderService;
-import eticaret.demo.response.ResponseMessage;
+import eticaret.demo.common.response.ResponseMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

@@ -2,7 +2,7 @@ package eticaret.demo.contract;
 
 import eticaret.demo.auth.AppUser;
 import eticaret.demo.auth.AppUserRepository;
-import eticaret.demo.exception.ResourceNotFoundException;
+import eticaret.demo.common.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

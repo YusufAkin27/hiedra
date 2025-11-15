@@ -1,6 +1,6 @@
 package eticaret.demo.order;
 
-import eticaret.demo.response.ResponseMessage;
+import eticaret.demo.common.response.ResponseMessage;
 
 public interface OrderService {
     

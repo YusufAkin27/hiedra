@@ -3,7 +3,7 @@ package eticaret.demo.controller;
 import eticaret.demo.product.Product;
 import eticaret.demo.recommendation.RecommendationController;
 import eticaret.demo.recommendation.RecommendationService;
-import eticaret.demo.response.DataResponseMessage;
+import eticaret.demo.common.response.DataResponseMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

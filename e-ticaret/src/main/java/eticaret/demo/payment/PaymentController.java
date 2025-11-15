@@ -7,9 +7,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import eticaret.demo.audit.AuditLogService;
-import eticaret.demo.config.AppUrlConfig;
-import eticaret.demo.response.DataResponseMessage;
-import eticaret.demo.response.ResponseMessage;
+import eticaret.demo.common.config.AppUrlConfig;
+import eticaret.demo.common.response.DataResponseMessage;
+import eticaret.demo.common.response.ResponseMessage;
 
 import java.io.IOException;
 import java.util.Map;

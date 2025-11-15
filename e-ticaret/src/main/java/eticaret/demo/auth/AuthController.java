@@ -17,8 +17,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import eticaret.demo.audit.AuditLogService;
-import eticaret.demo.response.DataResponseMessage;
-import eticaret.demo.response.ResponseMessage;
+import eticaret.demo.common.response.DataResponseMessage;
+import eticaret.demo.common.response.ResponseMessage;
 import eticaret.demo.admin.AdminIpService;
 
 import java.io.IOException;

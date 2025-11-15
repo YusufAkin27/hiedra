@@ -115,13 +115,17 @@ public class GlobalExceptionHandler {
 
     /**
      * CouponException - Kupon hataları
+     * CouponException zaten BusinessException'dan türüyor, bu yüzden BaseException handler'ı tarafından yakalanır
+     * Ancak özel log mesajı için bu handler'ı tutuyoruz
      */
     @ExceptionHandler(eticaret.demo.exception.CouponException.class)
     public ResponseEntity<ErrorResponse> handleCouponException(
             eticaret.demo.exception.CouponException ex, HttpServletRequest request) {
         log.warn("Kupon hatası: {}", ex.getMessage());
         
-        ErrorResponse errorResponse = ErrorResponse.of(ex, request.getRequestURI());
+        // CouponException BaseException'dan türüyor, BaseException olarak kullanabiliriz
+        BaseException baseEx = ex;
+        ErrorResponse errorResponse = ErrorResponse.of(baseEx, request.getRequestURI());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 

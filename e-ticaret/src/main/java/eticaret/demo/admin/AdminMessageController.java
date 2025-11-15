@@ -13,7 +13,7 @@ import eticaret.demo.contact_us.ContactUs;
 import eticaret.demo.contact_us.ContactUsRepository;
 import eticaret.demo.mail.EmailMessage;
 import eticaret.demo.mail.MailService;
-import eticaret.demo.response.DataResponseMessage;
+import eticaret.demo.common.response.DataResponseMessage;
 
 import java.time.LocalDateTime;
 import java.util.List;

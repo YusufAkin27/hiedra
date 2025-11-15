@@ -17,6 +17,7 @@ const OrdersPage = lazy(() => import('./pages/Orders'))
 const ProductsPage = lazy(() => import('./pages/Products'))
 const ShippingPage = lazy(() => import('./pages/Shipping'))
 const MessagesPage = lazy(() => import('./pages/Messages'))
+const BulkMailPage = lazy(() => import('./pages/BulkMail'))
 const CartsPage = lazy(() => import('./pages/Carts'))
 const ProductDetailPage = lazy(() => import('./pages/ProductDetail'))
 const ProductEditPage = lazy(() => import('./pages/ProductEdit'))
@@ -36,6 +37,7 @@ const UserAnalyticsPage = lazy(() => import('./pages/UserAnalytics'))
 const ContractsPage = lazy(() => import('./pages/Contracts'))
 const ContractAcceptancesPage = lazy(() => import('./pages/ContractAcceptances'))
 const CategoriesPage = lazy(() => import('./pages/Categories'))
+const AdminManagementPage = lazy(() => import('./pages/AdminManagement'))
 
 // Loading fallback component
 const PageLoader = () => (
@@ -59,6 +61,7 @@ type Page =
   | 'productAdd'
   | 'shipping'
   | 'messages'
+  | 'bulkMail'
   | 'carts'
   | 'reviews'
   | 'productViews'
@@ -73,6 +76,7 @@ type Page =
   | 'contracts'
   | 'contractAcceptances'
   | 'categories'
+  | 'adminManagement'
 
 const NAVIGATION_STORAGE_KEY = 'admin_navigation_state'
 
@@ -488,6 +492,7 @@ function App() {
         )}
         {currentPage === 'shipping' && <ShippingPage session={session} />}
         {currentPage === 'messages' && <MessagesPage session={session} />}
+        {currentPage === 'bulkMail' && <BulkMailPage session={session} />}
         {currentPage === 'carts' && <CartsPage session={session} />}
         {currentPage === 'reviews' && <ReviewsPage session={session} toast={toast} />}
         {currentPage === 'productViews' && <ProductViewsPage session={session} toast={toast} />}
@@ -521,6 +526,7 @@ function App() {
           />
         )}
         {currentPage === 'categories' && <CategoriesPage session={session} toast={toast} />}
+        {currentPage === 'adminManagement' && <AdminManagementPage session={session} />}
       </Suspense>
           </div>
         </div>

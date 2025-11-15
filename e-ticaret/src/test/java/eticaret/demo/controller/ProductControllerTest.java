@@ -6,7 +6,7 @@ import eticaret.demo.product.Product;
 import eticaret.demo.product.ProductController;
 import eticaret.demo.product.ProductRepository;
 import eticaret.demo.product.ProductViewRepository;
-import eticaret.demo.response.DataResponseMessage;
+import eticaret.demo.common.response.DataResponseMessage;
 import eticaret.demo.visitor.VisitorTrackingService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

@@ -1,6 +1,6 @@
 package eticaret.demo.coupon;
 
-import eticaret.demo.exception.CouponException;
+import eticaret.demo.common.exception.CouponException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

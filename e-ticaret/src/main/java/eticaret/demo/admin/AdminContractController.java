@@ -6,7 +6,7 @@ import eticaret.demo.contract.ContractAcceptanceRepository;
 import eticaret.demo.contract.ContractRepository;
 import eticaret.demo.contract.ContractService;
 import eticaret.demo.contract.ContractType;
-import eticaret.demo.response.DataResponseMessage;
+import eticaret.demo.common.response.DataResponseMessage;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -9,8 +9,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import eticaret.demo.mail.EmailMessage;
 import eticaret.demo.mail.MailService;
-import eticaret.demo.response.DataResponseMessage;
-import eticaret.demo.response.ResponseMessage;
+import eticaret.demo.common.response.DataResponseMessage;
+import eticaret.demo.common.response.ResponseMessage;
 
 import java.time.LocalDateTime;
 import java.util.List;

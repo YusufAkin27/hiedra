@@ -17,6 +17,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts'
+import { FaDollarSign, FaCreditCard, FaTruck, FaChartLine, FaInfoCircle } from 'react-icons/fa'
 
 type DashboardStats = {
   totalProducts: number
@@ -58,12 +59,24 @@ type HomePageProps = {
 }
 
 
+type RevenueData = {
+  totalOrders: number
+  totalRevenue: number
+  iyzicoFee: number
+  iyzicoFeeRate: number
+  totalShippingCost: number
+  shippingCostPerOrder: number
+  netProfit: number
+}
+
 function HomePage({ session, onLogout: _onLogout, onViewUser: _onViewUser, onNavigate }: HomePageProps) {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [isLoadingStats, setIsLoadingStats] = useState(true)
   const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null)
   const [isMobile, setIsMobile] = useState(false)
   const [userName, setUserName] = useState<string | null>(null)
+  const [revenueData, setRevenueData] = useState<RevenueData | null>(null)
+  const [isLoadingRevenue, setIsLoadingRevenue] = useState(false)
 
   useEffect(() => {
     const updateViewport = () => {
@@ -167,12 +180,44 @@ function HomePage({ session, onLogout: _onLogout, onViewUser: _onViewUser, onNav
     }
   }, [session.accessToken, session.user.id])
 
+  const fetchRevenue = useCallback(async () => {
+    try {
+      setIsLoadingRevenue(true)
+      const response = await fetch(`${apiBaseUrl}/admin/orders/revenue`, {
+        headers: {
+          Authorization: `Bearer ${session.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      const payload = (await response.json()) as {
+        isSuccess?: boolean
+        success?: boolean
+        data?: RevenueData
+        message?: string
+      }
+
+      const success = payload.isSuccess ?? payload.success ?? false
+      if (success && payload.data) {
+        setRevenueData(payload.data)
+      }
+    } catch (err) {
+      console.error('Kazanç verisi yüklenemedi:', err)
+    } finally {
+      setIsLoadingRevenue(false)
+    }
+  }, [session.accessToken])
+
   useEffect(() => {
     fetchStats()
+    fetchRevenue()
     // Cache kullanıldığı için interval'i 2 dakikaya çıkar (cache 5 dakika)
-    const interval = window.setInterval(() => fetchStats(false), 2 * 60 * 1000)
+    const interval = window.setInterval(() => {
+      fetchStats(false)
+      fetchRevenue()
+    }, 2 * 60 * 1000)
     return () => window.clearInterval(interval)
-  }, [fetchStats])
+  }, [fetchStats, fetchRevenue])
 
   const getStatusDisplayName = (status: string): string => {
     const statusMap: Record<string, string> = {
@@ -347,8 +392,11 @@ function HomePage({ session, onLogout: _onLogout, onViewUser: _onViewUser, onNav
         </div>
 
         <div className="dashboard__hero-actions">
-          <button className="dashboard__refresh-button" type="button" onClick={() => fetchStats(true)} disabled={isLoadingStats}>
-            {!isLoadingStats ? 'Verileri Yenile' : 'Yükleniyor...'}
+          <button className="dashboard__refresh-button" type="button" onClick={() => {
+            fetchStats(true)
+            fetchRevenue()
+          }} disabled={isLoadingStats || isLoadingRevenue}>
+            {!isLoadingStats && !isLoadingRevenue ? 'Verileri Yenile' : 'Yükleniyor...'}
           </button>
         </div>
       </section>
@@ -363,6 +411,91 @@ function HomePage({ session, onLogout: _onLogout, onViewUser: _onViewUser, onNav
 
       {stats && (
         <>
+          {revenueData && (
+            <section className="dashboard__grid" style={{ marginBottom: '2rem' }}>
+              <article className="dashboard-card revenue-modern" style={{ gridColumn: '1 / -1' }}>
+                <div className="revenue-modern__header">
+                  <div className="revenue-modern__header-content">
+                    <div className="revenue-modern__icon-wrapper">
+                      <FaChartLine className="revenue-modern__icon" />
+                    </div>
+                    <div>
+                      <h2>Kazanç Hesaplama</h2>
+                      <p className="revenue-modern__description">
+                        Başarılı siparişlerden elde edilen ortalama kazanç hesaplaması
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="revenue-modern__content">
+                  <div className="revenue-modern__grid">
+                    <div className="revenue-modern__card revenue-modern__card--income">
+                      <div className="revenue-modern__card-icon">
+                        <FaDollarSign />
+                      </div>
+                      <div className="revenue-modern__card-content">
+                        <div className="revenue-modern__card-label">Toplam Gelir</div>
+                        <div className="revenue-modern__card-value">
+                          {currencyFormatter.format(revenueData.totalRevenue)}
+                        </div>
+                        <div className="revenue-modern__card-meta">
+                          {revenueData.totalOrders} başarılı sipariş
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="revenue-modern__card revenue-modern__card--expense">
+                      <div className="revenue-modern__card-icon revenue-modern__card-icon--red">
+                        <FaCreditCard />
+                      </div>
+                      <div className="revenue-modern__card-content">
+                        <div className="revenue-modern__card-label">İyzico Kesintisi</div>
+                        <div className="revenue-modern__card-value revenue-modern__card-value--negative">
+                          -{currencyFormatter.format(revenueData.iyzicoFee)}
+                        </div>
+                        <div className="revenue-modern__card-meta">
+                          %{revenueData.iyzicoFeeRate.toFixed(2)} komisyon
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="revenue-modern__card revenue-modern__card--expense">
+                      <div className="revenue-modern__card-icon revenue-modern__card-icon--orange">
+                        <FaTruck />
+                      </div>
+                      <div className="revenue-modern__card-content">
+                        <div className="revenue-modern__card-label">Kargo Maliyeti</div>
+                        <div className="revenue-modern__card-value revenue-modern__card-value--negative">
+                          -{currencyFormatter.format(revenueData.totalShippingCost)}
+                        </div>
+                        <div className="revenue-modern__card-meta">
+                          {currencyFormatter.format(revenueData.shippingCostPerOrder)} / sipariş
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="revenue-modern__result">
+                    <div className="revenue-modern__result-icon">
+                      <FaChartLine />
+                    </div>
+                    <div className="revenue-modern__result-content">
+                      <div className="revenue-modern__result-label">Ortalama Kazanç</div>
+                      <div className="revenue-modern__result-value">
+                        {currencyFormatter.format(revenueData.netProfit)}
+                      </div>
+                      <div className="revenue-modern__result-note">
+                        <FaInfoCircle className="revenue-modern__info-icon" />
+                        <span>Tahmini hesaplama</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </article>
+            </section>
+          )}
+
           <section className="dashboard__summary">
             {summaryCards.map((card) => (
               <article 
@@ -910,8 +1043,259 @@ function HomePage({ session, onLogout: _onLogout, onViewUser: _onViewUser, onNav
               </ResponsiveContainer>
             </article>
           </section>
-        </>
+        </> 
       )}
+
+      <style>{`
+        /* Modern Revenue Styles */
+        .revenue-modern {
+          background: #ffffff;
+          border: 1px solid #e5e7eb;
+          border-radius: 16px;
+          overflow: hidden;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .revenue-modern__header {
+          background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+          border-bottom: 1px solid #e5e7eb;
+          padding: 24px 30px;
+        }
+
+        .revenue-modern__header-content {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+
+        .revenue-modern__icon-wrapper {
+          width: 48px;
+          height: 48px;
+          background: linear-gradient(135deg, #000000 0%, #333333 100%);
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+
+        .revenue-modern__icon {
+          font-size: 24px;
+          color: #ffffff;
+        }
+
+        .revenue-modern__header h2 {
+          margin: 0 0 4px 0;
+          font-size: 24px;
+          font-weight: 700;
+          color: #000000;
+        }
+
+        .revenue-modern__description {
+          margin: 0;
+          font-size: 14px;
+          color: #6b7280;
+          line-height: 1.5;
+        }
+
+        .revenue-modern__content {
+          padding: 30px;
+        }
+
+        .revenue-modern__grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+          gap: 20px;
+          margin-bottom: 24px;
+        }
+
+        .revenue-modern__card {
+          background: #ffffff;
+          border: 1px solid #e5e7eb;
+          border-radius: 12px;
+          padding: 20px;
+          display: flex;
+          align-items: flex-start;
+          gap: 16px;
+          transition: all 0.2s ease;
+        }
+
+        .revenue-modern__card:hover {
+          border-color: #d1d5db;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+          transform: translateY(-2px);
+        }
+
+        .revenue-modern__card--income {
+          border-left: 4px solid #10b981;
+        }
+
+        .revenue-modern__card--expense {
+          border-left: 4px solid #ef4444;
+        }
+
+        .revenue-modern__card-icon {
+          width: 48px;
+          height: 48px;
+          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          font-size: 20px;
+          color: #ffffff;
+        }
+
+        .revenue-modern__card-icon--red {
+          background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+
+        .revenue-modern__card-icon--orange {
+          background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+        }
+
+        .revenue-modern__card-content {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .revenue-modern__card-label {
+          font-size: 13px;
+          font-weight: 500;
+          color: #6b7280;
+          margin-bottom: 8px;
+          text-transform: uppercase;
+          letter-spacing: 0.3px;
+        }
+
+        .revenue-modern__card-value {
+          font-size: 24px;
+          font-weight: 700;
+          color: #000000;
+          margin-bottom: 6px;
+          line-height: 1.2;
+        }
+
+        .revenue-modern__card-value--negative {
+          color: #ef4444;
+        }
+
+        .revenue-modern__card-meta {
+          font-size: 12px;
+          color: #9ca3af;
+          line-height: 1.4;
+        }
+
+        .revenue-modern__result {
+          background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+          border: 2px solid #000000;
+          border-radius: 12px;
+          padding: 24px;
+          display: flex;
+          align-items: center;
+          gap: 20px;
+        }
+
+        .revenue-modern__result-icon {
+          width: 56px;
+          height: 56px;
+          background: linear-gradient(135deg, #000000 0%, #333333 100%);
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          font-size: 24px;
+          color: #ffffff;
+        }
+
+        .revenue-modern__result-content {
+          flex: 1;
+        }
+
+        .revenue-modern__result-label {
+          font-size: 13px;
+          font-weight: 600;
+          color: #6b7280;
+          margin-bottom: 8px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .revenue-modern__result-value {
+          font-size: 36px;
+          font-weight: 800;
+          color: #000000;
+          margin-bottom: 8px;
+          line-height: 1;
+        }
+
+        .revenue-modern__result-note {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 12px;
+          color: #9ca3af;
+          font-style: italic;
+        }
+
+        .revenue-modern__info-icon {
+          font-size: 14px;
+          color: #9ca3af;
+        }
+
+        @media (max-width: 768px) {
+          .revenue-modern__header {
+            padding: 20px;
+          }
+
+          .revenue-modern__header-content {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+          }
+
+          .revenue-modern__content {
+            padding: 20px;
+          }
+
+          .revenue-modern__grid {
+            grid-template-columns: 1fr;
+            gap: 16px;
+          }
+
+          .revenue-modern__result {
+            flex-direction: column;
+            text-align: center;
+            gap: 16px;
+          }
+
+          .revenue-modern__result-value {
+            font-size: 28px;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .revenue-stat-card__value {
+            font-size: 28px;
+          }
+
+          .revenue-net__value {
+            font-size: 24px;
+          }
+
+          .revenue-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+          }
+
+          .revenue-item__value {
+            align-self: flex-end;
+          }
+        }
+      `}</style>
     </main>
   )
 }

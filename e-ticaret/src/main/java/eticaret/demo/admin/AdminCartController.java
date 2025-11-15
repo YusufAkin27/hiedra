@@ -10,7 +10,7 @@ import eticaret.demo.auth.AppUserRepository;
 import eticaret.demo.cart.Cart;
 import eticaret.demo.cart.CartRepository;
 import eticaret.demo.cart.CartStatus;
-import eticaret.demo.response.DataResponseMessage;
+import eticaret.demo.common.response.DataResponseMessage;
 
 import java.util.List;
 import java.util.Optional;

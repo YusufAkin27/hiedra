@@ -10,7 +10,7 @@ import eticaret.demo.product.Product;
 import eticaret.demo.product.ProductRepository;
 import eticaret.demo.product.ProductReviewRepository;
 import eticaret.demo.product.ProductViewRepository;
-import eticaret.demo.response.DataResponseMessage;
+import eticaret.demo.common.response.DataResponseMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

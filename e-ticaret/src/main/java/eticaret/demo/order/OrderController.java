@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import eticaret.demo.audit.AuditLogService;
 import eticaret.demo.auth.AppUser;
 import eticaret.demo.guest.GuestUserService;
-import eticaret.demo.response.ResponseMessage;
+import eticaret.demo.common.response.ResponseMessage;
 
 import java.util.Map;
 

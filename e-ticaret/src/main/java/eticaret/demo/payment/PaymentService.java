@@ -1,8 +1,8 @@
 package eticaret.demo.payment;
 
+import eticaret.demo.common.response.ResponseMessage;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import eticaret.demo.response.ResponseMessage;
 
 public interface PaymentService {
 

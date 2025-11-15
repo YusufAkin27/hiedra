@@ -2,7 +2,7 @@ package eticaret.demo.recommendation;
 
 import eticaret.demo.auth.AppUser;
 import eticaret.demo.product.Product;
-import eticaret.demo.response.DataResponseMessage;
+import eticaret.demo.common.response.DataResponseMessage;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

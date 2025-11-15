@@ -6,7 +6,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import eticaret.demo.guest.GuestUser;
 import eticaret.demo.guest.GuestUserRepository;
-import eticaret.demo.response.DataResponseMessage;
+import eticaret.demo.common.response.DataResponseMessage;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;

@@ -3,7 +3,7 @@ package eticaret.demo.admin;
 import eticaret.demo.auth.AppUser;
 import eticaret.demo.auth.AppUserRepository;
 import eticaret.demo.auth.UserRole;
-import eticaret.demo.config.AppUrlConfig;
+import eticaret.demo.common.config.AppUrlConfig;
 import eticaret.demo.mail.EmailMessage;
 import eticaret.demo.mail.MailService;
 import lombok.RequiredArgsConstructor;

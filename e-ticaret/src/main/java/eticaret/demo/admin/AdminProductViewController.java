@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import eticaret.demo.product.ProductView;
 import eticaret.demo.product.ProductViewRepository;
 import eticaret.demo.product.ProductRepository;
-import eticaret.demo.response.DataResponseMessage;
+import eticaret.demo.common.response.DataResponseMessage;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;

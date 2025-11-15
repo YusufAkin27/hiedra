@@ -7,7 +7,7 @@ import eticaret.demo.cart.CartService;
 import eticaret.demo.cart.CartStatus;
 import eticaret.demo.coupon.CouponService;
 import eticaret.demo.guest.GuestUserService;
-import eticaret.demo.response.DataResponseMessage;
+import eticaret.demo.common.response.DataResponseMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

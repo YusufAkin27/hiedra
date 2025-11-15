@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import eticaret.demo.auth.AppUser;
 import eticaret.demo.auth.AppUserRepository;
 import eticaret.demo.auth.UserRole;
-import eticaret.demo.response.DataResponseMessage;
+import eticaret.demo.common.response.DataResponseMessage;
 import eticaret.demo.audit.AuditLogService;
 
 import java.time.LocalDateTime;

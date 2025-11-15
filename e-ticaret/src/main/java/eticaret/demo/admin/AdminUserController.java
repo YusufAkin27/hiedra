@@ -19,7 +19,7 @@ import eticaret.demo.order.Order;
 import eticaret.demo.order.OrderRepository;
 import eticaret.demo.product.ProductReview;
 import eticaret.demo.product.ProductReviewRepository;
-import eticaret.demo.response.DataResponseMessage;
+import eticaret.demo.common.response.DataResponseMessage;
 
 
 import java.time.LocalDateTime;

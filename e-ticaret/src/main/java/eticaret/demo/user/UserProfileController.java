@@ -33,7 +33,7 @@ import eticaret.demo.order.OrderRepository;
 import eticaret.demo.order.OrderStatus;
 import eticaret.demo.product.ProductReview;
 import eticaret.demo.product.ProductReviewRepository;
-import eticaret.demo.response.DataResponseMessage;
+import eticaret.demo.common.response.DataResponseMessage;
 
 import java.math.BigDecimal;
 import java.util.List;

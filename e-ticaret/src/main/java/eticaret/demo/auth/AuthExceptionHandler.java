@@ -9,7 +9,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import eticaret.demo.audit.AuditLogService;
-import eticaret.demo.response.ResponseMessage;
+import eticaret.demo.common.response.ResponseMessage;
 
 @RestControllerAdvice
 @RequiredArgsConstructor

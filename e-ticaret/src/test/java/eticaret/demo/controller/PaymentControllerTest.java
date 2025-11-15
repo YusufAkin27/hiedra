@@ -3,7 +3,7 @@ package eticaret.demo.controller;
 import eticaret.demo.payment.PaymentController;
 import eticaret.demo.payment.PaymentRequest;
 import eticaret.demo.payment.PaymentService;
-import eticaret.demo.response.ResponseMessage;
+import eticaret.demo.common.response.ResponseMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

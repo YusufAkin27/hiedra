@@ -1,7 +1,7 @@
 package eticaret.demo.auth;
 
 import eticaret.demo.admin.AdminNotificationService;
-import eticaret.demo.config.AppUrlConfig;
+import eticaret.demo.common.config.AppUrlConfig;
 import eticaret.demo.mail.EmailMessage;
 import eticaret.demo.mail.MailService;
 import eticaret.demo.security.JwtService;

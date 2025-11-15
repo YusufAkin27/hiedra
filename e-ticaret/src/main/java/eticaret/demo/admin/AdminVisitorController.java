@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import eticaret.demo.response.DataResponseMessage;
+import eticaret.demo.common.response.DataResponseMessage;
 import eticaret.demo.visitor.ActiveVisitor;
 import eticaret.demo.visitor.ActiveVisitorRepository;
 import eticaret.demo.visitor.VisitorAnalyticsService;

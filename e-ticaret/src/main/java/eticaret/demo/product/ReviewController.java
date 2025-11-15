@@ -14,7 +14,7 @@ import eticaret.demo.cloudinary.MediaUploadService;
 import eticaret.demo.order.Order;
 import eticaret.demo.order.OrderRepository;
 import eticaret.demo.order.OrderStatus;
-import eticaret.demo.response.DataResponseMessage;
+import eticaret.demo.common.response.DataResponseMessage;
 
 
 import java.util.ArrayList;

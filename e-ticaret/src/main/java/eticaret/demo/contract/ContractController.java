@@ -1,7 +1,7 @@
 package eticaret.demo.contract;
 
 import eticaret.demo.auth.AppUser;
-import eticaret.demo.response.DataResponseMessage;
+import eticaret.demo.common.response.DataResponseMessage;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

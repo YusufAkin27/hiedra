@@ -1,6 +1,6 @@
 package eticaret.demo.contact_us;
 
-import eticaret.demo.response.ResponseMessage;
+import eticaret.demo.common.response.ResponseMessage;
 
 public interface ContactUsServis {
     ResponseMessage gonder(ContactUsMessage message);

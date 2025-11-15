@@ -11,7 +11,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import eticaret.demo.audit.AuditLog;
 import eticaret.demo.audit.AuditLogRepository;
-import eticaret.demo.response.DataResponseMessage;
+import eticaret.demo.common.response.DataResponseMessage;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
