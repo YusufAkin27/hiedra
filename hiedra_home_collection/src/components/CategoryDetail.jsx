@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import LazyImage from './LazyImage'
+import Loading from './Loading'
 import SEO from './SEO'
 import './CategoryDetail.css'
 
@@ -66,29 +67,31 @@ const CategoryDetail = () => {
               })
             }
             
-            // Ürünleri formatla
-            const formattedProducts = productsData.map(product => ({
-              id: product.id,
-              name: product.name,
-              price: product.price ? parseFloat(product.price) : 0,
-              image: product.coverImageUrl || '/images/perde1kapak.jpg',
-              detailImages: product.detailImageUrl ? [product.detailImageUrl] : [],
-              description: product.description || product.shortDescription || '',
-              shortDescription: product.shortDescription || '',
-              category: product.category?.name || 'Genel',
-              color: product.color || '',
-              inStock: (product.quantity || 0) > 0,
-              productCode: product.productCode || product.code || product.sku || '',
-              quantity: product.quantity || 0,
-              mountingType: product.mountingType || '',
-              material: product.material || '',
-              lightTransmittance: product.lightTransmittance || '',
-              pieceCount: product.pieceCount || null,
-              usageArea: product.usageArea || '',
-              reviewCount: product.reviewCount || 0,
-              averageRating: product.averageRating || 0,
-              viewCount: product.viewCount || 0,
-            }))
+            // Ürünleri formatla ve sadece stokta olan ürünleri filtrele
+            const formattedProducts = productsData
+              .filter(product => (product.quantity || 0) > 0) // Sadece stokta olan ürünler
+              .map(product => ({
+                id: product.id,
+                name: product.name,
+                price: product.price ? parseFloat(product.price) : 0,
+                image: product.coverImageUrl || '/images/perde1kapak.jpg',
+                detailImages: product.detailImageUrl ? [product.detailImageUrl] : [],
+                description: product.description || product.shortDescription || '',
+                shortDescription: product.shortDescription || '',
+                category: product.category?.name || 'Genel',
+                color: product.color || '',
+                inStock: (product.quantity || 0) > 0,
+                productCode: product.productCode || product.code || product.sku || '',
+                quantity: product.quantity || 0,
+                mountingType: product.mountingType || '',
+                material: product.material || '',
+                lightTransmittance: product.lightTransmittance || '',
+                pieceCount: product.pieceCount || null,
+                usageArea: product.usageArea || '',
+                reviewCount: product.reviewCount || 0,
+                averageRating: product.averageRating || 0,
+                viewCount: product.viewCount || 0,
+              }))
             
             setProducts(formattedProducts)
             // İlk ürünü varsayılan olarak seç
@@ -164,9 +167,7 @@ const CategoryDetail = () => {
     return (
       <div className="category-detail-page">
         <div className="category-detail-container">
-          <div className="loading-state">
-            <p>Ürünler yükleniyor...</p>
-          </div>
+          <Loading size="large" text="Ürünler yükleniyor..." variant="page" />
         </div>
       </div>
     )
@@ -234,14 +235,6 @@ const CategoryDetail = () => {
                     alt={selectedProduct.name}
                     className="main-product-image"
                   />
-                  {selectedProduct.inStock && (
-                    <div className="product-stock-badge-large">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                      <span>Stokta</span>
-                    </div>
-                  )}
                   {/* Detay fotoğraf önizleme */}
                   {selectedProduct.detailImages && selectedProduct.detailImages.length > 0 && selectedProduct.detailImages[0] && (
                     <div 

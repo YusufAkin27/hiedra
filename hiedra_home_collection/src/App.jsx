@@ -22,6 +22,8 @@ import Login from './components/Login'
 import Addresses from './components/Addresses'
 import AddAddress from './components/AddAddress'
 import MyReviews from './components/MyReviews'
+import Coupons from './components/Coupons'
+import CouponDetail from './components/CouponDetail'
 import Footer from './components/Footer'
 import PrivacyPolicy from './components/PrivacyPolicy'
 import TermsOfService from './components/TermsOfService'
@@ -75,6 +77,8 @@ function App() {
                 <Route path="/adreslerim" element={<Addresses />} />
                 <Route path="/adres-ekle" element={<AddAddress />} />
                 <Route path="/yorumlarim" element={<MyReviews />} />
+                <Route path="/kuponlar" element={<Coupons />} />
+                <Route path="/kupon/:id" element={<CouponDetail />} />
                 <Route path="/sozlesmelerim" element={<MyContracts />} />
                 <Route path="/gizlilik-politikasi" element={<PrivacyPolicy />} />
                 <Route path="/kullanim-kosullari" element={<TermsOfService />} />

@@ -112,9 +112,9 @@ public class ProductController {
                 productsPage = productRepository.findByActiveTrue(pageable);
             }
             
-            // Stoğu biten ürünleri filtrele ve istatistikleri ekle
-            List<Product> filteredProducts = productsPage.getContent().stream()
-                    .filter(product -> product.getQuantity() != null && product.getQuantity() > 0)
+            // Repository'den gelen ürünler zaten stokta olanlar olduğu için ek filtreleme gerekmez
+            // Sadece görselleri optimize et ve istatistikleri ekle
+            List<Product> optimizedProducts = productsPage.getContent().stream()
                     .map(product -> {
                         Product optimized = optimizeProductImages(product);
                         enrichProductWithStatistics(optimized);
@@ -124,7 +124,7 @@ public class ProductController {
             
             // Sayfalama bilgileri ile yeni sayfa oluştur
             Page<Product> finalPage = new org.springframework.data.domain.PageImpl<>(
-                    filteredProducts, 
+                    optimizedProducts, 
                     pageable, 
                     productsPage.getTotalElements()
             );
@@ -171,6 +171,7 @@ public class ProductController {
             Pageable pageable = PageRequest.of(page, size);
             Page<Product> productsPage = productRepository.searchByKeyword(keyword.trim(), pageable);
             
+            // Repository'den gelen ürünler zaten stokta olanlar olduğu için ek filtreleme gerekmez
             // Görselleri optimize et ve istatistikleri ekle
             List<Product> optimizedProducts = productsPage.getContent().stream()
                     .map(product -> {
@@ -212,9 +213,9 @@ public class ProductController {
         try {
             List<Product> products = productRepository.filterProducts(color, material, usageArea, mountingType);
             
+            // Repository'den gelen ürünler zaten stokta olanlar olduğu için ek filtreleme gerekmez
             // Görselleri optimize et ve istatistikleri ekle
             List<Product> optimizedProducts = products.stream()
-                    .filter(product -> product.getQuantity() != null && product.getQuantity() > 0)
                     .map(product -> {
                         Product optimized = optimizeProductImages(product);
                         enrichProductWithStatistics(optimized);
@@ -331,8 +332,9 @@ public class ProductController {
             Pageable pageable = PageRequest.of(page, size);
             Page<Product> productsPage = productRepository.findByCategoryIdAndActiveTrue(categoryId, pageable);
             
+            // Repository'den gelen ürünler zaten stokta olanlar olduğu için ek filtreleme gerekmez
+            // Görselleri optimize et ve istatistikleri ekle
             List<Product> optimizedProducts = productsPage.getContent().stream()
-                    .filter(product -> product.getQuantity() != null && product.getQuantity() > 0)
                     .map(product -> {
                         Product optimized = optimizeProductImages(product);
                         enrichProductWithStatistics(optimized);

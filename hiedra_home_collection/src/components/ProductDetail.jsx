@@ -541,14 +541,6 @@ const ProductDetail = () => {
             <span className="product-detail-badge category-badge-top">
               {product.category || 'Genel'}
             </span>
-            {product.inStock && (
-              <span className="product-detail-badge stock-badge-top">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-                Stokta
-              </span>
-            )}
           </div>
 
         <div className="product-detail-content">
@@ -582,9 +574,6 @@ const ProductDetail = () => {
               <div className="product-badges-top">
                 <span className="badge badge-return">14 Gün Koşulsuz İade</span>
                 <span className="badge badge-shipping">Ücretsiz Kargo</span>
-                {product.inStock && (
-                  <span className="badge badge-stock">Stokta Var</span>
-                )}
               </div>
               
               <LazyImage 
@@ -784,9 +773,6 @@ const ProductDetail = () => {
                 <span className="price-label">Metre Fiyatı:</span>
                 <span className="detail-price">{product.price} ₺</span>
               </div>
-              {product.inStock && (
-                <span className="detail-stock">Stokta</span>
-              )}
             </div>
 
           {/* Fiyatlandırma Formu */}
@@ -1092,9 +1078,6 @@ const ProductDetail = () => {
                   <p className="related-product-description">{(relatedProduct.description || '').substring(0, 60)}{(relatedProduct.description || '').length > 60 ? '...' : ''}</p>
                   <div className="related-product-footer">
                     <span className="related-product-price">{(typeof relatedProduct.price === 'number' ? relatedProduct.price : parseFloat(relatedProduct.price) || 0).toFixed(2)} ₺</span>
-                    {relatedProduct.inStock && (
-                      <span className="related-product-stock">Stokta</span>
-                    )}
                   </div>
                 </div>
               </Link>
@@ -1124,9 +1107,6 @@ const ProductDetail = () => {
                   <p className="related-product-description">{(relatedProduct.description || '').substring(0, 60)}{(relatedProduct.description || '').length > 60 ? '...' : ''}</p>
                   <div className="related-product-footer">
                     <span className="related-product-price">{(typeof relatedProduct.price === 'number' ? relatedProduct.price : parseFloat(relatedProduct.price) || 0).toFixed(2)} ₺</span>
-                    {relatedProduct.inStock && (
-                      <span className="related-product-stock">Stokta</span>
-                    )}
                   </div>
                 </div>
               </Link>

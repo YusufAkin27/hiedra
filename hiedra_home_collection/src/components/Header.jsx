@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import './Header.css'
 
 const Header = () => {
+  const navigate = useNavigate()
   const { getCartItemsCount } = useCart()
   const { user, isAuthenticated, logout } = useAuth()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [showMoreMenu, setShowMoreMenu] = useState(false)
   const [isHeaderVisible, setIsHeaderVisible] = useState(true)
   const lastScrollY = useRef(0)
   const scrollThreshold = 10 // Minimum scroll miktarı (piksel)
@@ -20,13 +22,17 @@ const Header = () => {
   const closeMenu = () => {
     setIsMenuOpen(false)
     setShowUserMenu(false)
+    setShowMoreMenu(false)
   }
 
-  // Dışarı tıklandığında user menu'yu kapat
+  // Dışarı tıklandığında dropdown menüleri kapat
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (showUserMenu && !event.target.closest('.user-menu-wrapper')) {
         setShowUserMenu(false)
+      }
+      if (showMoreMenu && !event.target.closest('.more-menu-wrapper')) {
+        setShowMoreMenu(false)
       }
     }
 
@@ -34,7 +40,7 @@ const Header = () => {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [showUserMenu])
+  }, [showUserMenu, showMoreMenu])
 
   // Scroll ile header'ı gizle/göster
   useEffect(() => {
@@ -82,42 +88,167 @@ const Header = () => {
   }, [])
 
   return (
-    <header className={`header ${isHeaderVisible ? 'header-visible' : 'header-hidden'}`} role="banner">
-      <div className="header-container">
-        <Link to="/" className="logo" onClick={closeMenu}>
-          <img src="/logo.png" alt="Hiedra Home Collection" className="logo-img" />
-          <div className="logo-text">
-            <h1>HIEDRA HOME COLLECTION</h1>
+    <>
+      {/* Promosyon Barı */}
+      <div className="promotion-bar">
+        <div className="promotion-bar-container">
+          <div className="promotion-text">
+            <span>2000 TL ve üzeri alışverişlerinizde ÜCRETSİZ kargo</span>
+          </div>
+          <div className="promotion-phone">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+            </svg>
+            <span>(507) 205-4460</span>
+          </div>
+        </div>
+      </div>
+      <header className={`header ${isHeaderVisible ? 'header-visible' : 'header-hidden'}`} role="banner">
+        <div className="header-container">
+        {/* Sol Navigasyon Linkleri */}
+        <div className="nav-left">
+          <Link to="/kategoriler" className="nav-link" onClick={closeMenu}>
+            Tül Perde
+          </Link>
+          <Link to="/kategoriler" className="nav-link" onClick={closeMenu}>
+            Fon Perde
+          </Link>
+          <Link to="/kategoriler" className="nav-link" onClick={closeMenu}>
+            Mekanik Perde
+          </Link>
+        </div>
+
+        {/* Logo Ortada */}
+        <Link to="/" className="logo logo-center" onClick={closeMenu}>
+          <div className="logo-wrapper">
+            <h1 className="logo-title-center">HIEDRA</h1>
           </div>
         </Link>
 
-        {/* Masaüstü Navigasyon */}
-        <nav className={`nav ${isMenuOpen ? 'nav-open' : ''}`} role="navigation" aria-label="Ana navigasyon">
-          <Link to="/" className="nav-link" onClick={closeMenu}>
-            Ana Sayfa
+        {/* Sağ Navigasyon Linkleri */}
+        <div className="nav-right">
+          <Link to="/kategoriler" className="nav-link" onClick={closeMenu}>
+            Aksesuar
           </Link>
           <Link to="/kategoriler" className="nav-link" onClick={closeMenu}>
-            Kategorilerimiz
+            Ev Tekstili
           </Link>
-          <Link to="/hakkimizda" className="nav-link" onClick={closeMenu}>
-            Hakkımızda
+          <Link to="/kategoriler" className="nav-link" onClick={closeMenu}>
+            Kumaş
           </Link>
-          <Link to="/iletisim" className="nav-link" onClick={closeMenu}>
-            İletişim
-          </Link>
-          <Link to="/sss" className="nav-link" onClick={closeMenu}>
-            SSS
-          </Link>
-          {!isAuthenticated && (
-            <Link to="/siparis-sorgula" className="nav-link" onClick={closeMenu}>
-              Sipariş Sorgula
-            </Link>
-          )}
-          {isAuthenticated && (
-            <Link to="/siparislerim" className="nav-link" onClick={closeMenu}>
-              Siparişlerim
-            </Link>
-          )}
+        </div>
+
+        {/* Masaüstü Navigasyon - Sağ Taraf İkonlar */}
+        <nav className={`nav ${isMenuOpen ? 'nav-open' : ''}`} role="navigation" aria-label="Ana navigasyon">
+          {/* Arama İkonu */}
+          <button className="nav-icon-btn" onClick={() => navigate('/?search=')} aria-label="Ara">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35" />
+            </svg>
+          </button>
+          
+          {/* Favori İkonu */}
+          <button className="nav-icon-btn" onClick={() => navigate('/kuponlar')} aria-label="Favoriler">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+            </svg>
+            <span className="icon-badge">0</span>
+          </button>
+          
+          {/* Daha Fazla Menüsü */}
+          <div className="more-menu-wrapper">
+            <button
+              className={`nav-link more-link ${showMoreMenu ? 'active' : ''}`}
+              onClick={() => setShowMoreMenu(!showMoreMenu)}
+              aria-label="Daha fazla menü"
+            >
+              Daha Fazla
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+            {showMoreMenu && (
+              <div className="more-dropdown">
+                <Link
+                  to="/hakkimizda"
+                  className="more-dropdown-item"
+                  onClick={() => {
+                    setShowMoreMenu(false)
+                    closeMenu()
+                  }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                  Hakkımızda
+                </Link>
+                <Link
+                  to="/iletisim"
+                  className="more-dropdown-item"
+                  onClick={() => {
+                    setShowMoreMenu(false)
+                    closeMenu()
+                  }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                    <circle cx="12" cy="10" r="3" />
+                  </svg>
+                  İletişim
+                </Link>
+                <Link
+                  to="/sss"
+                  className="more-dropdown-item"
+                  onClick={() => {
+                    setShowMoreMenu(false)
+                    closeMenu()
+                  }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                  </svg>
+                  SSS
+                </Link>
+                {!isAuthenticated && (
+                  <Link
+                    to="/siparis-sorgula"
+                    className="more-dropdown-item"
+                    onClick={() => {
+                      setShowMoreMenu(false)
+                      closeMenu()
+                    }}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10" />
+                      <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                    Sipariş Sorgula
+                  </Link>
+                )}
+                {isAuthenticated && (
+                  <Link
+                    to="/siparislerim"
+                    className="more-dropdown-item"
+                    onClick={() => {
+                      setShowMoreMenu(false)
+                      closeMenu()
+                    }}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M9 2L7 6m6-4l2 4M3 8h18l-1 8H4L3 8z" />
+                      <circle cx="7" cy="20" r="2" />
+                      <circle cx="17" cy="20" r="2" />
+                    </svg>
+                    Siparişlerim
+                  </Link>
+                )}
+              </div>
+            )}
+          </div>
           {isAuthenticated ? (
             <div className="user-menu-wrapper">
               <button
@@ -250,6 +381,7 @@ const Header = () => {
         </button>
       </div>
     </header>
+    </>
   )
 }
 

@@ -60,8 +60,21 @@ public class Coupon {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
-    @Column(precision = 10, scale = 2)
+    @Column(name = "minimum_purchase_amount", precision = 10, scale = 2)
     private BigDecimal minimumPurchaseAmount; // Minimum alışveriş tutarı (opsiyonel)
+
+    @Column(name = "cover_image_url", length = 1000)
+    private String coverImageUrl; // Kupon kapak resmi URL'i
+
+    @Column(name = "is_personal", nullable = false)
+    @Builder.Default
+    private Boolean isPersonal = false; // Özel kupon mu? (belirli kullanıcılara özel)
+
+    @Column(name = "target_user_ids", columnDefinition = "TEXT")
+    private String targetUserIds; // Hedef kullanıcı ID'leri (JSON array veya comma-separated)
+
+    @Column(name = "target_user_emails", columnDefinition = "TEXT")
+    private String targetUserEmails; // Hedef kullanıcı email'leri (JSON array veya comma-separated)
 
     /**
      * Kupon geçerli mi?

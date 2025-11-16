@@ -220,5 +220,46 @@ public class CouponService {
         
         return validCoupons;
     }
+    
+    /**
+     * Kullanıcıya özel geçerli kuponları getir
+     * @param userId Kullanıcı ID (null olabilir)
+     * @param userEmail Kullanıcı email (null olabilir)
+     * @return Kullanıcıya özel geçerli kuponlar
+     */
+    public List<Coupon> getPersonalCouponsForUser(Long userId, String userEmail) {
+        if (userId == null && (userEmail == null || userEmail.trim().isEmpty())) {
+            return List.of();
+        }
+        
+        String userIdStr = userId != null ? String.valueOf(userId) : "";
+        String emailStr = userEmail != null ? userEmail.toLowerCase().trim() : "";
+        
+        return couponRepository.findPersonalValidCouponsForUser(
+            LocalDateTime.now(), 
+            userIdStr, 
+            emailStr
+        );
+    }
+    
+    /**
+     * Tüm geçerli kuponları getir (genel + kullanıcıya özel)
+     * @param userId Kullanıcı ID (null olabilir)
+     * @param userEmail Kullanıcı email (null olabilir)
+     * @return Tüm geçerli kuponlar
+     */
+    public List<Coupon> getAllValidCouponsForUser(Long userId, String userEmail) {
+        List<Coupon> generalCoupons = getValidCoupons().stream()
+            .filter(coupon -> !coupon.getIsPersonal()) // Sadece genel kuponlar
+            .toList();
+        
+        List<Coupon> personalCoupons = getPersonalCouponsForUser(userId, userEmail);
+        
+        // İki listeyi birleştir
+        java.util.ArrayList<Coupon> allCoupons = new java.util.ArrayList<>(generalCoupons);
+        allCoupons.addAll(personalCoupons);
+        
+        return allCoupons;
+    }
 }
 

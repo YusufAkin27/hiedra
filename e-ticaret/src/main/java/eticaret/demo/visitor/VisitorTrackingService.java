@@ -198,8 +198,13 @@ public class VisitorTrackingService {
                 }
             }
             
-            // Sayfa görüntüleme kaydı oluştur
-            createPageView(visitor, currentPage, referrer, deviceInfo, language, request);
+            // Sayfa görüntüleme kaydı oluştur (ayrı transaction'da)
+            try {
+                createPageView(visitor, currentPage, referrer, deviceInfo, language, request);
+            } catch (Exception e) {
+                // Sayfa görüntüleme hatası ana transaction'ı etkilemez
+                log.warn("Sayfa görüntüleme kaydı oluşturulamadı: {}", e.getMessage());
+            }
             
             log.debug("Ziyaretçi takip edildi: SessionId={}, Page={}, Type={}, New={}", 
                 sessionId, currentPage, visitorType, isNewVisitor);
@@ -213,8 +218,9 @@ public class VisitorTrackingService {
     }
     
     /**
-     * Sayfa görüntüleme kaydı oluştur
+     * Sayfa görüntüleme kaydı oluştur (ayrı transaction'da)
      */
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     private void createPageView(ActiveVisitor visitor, String currentPage, String referrer, 
                                 DeviceInfo deviceInfo, String language, HttpServletRequest request) {
         try {
@@ -236,6 +242,7 @@ public class VisitorTrackingService {
             pageViewRepository.save(pageView);
         } catch (Exception e) {
             log.warn("Sayfa görüntüleme kaydı oluşturulamadı: {}", e.getMessage());
+            throw e; // Yeni transaction'da exception fırlatılabilir
         }
     }
     

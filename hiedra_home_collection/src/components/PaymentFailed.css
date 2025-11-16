@@ -82,8 +82,26 @@
 }
 
 .error-icon-small {
-  font-size: 1.5rem;
+  width: 24px;
+  height: 24px;
   flex-shrink: 0;
+  background: var(--danger);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.error-icon-small::after {
+  content: '!';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-weight: bold;
+  font-size: 0.9rem;
 }
 
 .error-text {

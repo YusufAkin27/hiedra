@@ -29,7 +29,7 @@ public class AuditLog {
     @Column(name = "entity_id")
     private Long entityId; // İlgili entity'nin ID'si
 
-    @Column(name = "description", length = 500)
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description; // İşlem açıklaması
 
     @Column(name = "user_id", length = 100)

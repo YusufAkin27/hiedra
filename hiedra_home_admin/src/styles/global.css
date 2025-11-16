@@ -1451,6 +1451,15 @@ button {
   animation: admin-header-spin 0.6s linear infinite;
 }
 
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @keyframes admin-header-spin {
   to {
     transform: rotate(360deg);

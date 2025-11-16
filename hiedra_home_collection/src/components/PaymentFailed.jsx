@@ -62,7 +62,7 @@ const PaymentFailed = () => {
           <h2>Hata Detayları</h2>
           <div className="error-list">
             <div className="error-item">
-              <span className="error-icon-small">⚠️</span>
+              <span className="error-icon-small"></span>
               <div className="error-text">
                 <p className="error-title">Ödeme Onaylanamadı</p>
                 <p className="error-description">

@@ -24,9 +24,9 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findAllWithCategory();
     
     /**
-     * Aktif ürünleri kategori ile birlikte getir
+     * Aktif ürünleri kategori ile birlikte getir (sadece stokta olanlar)
      */
-    @Query("SELECT DISTINCT p FROM Product p LEFT JOIN FETCH p.category WHERE p.active = true")
+    @Query("SELECT DISTINCT p FROM Product p LEFT JOIN FETCH p.category WHERE p.active = true AND p.quantity > 0")
     List<Product> findAllActiveWithCategory();
     
     @Override
@@ -34,15 +34,17 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findAll();
     
     /**
-     * Aktif ürünleri getir
+     * Aktif ürünleri getir (sadece stokta olanlar)
      */
     @EntityGraph(attributePaths = {"category"})
+    @Query("SELECT p FROM Product p WHERE p.active = true AND p.quantity > 0")
     List<Product> findByActiveTrue();
     
     /**
-     * Aktif ürünleri sayfalama ile getir
+     * Aktif ürünleri sayfalama ile getir (sadece stokta olanlar)
      */
     @EntityGraph(attributePaths = {"category"})
+    @Query("SELECT p FROM Product p WHERE p.active = true AND p.quantity > 0")
     Page<Product> findByActiveTrue(Pageable pageable);
     
     /**
@@ -57,33 +59,38 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     Optional<Product> findBySku(String sku);
     
     /**
-     * Kategoriye göre aktif ürünleri getir
+     * Kategoriye göre aktif ürünleri getir (sadece stokta olanlar)
      */
     @EntityGraph(attributePaths = {"category"})
-    List<Product> findByCategoryIdAndActiveTrue(Long categoryId);
+    @Query("SELECT p FROM Product p WHERE p.category.id = :categoryId AND p.active = true AND p.quantity > 0")
+    List<Product> findByCategoryIdAndActiveTrue(@Param("categoryId") Long categoryId);
     
     /**
-     * Kategoriye göre aktif ürünleri sayfalama ile getir
+     * Kategoriye göre aktif ürünleri sayfalama ile getir (sadece stokta olanlar)
      */
     @EntityGraph(attributePaths = {"category"})
-    Page<Product> findByCategoryIdAndActiveTrue(Long categoryId, Pageable pageable);
+    @Query("SELECT p FROM Product p WHERE p.category.id = :categoryId AND p.active = true AND p.quantity > 0")
+    Page<Product> findByCategoryIdAndActiveTrue(@Param("categoryId") Long categoryId, Pageable pageable);
     
     /**
-     * Öne çıkarılmış ürünleri getir
+     * Öne çıkarılmış ürünleri getir (sadece stokta olanlar)
      */
     @EntityGraph(attributePaths = {"category"})
+    @Query("SELECT p FROM Product p WHERE p.featured = true AND p.active = true AND p.quantity > 0 ORDER BY p.sortOrder ASC")
     List<Product> findByFeaturedTrueAndActiveTrueOrderBySortOrderAsc();
     
     /**
-     * Yeni ürünleri getir
+     * Yeni ürünleri getir (sadece stokta olanlar)
      */
     @EntityGraph(attributePaths = {"category"})
+    @Query("SELECT p FROM Product p WHERE p.isNew = true AND p.active = true AND p.quantity > 0 ORDER BY p.createdAt DESC")
     List<Product> findByIsNewTrueAndActiveTrueOrderByCreatedAtDesc(Pageable pageable);
     
     /**
-     * İndirimli ürünleri getir
+     * İndirimli ürünleri getir (sadece stokta olanlar)
      */
     @EntityGraph(attributePaths = {"category"})
+    @Query("SELECT p FROM Product p WHERE p.onSale = true AND p.active = true AND p.quantity > 0 ORDER BY p.sortOrder ASC")
     List<Product> findByOnSaleTrueAndActiveTrueOrderBySortOrderAsc();
     
     /**
@@ -108,58 +115,58 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findLowStockProducts();
     
     /**
-     * Fiyat aralığına göre ürünleri getir
+     * Fiyat aralığına göre ürünleri getir (sadece stokta olanlar)
      */
     @EntityGraph(attributePaths = {"category"})
-    @Query("SELECT p FROM Product p WHERE p.active = true AND p.price BETWEEN :minPrice AND :maxPrice")
+    @Query("SELECT p FROM Product p WHERE p.active = true AND p.quantity > 0 AND p.price BETWEEN :minPrice AND :maxPrice")
     List<Product> findByPriceBetween(@Param("minPrice") BigDecimal minPrice, @Param("maxPrice") BigDecimal maxPrice);
     
     /**
-     * Fiyat aralığına göre ürünleri sayfalama ile getir
+     * Fiyat aralığına göre ürünleri sayfalama ile getir (sadece stokta olanlar)
      */
     @EntityGraph(attributePaths = {"category"})
-    @Query("SELECT p FROM Product p WHERE p.active = true AND p.price BETWEEN :minPrice AND :maxPrice")
+    @Query("SELECT p FROM Product p WHERE p.active = true AND p.quantity > 0 AND p.price BETWEEN :minPrice AND :maxPrice")
     Page<Product> findByPriceBetween(@Param("minPrice") BigDecimal minPrice, @Param("maxPrice") BigDecimal maxPrice, Pageable pageable);
     
     /**
-     * İsme göre arama (case-insensitive, contains)
+     * İsme göre arama (case-insensitive, contains) - sadece stokta olanlar
      */
     @EntityGraph(attributePaths = {"category"})
-    @Query("SELECT p FROM Product p WHERE p.active = true AND LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%'))")
+    @Query("SELECT p FROM Product p WHERE p.active = true AND p.quantity > 0 AND LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%'))")
     List<Product> searchByName(@Param("name") String name);
     
     /**
-     * İsme göre arama (sayfalama ile)
+     * İsme göre arama (sayfalama ile) - sadece stokta olanlar
      */
     @EntityGraph(attributePaths = {"category"})
-    @Query("SELECT p FROM Product p WHERE p.active = true AND LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%'))")
+    @Query("SELECT p FROM Product p WHERE p.active = true AND p.quantity > 0 AND LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%'))")
     Page<Product> searchByName(@Param("name") String name, Pageable pageable);
     
     /**
-     * Açıklamaya göre arama
+     * Açıklamaya göre arama - sadece stokta olanlar
      */
     @EntityGraph(attributePaths = {"category"})
-    @Query("SELECT p FROM Product p WHERE p.active = true AND " +
+    @Query("SELECT p FROM Product p WHERE p.active = true AND p.quantity > 0 AND " +
            "(LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "LOWER(p.shortDescription) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     List<Product> searchByKeyword(@Param("keyword") String keyword);
     
     /**
-     * Açıklamaya göre arama (sayfalama ile)
+     * Açıklamaya göre arama (sayfalama ile) - sadece stokta olanlar
      */
     @EntityGraph(attributePaths = {"category"})
-    @Query("SELECT p FROM Product p WHERE p.active = true AND " +
+    @Query("SELECT p FROM Product p WHERE p.active = true AND p.quantity > 0 AND " +
            "(LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "LOWER(p.shortDescription) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Page<Product> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
     
     /**
-     * Renk, materyal, kullanım alanı gibi özelliklere göre filtreleme
+     * Renk, materyal, kullanım alanı gibi özelliklere göre filtreleme - sadece stokta olanlar
      */
     @EntityGraph(attributePaths = {"category"})
-    @Query("SELECT p FROM Product p WHERE p.active = true " +
+    @Query("SELECT p FROM Product p WHERE p.active = true AND p.quantity > 0 " +
            "AND (:color IS NULL OR LOWER(p.color) = LOWER(:color)) " +
            "AND (:material IS NULL OR LOWER(p.material) = LOWER(:material)) " +
            "AND (:usageArea IS NULL OR LOWER(p.usageArea) LIKE LOWER(CONCAT('%', :usageArea, '%'))) " +
@@ -172,31 +179,31 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     );
     
     /**
-     * Fiyata göre sıralama (artan)
+     * Fiyata göre sıralama (artan) - sadece stokta olanlar
      */
     @EntityGraph(attributePaths = {"category"})
-    @Query("SELECT p FROM Product p WHERE p.active = true ORDER BY p.price ASC")
+    @Query("SELECT p FROM Product p WHERE p.active = true AND p.quantity > 0 ORDER BY p.price ASC")
     List<Product> findAllActiveOrderByPriceAsc();
     
     /**
-     * Fiyata göre sıralama (azalan)
+     * Fiyata göre sıralama (azalan) - sadece stokta olanlar
      */
     @EntityGraph(attributePaths = {"category"})
-    @Query("SELECT p FROM Product p WHERE p.active = true ORDER BY p.price DESC")
+    @Query("SELECT p FROM Product p WHERE p.active = true AND p.quantity > 0 ORDER BY p.price DESC")
     List<Product> findAllActiveOrderByPriceDesc();
     
     /**
-     * Tarihe göre sıralama (yeni önce)
+     * Tarihe göre sıralama (yeni önce) - sadece stokta olanlar
      */
     @EntityGraph(attributePaths = {"category"})
-    @Query("SELECT p FROM Product p WHERE p.active = true ORDER BY p.createdAt DESC")
+    @Query("SELECT p FROM Product p WHERE p.active = true AND p.quantity > 0 ORDER BY p.createdAt DESC")
     List<Product> findAllActiveOrderByCreatedAtDesc();
     
     /**
-     * Sıralama değerine göre sıralama
+     * Sıralama değerine göre sıralama - sadece stokta olanlar
      */
     @EntityGraph(attributePaths = {"category"})
-    @Query("SELECT p FROM Product p WHERE p.active = true ORDER BY p.sortOrder ASC, p.createdAt DESC")
+    @Query("SELECT p FROM Product p WHERE p.active = true AND p.quantity > 0 ORDER BY p.sortOrder ASC, p.createdAt DESC")
     List<Product> findAllActiveOrderBySortOrder();
     
     /**

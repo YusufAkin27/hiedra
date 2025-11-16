@@ -25,6 +25,7 @@
   align-items: center;
   justify-content: center;
   transition: background 0.3s ease;
+  z-index: 1;
 }
 
 [data-theme='dark'] .lazy-image-placeholder {
@@ -46,21 +47,7 @@
   }
 }
 
-.lazy-image-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid var(--border-color);
-  border-top-color: var(--bg-header);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  transition: border-color 0.3s ease;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
+/* Spinner artık Loading component'i kullanıyor */
 
 .lazy-image {
   width: 100%;

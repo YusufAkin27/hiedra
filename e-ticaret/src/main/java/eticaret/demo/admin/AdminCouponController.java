@@ -20,6 +20,9 @@ import eticaret.demo.auth.AppUserRepository;
 import eticaret.demo.auth.UserRole;
 import eticaret.demo.mail.EmailMessage;
 import eticaret.demo.mail.MailService;
+import eticaret.demo.cloudinary.MediaUploadService;
+import org.springframework.http.MediaType;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -42,6 +45,7 @@ public class AdminCouponController {
     private final CouponUsageRepository couponUsageRepository;
     private final MailService mailService;
     private final AppUserRepository userRepository;
+    private final MediaUploadService mediaUploadService;
 
     /**
      * Yeni kupon oluştur
@@ -69,6 +73,10 @@ public class AdminCouponController {
                     .validUntil(request.getValidUntil())
                     .minimumPurchaseAmount(request.getMinimumPurchaseAmount())
                     .active(request.getActive() != null ? request.getActive() : true)
+                    .coverImageUrl(request.getCoverImageUrl())
+                    .isPersonal(request.getIsPersonal() != null ? request.getIsPersonal() : false)
+                    .targetUserIds(request.getTargetUserIds())
+                    .targetUserEmails(request.getTargetUserEmails())
                     .build();
 
             Coupon saved = couponRepository.save(coupon);
@@ -77,10 +85,16 @@ public class AdminCouponController {
                     "Yeni kupon oluşturuldu: " + saved.getCode(),
                     request, saved, httpRequest);
 
-            // Kupon oluşturulduğunda aktif kullanıcılara toplu mail gönder
+            // Kupon oluşturulduğunda mail gönder
             if (saved.getActive() != null && saved.getActive()) {
                 try {
-                    sendCouponNotificationToUsers(saved);
+                    if (saved.getIsPersonal() != null && saved.getIsPersonal()) {
+                        // Özel kupon - sadece hedef kullanıcılara mail gönder
+                        sendPersonalCouponNotification(saved);
+                    } else {
+                        // Genel kupon - tüm aktif kullanıcılara mail gönder
+                        sendCouponNotificationToUsers(saved);
+                    }
                 } catch (Exception e) {
                     log.error("Kupon bildirimi gönderilirken hata: {}", e.getMessage(), e);
                     // Mail gönderim hatası kupon oluşturmayı engellemez
@@ -88,11 +102,30 @@ public class AdminCouponController {
             }
 
             return ResponseEntity.ok(DataResponseMessage.success("Kupon başarıyla oluşturuldu", saved));
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            String errorMessage = "Veritabanı hatası: " + e.getMessage();
+            if (e.getMessage() != null && e.getMessage().contains("column") && e.getMessage().contains("does not exist")) {
+                errorMessage = "Veritabanı kolonları eksik. Lütfen migration script'ini çalıştırın: migration_add_coupon_fields.sql";
+            }
+            log.error("Kupon oluşturulurken veritabanı hatası: {}", e.getMessage(), e);
+            auditLogService.logError("CREATE_COUPON", "Coupon", null,
+                    "Kupon oluşturulurken veritabanı hatası: " + e.getMessage(), e.getMessage(), httpRequest);
+            return ResponseEntity.badRequest()
+                    .body(DataResponseMessage.error(errorMessage));
+        } catch (jakarta.validation.ConstraintViolationException e) {
+            String errorMessage = "Validasyon hatası: " + e.getMessage();
+            log.error("Kupon oluşturulurken validasyon hatası: {}", e.getMessage(), e);
+            auditLogService.logError("CREATE_COUPON", "Coupon", null,
+                    "Kupon oluşturulurken validasyon hatası: " + e.getMessage(), e.getMessage(), httpRequest);
+            return ResponseEntity.badRequest()
+                    .body(DataResponseMessage.error(errorMessage));
         } catch (Exception e) {
+            String errorMessage = "Kupon oluşturulamadı: " + e.getMessage();
+            log.error("Kupon oluşturulurken beklenmeyen hata: {}", e.getMessage(), e);
             auditLogService.logError("CREATE_COUPON", "Coupon", null,
                     "Kupon oluşturulurken hata: " + e.getMessage(), e.getMessage(), httpRequest);
             return ResponseEntity.badRequest()
-                    .body(DataResponseMessage.error("Kupon oluşturulamadı: " + e.getMessage()));
+                    .body(DataResponseMessage.error(errorMessage));
         }
     }
 
@@ -175,6 +208,10 @@ public class AdminCouponController {
             if (request.getValidUntil() != null) coupon.setValidUntil(request.getValidUntil());
             if (request.getMinimumPurchaseAmount() != null) coupon.setMinimumPurchaseAmount(request.getMinimumPurchaseAmount());
             if (request.getActive() != null) coupon.setActive(request.getActive());
+            if (request.getCoverImageUrl() != null) coupon.setCoverImageUrl(request.getCoverImageUrl());
+            if (request.getIsPersonal() != null) coupon.setIsPersonal(request.getIsPersonal());
+            if (request.getTargetUserIds() != null) coupon.setTargetUserIds(request.getTargetUserIds());
+            if (request.getTargetUserEmails() != null) coupon.setTargetUserEmails(request.getTargetUserEmails());
 
             Coupon updated = couponRepository.save(coupon);
 
@@ -326,6 +363,167 @@ public class AdminCouponController {
         } catch (Exception e) {
             log.error("Kupon bildirimi gönderilirken genel hata: {}", e.getMessage(), e);
         }
+    }
+
+    /**
+     * Özel kupon oluşturulduğunda hedef kullanıcılara bildirim gönder
+     */
+    private void sendPersonalCouponNotification(Coupon coupon) {
+        try {
+            java.util.List<AppUser> recipients = new java.util.ArrayList<>();
+            
+            // Email listesinden kullanıcıları bul
+            if (coupon.getTargetUserEmails() != null && !coupon.getTargetUserEmails().trim().isEmpty()) {
+                java.util.List<String> emails = parseEmailList(coupon.getTargetUserEmails());
+                for (String email : emails) {
+                    userRepository.findByEmailIgnoreCase(email.trim())
+                        .filter(user -> user.isActive() && user.isEmailVerified())
+                        .ifPresent(recipients::add);
+                }
+            }
+            
+            // User ID listesinden kullanıcıları bul
+            if (coupon.getTargetUserIds() != null && !coupon.getTargetUserIds().trim().isEmpty()) {
+                java.util.List<Long> userIds = parseUserIdList(coupon.getTargetUserIds());
+                for (Long userId : userIds) {
+                    userRepository.findById(userId)
+                        .filter(user -> user.isActive() && user.isEmailVerified())
+                        .ifPresent(user -> {
+                            // Zaten email listesinde yoksa ekle
+                            if (recipients.stream().noneMatch(r -> r.getId().equals(user.getId()))) {
+                                recipients.add(user);
+                            }
+                        });
+                }
+            }
+            
+            if (recipients.isEmpty()) {
+                log.info("Özel kupon bildirimi için alıcı bulunamadı - Kupon: {}", coupon.getCode());
+                return;
+            }
+            
+            // Email template oluştur
+            String subject = "🎁 Size Özel Kupon: " + coupon.getName();
+            String htmlBody = createCouponEmailTemplate(coupon);
+            
+            int successCount = 0;
+            int failCount = 0;
+            
+            // Her kullanıcıya mail gönder
+            for (AppUser user : recipients) {
+                try {
+                    EmailMessage emailMessage = EmailMessage.builder()
+                            .toEmail(user.getEmail())
+                            .subject(subject)
+                            .body(htmlBody)
+                            .isHtml(true)
+                            .build();
+                    
+                    mailService.queueEmail(emailMessage);
+                    successCount++;
+                    log.info("Özel kupon bildirimi gönderildi - Email: {}, Kupon: {}", 
+                            user.getEmail(), coupon.getCode());
+                } catch (Exception e) {
+                    failCount++;
+                    log.error("Özel kupon bildirimi gönderilemedi - Email: {}, Error: {}", 
+                            user.getEmail(), e.getMessage());
+                }
+            }
+            
+            log.info("Özel kupon bildirimi tamamlandı - Başarılı: {}, Başarısız: {}, Toplam: {}", 
+                    successCount, failCount, recipients.size());
+            
+        } catch (Exception e) {
+            log.error("Özel kupon bildirimi gönderilirken genel hata: {}", e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * Email listesini parse et (JSON array veya comma-separated)
+     */
+    private java.util.List<String> parseEmailList(String emailList) {
+        java.util.List<String> emails = new java.util.ArrayList<>();
+        if (emailList == null || emailList.trim().isEmpty()) {
+            return emails;
+        }
+        
+        try {
+            // JSON array olarak parse etmeyi dene
+            if (emailList.trim().startsWith("[")) {
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                java.util.List<String> jsonList = mapper.readValue(emailList, 
+                    mapper.getTypeFactory().constructCollectionType(java.util.List.class, String.class));
+                emails.addAll(jsonList);
+            } else {
+                // Comma-separated olarak parse et
+                String[] parts = emailList.split(",");
+                for (String part : parts) {
+                    String email = part.trim();
+                    if (!email.isEmpty()) {
+                        emails.add(email.toLowerCase());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Parse hatası - comma-separated olarak dene
+            String[] parts = emailList.split(",");
+            for (String part : parts) {
+                String email = part.trim();
+                if (!email.isEmpty()) {
+                    emails.add(email.toLowerCase());
+                }
+            }
+        }
+        
+        return emails;
+    }
+    
+    /**
+     * User ID listesini parse et (JSON array veya comma-separated)
+     */
+    private java.util.List<Long> parseUserIdList(String userIdList) {
+        java.util.List<Long> userIds = new java.util.ArrayList<>();
+        if (userIdList == null || userIdList.trim().isEmpty()) {
+            return userIds;
+        }
+        
+        try {
+            // JSON array olarak parse etmeyi dene
+            if (userIdList.trim().startsWith("[")) {
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                java.util.List<Object> jsonList = mapper.readValue(userIdList, 
+                    mapper.getTypeFactory().constructCollectionType(java.util.List.class, Object.class));
+                for (Object item : jsonList) {
+                    if (item instanceof Number) {
+                        userIds.add(((Number) item).longValue());
+                    } else if (item instanceof String) {
+                        try {
+                            userIds.add(Long.parseLong((String) item));
+                        } catch (NumberFormatException ignored) {}
+                    }
+                }
+            } else {
+                // Comma-separated olarak parse et
+                String[] parts = userIdList.split(",");
+                for (String part : parts) {
+                    try {
+                        Long userId = Long.parseLong(part.trim());
+                        userIds.add(userId);
+                    } catch (NumberFormatException ignored) {}
+                }
+            }
+        } catch (Exception e) {
+            // Parse hatası - comma-separated olarak dene
+            String[] parts = userIdList.split(",");
+            for (String part : parts) {
+                try {
+                    Long userId = Long.parseLong(part.trim());
+                    userIds.add(userId);
+                } catch (NumberFormatException ignored) {}
+            }
+        }
+        
+        return userIds;
     }
 
     /**
@@ -537,6 +735,10 @@ public class AdminCouponController {
         private LocalDateTime validUntil;
         private BigDecimal minimumPurchaseAmount;
         private Boolean active;
+        private String coverImageUrl;
+        private Boolean isPersonal;
+        private String targetUserIds; // JSON array veya comma-separated
+        private String targetUserEmails; // JSON array veya comma-separated
     }
 
     @Data
@@ -553,6 +755,49 @@ public class AdminCouponController {
         private LocalDateTime validUntil;
         private BigDecimal minimumPurchaseAmount;
         private Boolean active;
+        private String coverImageUrl;
+        private Boolean isPersonal;
+        private String targetUserIds;
+        private String targetUserEmails;
+    }
+
+    /**
+     * Kupon kapak resmi yükle
+     * POST /api/admin/coupons/upload-cover-image
+     */
+    @PostMapping(value = "/upload-cover-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<DataResponseMessage<String>> uploadCoverImage(
+            @RequestParam("file") MultipartFile file,
+            HttpServletRequest httpRequest) {
+        try {
+            // Dosya boyutu kontrolü (25MB)
+            long maxFileSize = 25 * 1024 * 1024;
+            if (file.getSize() > maxFileSize) {
+                return ResponseEntity.badRequest()
+                        .body(DataResponseMessage.error("Dosya çok büyük. Maksimum boyut: 25MB"));
+            }
+
+            // Dosya tipi kontrolü
+            if (!file.getContentType().startsWith("image/")) {
+                return ResponseEntity.badRequest()
+                        .body(DataResponseMessage.error("Geçerli bir resim dosyası değil"));
+            }
+
+            // Cloudinary'ye yükle
+            var result = mediaUploadService.uploadAndOptimizeProductImage(file);
+            String imageUrl = result.getOptimizedUrl();
+
+            auditLogService.logSuccess("UPLOAD_COUPON_COVER_IMAGE", "Coupon", null,
+                    "Kupon kapak resmi yüklendi", null, imageUrl, httpRequest);
+
+            return ResponseEntity.ok(DataResponseMessage.success("Kapak resmi başarıyla yüklendi", imageUrl));
+        } catch (Exception e) {
+            log.error("Kapak resmi yüklenirken hata: {}", e.getMessage(), e);
+            auditLogService.logError("UPLOAD_COUPON_COVER_IMAGE", "Coupon", null,
+                    "Kapak resmi yüklenemedi: " + e.getMessage(), e.getMessage(), httpRequest);
+            return ResponseEntity.badRequest()
+                    .body(DataResponseMessage.error("Kapak resmi yüklenemedi: " + e.getMessage()));
+        }
     }
 
     @Data

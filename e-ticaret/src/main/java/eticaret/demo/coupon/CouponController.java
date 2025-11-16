@@ -2,6 +2,9 @@ package eticaret.demo.coupon;
 
 import eticaret.demo.audit.AuditLogService;
 import eticaret.demo.common.response.DataResponseMessage;
+import eticaret.demo.auth.AppUser;
+import eticaret.demo.auth.AppUserRepository;
+import eticaret.demo.security.JwtService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,9 +26,11 @@ public class CouponController {
 
     private final CouponService couponService;
     private final AuditLogService auditLogService;
+    private final JwtService jwtService;
+    private final AppUserRepository appUserRepository;
 
     /**
-     * Tüm aktif kuponları getir
+     * Tüm aktif kuponları getir (genel + kullanıcıya özel)
      * GET /api/coupons
      */
     @GetMapping
@@ -33,17 +38,52 @@ public class CouponController {
             @RequestParam(value = "cartTotal", required = false) BigDecimal cartTotal,
             HttpServletRequest request) {
         try {
-            List<Coupon> coupons;
+            // JWT token'dan kullanıcı bilgilerini al (varsa)
+            Long userId = null;
+            String userEmail = null;
             
-            // Eğer sepet tutarı belirtilmişse, kullanıcının kullanabileceği kuponları filtrele
-            if (cartTotal != null && cartTotal.compareTo(BigDecimal.ZERO) > 0) {
-                coupons = couponService.getAvailableCouponsForUser(cartTotal);
-            } else {
-                coupons = couponService.getValidCoupons();
+            try {
+                String authHeader = request.getHeader("Authorization");
+                if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                    String token = authHeader.substring(7);
+                    try {
+                        String email = jwtService.extractEmail(token);
+                        Long extractedUserId = jwtService.extractUserId(token);
+                        if (email != null) {
+                            AppUser user = appUserRepository.findByEmailIgnoreCase(email).orElse(null);
+                            if (user != null && extractedUserId != null && extractedUserId.equals(user.getId())) {
+                                userId = user.getId();
+                                userEmail = user.getEmail();
+                            }
+                        }
+                    } catch (Exception tokenException) {
+                        // Token geçersizse devam et
+                        log.debug("Token geçersiz, genel kuponlar gösterilecek: {}", tokenException.getMessage());
+                    }
+                }
+            } catch (Exception e) {
+                // Token yoksa veya geçersizse devam et (genel kuponlar gösterilir)
+                log.debug("Kullanıcı bilgisi alınamadı, genel kuponlar gösterilecek: {}", e.getMessage());
             }
             
-            auditLogService.logSimple("GET_ACTIVE_COUPONS", "Coupon", null,
-                    "Aktif kuponlar listelendi (Toplam: " + coupons.size() + ")", request);
+            // Tüm geçerli kuponları getir (genel + özel)
+            List<Coupon> coupons = couponService.getAllValidCouponsForUser(userId, userEmail);
+            
+            // Eğer sepet tutarı belirtilmişse, minimum tutar kontrolü yap
+            if (cartTotal != null && cartTotal.compareTo(BigDecimal.ZERO) > 0) {
+                coupons = coupons.stream()
+                    .filter(coupon -> coupon.getMinimumPurchaseAmount() == null || 
+                            cartTotal.compareTo(coupon.getMinimumPurchaseAmount()) >= 0)
+                    .toList();
+            }
+            
+            String logDescription = "Aktif kuponlar listelendi (Toplam: " + coupons.size() + 
+                    ", Kullanıcı: " + (userId != null ? userId : "Misafir") + ")";
+            // Description'ı 500 karakter ile sınırla (güvenlik için)
+            if (logDescription.length() > 500) {
+                logDescription = logDescription.substring(0, 497) + "...";
+            }
+            auditLogService.logSimple("GET_ACTIVE_COUPONS", "Coupon", null, logDescription, request);
             
             return ResponseEntity.ok(DataResponseMessage.success(
                     "Aktif kuponlar başarıyla getirildi", coupons));

@@ -2,7 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import LazyImage from './LazyImage'
+import Loading from './Loading'
 import SEO from './SEO'
+import CategoryHeader from './CategoryHeader'
 import './ProductList.css'
 
 // Ürün Özellikleri Accordion Component
@@ -136,23 +138,30 @@ const ProductList = () => {
   
   const [products, setProducts] = useState([])
   const [isLoading, setIsLoading] = useState(true)
-  const [selectedProducts, setSelectedProducts] = useState({}) // Her kategori için seçili ürün
+  const [selectedProducts, setSelectedProducts] = useState({})
+  const [transitioningCategories, setTransitioningCategories] = useState({}) // Her kategori için geçiş durumu
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
   const [selectedDetailImage, setSelectedDetailImage] = useState(null)
+  const [searchInput, setSearchInput] = useState('')
   
   // URL'den arama terimini al
   const searchParams = new URLSearchParams(location.search)
   const searchTerm = searchParams.get('search') || ''
 
-  // Backend'den ürünleri çek
+  // Backend'den ürünleri ve kategorileri çek
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setIsLoading(true)
-        // Backend Page<Product> döndürüyor, bu yüzden size parametresi ekliyoruz
-        const response = await fetch(`${API_BASE_URL}/products?page=0&size=1000`)
-        if (response.ok) {
-          const data = await response.json()
+        
+        // Hem ürünleri hem de kategorileri paralel olarak çek
+        const [productsResponse, categoriesResponse] = await Promise.all([
+          fetch(`${API_BASE_URL}/products?page=0&size=1000`),
+          fetch(`${API_BASE_URL}/categories`)
+        ])
+        
+        if (productsResponse.ok) {
+          const data = await productsResponse.json()
           if (data.isSuccess || data.success) {
             // Backend Page<Product> döndürüyor, content array'ini al
             let productsData = []
@@ -170,31 +179,62 @@ const ProductList = () => {
               console.warn('productsData array değil, boş array kullanılıyor:', productsData)
               productsData = []
             }
-            // Backend formatını frontend formatına çevir
-            const formattedProducts = productsData.map(product => ({
-              id: product.id,
-              name: product.name,
-              price: product.price ? parseFloat(product.price) : 0,
-              image: product.coverImageUrl || '/images/perde1kapak.jpg',
-              detailImages: product.detailImageUrl ? [product.detailImageUrl] : [],
-              description: product.description || product.shortDescription || '',
-              shortDescription: product.shortDescription || '',
-              category: product.category?.name || 'Genel',
-              color: product.color || '',
-              inStock: (product.quantity || 0) > 0,
-              productCode: product.productCode || product.code || product.sku || '',
-              quantity: product.quantity || 0,
-              // Ürün özellikleri
-              mountingType: product.mountingType || '',
-              material: product.material || '',
-              lightTransmittance: product.lightTransmittance || '',
-              pieceCount: product.pieceCount || null,
-              usageArea: product.usageArea || '',
-              // İstatistikler
-              reviewCount: product.reviewCount || 0,
-              averageRating: product.averageRating || 0,
-              viewCount: product.viewCount || 0,
-            }))
+            
+            // Kategorileri de çek ve ürünlere ekle
+            let categoriesMap = {}
+            if (categoriesResponse.ok) {
+              const categoriesData = await categoriesResponse.json()
+              if (categoriesData.isSuccess || categoriesData.success) {
+                const categoriesList = categoriesData.data || []
+                categoriesList.forEach(cat => {
+                  categoriesMap[cat.id] = {
+                    id: cat.id,
+                    name: cat.name,
+                    slug: cat.slug || cat.name?.toLowerCase().replace(/\s+/g, '-') || ''
+                  }
+                })
+              }
+            }
+            // Backend formatını frontend formatına çevir ve sadece stokta olan ürünleri filtrele
+            const formattedProducts = productsData
+              .filter(product => (product.quantity || 0) > 0) // Sadece stokta olan ürünler
+              .map(product => {
+                const categoryId = product.category?.id || null
+                const categoryInfo = categoryId && categoriesMap[categoryId] 
+                  ? categoriesMap[categoryId]
+                  : {
+                      id: categoryId,
+                      name: product.category?.name || 'Genel',
+                      slug: product.category?.slug || product.category?.name?.toLowerCase().replace(/\s+/g, '-') || ''
+                    }
+                
+                return {
+                  id: product.id,
+                  name: product.name,
+                  price: product.price ? parseFloat(product.price) : 0,
+                  image: product.coverImageUrl || '/images/perde1kapak.jpg',
+                  detailImages: product.detailImageUrl ? [product.detailImageUrl] : [],
+                  description: product.description || product.shortDescription || '',
+                  shortDescription: product.shortDescription || '',
+                  category: categoryInfo.name,
+                  categoryId: categoryInfo.id,
+                  categorySlug: categoryInfo.slug,
+                  color: product.color || '',
+                  inStock: (product.quantity || 0) > 0,
+                  productCode: product.productCode || product.code || product.sku || '',
+                  quantity: product.quantity || 0,
+                  // Ürün özellikleri
+                  mountingType: product.mountingType || '',
+                  material: product.material || '',
+                  lightTransmittance: product.lightTransmittance || '',
+                  pieceCount: product.pieceCount || null,
+                  usageArea: product.usageArea || '',
+                  // İstatistikler
+                  reviewCount: product.reviewCount || 0,
+                  averageRating: product.averageRating || 0,
+                  viewCount: product.viewCount || 0,
+                }
+              })
             setProducts(formattedProducts)
           } else {
             console.warn('Ürünler yüklenemedi:', data.message || 'Bilinmeyen hata')
@@ -225,17 +265,22 @@ const ProductList = () => {
     products.forEach(product => {
       const categoryName = product.category
       if (!categoryMap[categoryName]) {
-        categoryMap[categoryName] = []
+        categoryMap[categoryName] = {
+          name: categoryName,
+          id: product.categoryId,
+          slug: product.categorySlug,
+          products: []
+        }
       }
-      categoryMap[categoryName].push(product)
+      categoryMap[categoryName].products.push(product)
     })
     
     // Kategorileri alfabetik sırala ve her kategorinin ürünlerini sırala
-    return Object.keys(categoryMap)
-      .sort()
-      .map(categoryName => ({
-        name: categoryName,
-        products: categoryMap[categoryName].sort((a, b) => a.name.localeCompare(b.name))
+    return Object.values(categoryMap)
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map(cat => ({
+        ...cat,
+        products: cat.products.sort((a, b) => a.name.localeCompare(b.name))
       }))
       .filter(cat => cat.products.length > 0) // Sadece ürünü olan kategorileri göster
   }, [products])
@@ -256,10 +301,27 @@ const ProductList = () => {
 
   // Kategori için ürün seç
   const handleColorSelect = (product, categoryName) => {
-    setSelectedProducts(prev => ({
+    // Geçiş animasyonu için önce fade-out yap
+    setTransitioningCategories(prev => ({
       ...prev,
-      [categoryName]: product
+      [categoryName]: true
     }))
+    
+    // Kısa bir gecikme sonrası yeni ürünü seç
+    setTimeout(() => {
+      setSelectedProducts(prev => ({
+        ...prev,
+        [categoryName]: product
+      }))
+      
+      // Fade-in için animasyonu bitir
+      setTimeout(() => {
+        setTransitioningCategories(prev => ({
+          ...prev,
+          [categoryName]: false
+        }))
+      }, 50)
+    }, 200)
   }
 
   // Color field'ı direkt hex kodu içeriyor, kontrol et ve döndür
@@ -337,12 +399,17 @@ const ProductList = () => {
     )
   }
 
+  const handleSearch = (e) => {
+    e.preventDefault()
+    if (searchInput.trim()) {
+      navigate(`/?search=${encodeURIComponent(searchInput.trim())}`)
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="product-list-container">
-        <div className="loading-state">
-          <p>Ürünler yükleniyor...</p>
-        </div>
+        <Loading size="large" text="Ürünler yükleniyor..." variant="page" />
       </div>
     )
   }
@@ -356,9 +423,79 @@ const ProductList = () => {
         url="/"
       />
       
-      <header className="product-list-header">
-        <h1>Perde Koleksiyonlarımız</h1>
-        <p>Modern ve şık perde seçenekleri</p>
+      {/* Modern Hero Section */}
+      <section className="hero-section-modern">
+        <div className="hero-content-modern">
+          <h1 className="hero-title-modern">Toptan Fiyatına Perakende Satış</h1>
+          <h2 className="hero-subtitle-modern">Modern, Minimalist Perde Modelleri</h2>
+          
+          {/* Arama Çubuğu */}
+          <form className="hero-search-form" onSubmit={handleSearch}>
+            <input
+              type="text"
+              className="hero-search-input"
+              placeholder="Ürünün ismini, kodunu veya etiketini yazınız."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+            />
+            <button type="submit" className="hero-search-btn">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
+              </svg>
+            </button>
+          </form>
+          
+          {/* İstatistik */}
+          <div className="hero-statistics">
+            <div className="stat-number">53.000+</div>
+            <div className="stat-label">Mutlu Müşteri Siparişi</div>
+          </div>
+          
+          {/* Açıklama */}
+          <div className="hero-description">
+            <h3 className="description-title">Özelleştirilebilir Perde Modelleri</h3>
+            <p className="description-text">
+              En, boy, Pile ve bir çok ayrıntılı seçenek ile kendi perdenizi oluşturun. 
+              Türkiye'de ilk defa Villa, tiny house, bungalov ve benzeri yerler için 
+              Çatı eğimli perdeler ile size özel seçenekler.
+            </p>
+          </div>
+        </div>
+      </section>
+      
+      {/* Sosyal Medya İkonları - Sabit Sağ Taraf */}
+      <div className="social-media-fixed">
+        <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="social-icon facebook" aria-label="Facebook">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+          </svg>
+        </a>
+        <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="social-icon instagram" aria-label="Instagram">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+            <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+          </svg>
+        </a>
+        <a href="https://wa.me/905072054460" target="_blank" rel="noopener noreferrer" className="social-icon whatsapp" aria-label="WhatsApp">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+          </svg>
+        </a>
+      </div>
+      
+      {/* Premium Section Header */}
+      <header className="product-list-header-premium">
+        <div className="section-header-content-premium">
+          <div className="section-header-badge-premium">
+            <span>Koleksiyonlarımız</span>
+          </div>
+          <h1 className="section-header-title-premium">Özenle Seçilmiş Ürünler</h1>
+          <p className="section-header-subtitle-premium">
+            Her biri özenle tasarlanmış, kaliteli malzemelerden üretilmiş perde koleksiyonlarımızı keşfedin
+          </p>
+        </div>
       </header>
 
       <div className="categories-showcase-home">
@@ -367,28 +504,20 @@ const ProductList = () => {
           
           return (
             <div key={category.name} className="category-section-home">
-              <div className="category-header-home">
-                <h2 className="category-title-home">{category.name}</h2>
-                <p className="category-subtitle-home">{category.products.length} ürün</p>
-              </div>
+              <CategoryHeader 
+                title={category.name} 
+                subtitle={`${category.products.length} ürün`} 
+              />
               
               <div className="category-product-showcase-home">
                 {/* Sol taraf - Büyük fotoğraf */}
                 <div className="product-image-section-home">
-                  <div className="main-product-image-wrapper-home">
+                  <div className={`main-product-image-wrapper-home ${transitioningCategories[category.name] ? 'fade-out' : 'fade-in'}`}>
                     <LazyImage
                       src={selectedProduct.image || ''}
                       alt={selectedProduct.name}
                       className="main-product-image-home"
                     />
-                    {selectedProduct.inStock && (
-                      <div className="product-stock-badge-large-home">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                        <span>Stokta</span>
-                      </div>
-                    )}
                     {/* Detay fotoğraf önizleme */}
                     {selectedProduct.detailImages && selectedProduct.detailImages.length > 0 && selectedProduct.detailImages[0] && (
                       <div 
@@ -416,7 +545,7 @@ const ProductList = () => {
                 </div>
 
                 {/* Sağ taraf - Ürün detayları ve renk seçenekleri */}
-                <div className="product-details-section-home">
+                <div className={`product-details-section-home ${transitioningCategories[category.name] ? 'fade-out' : 'fade-in'}`}>
                   <div className="product-header-info-home">
                     <h2 className="product-title-home">{selectedProduct.name}</h2>
                     {selectedProduct.productCode && (
@@ -505,8 +634,9 @@ const ProductList = () => {
                     </div>
                   )}
 
-                  {/* Ürün Özellikleri */}
-                  {(selectedProduct.mountingType || selectedProduct.material || selectedProduct.lightTransmittance) && (
+                  {/* Ürün Özellikleri - CategoryDetail gibi tüm özellikler */}
+                  {(selectedProduct.mountingType || selectedProduct.material || selectedProduct.lightTransmittance || 
+                    selectedProduct.usageArea || selectedProduct.pieceCount || selectedProduct.color) && (
                     <div className="product-features-home">
                       {selectedProduct.mountingType && (
                         <div className="product-feature-item-home">
@@ -521,6 +651,8 @@ const ProductList = () => {
                         <div className="product-feature-item-home">
                           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <rect x="3" y="3" width="18" height="18" rx="2" />
+                            <line x1="3" y1="9" x2="21" y2="9" />
+                            <line x1="9" y1="21" x2="9" y2="9" />
                           </svg>
                           <span>Materyal: {selectedProduct.material}</span>
                         </div>
@@ -531,24 +663,66 @@ const ProductList = () => {
                             <circle cx="12" cy="12" r="5" />
                             <line x1="12" y1="1" x2="12" y2="3" />
                             <line x1="12" y1="21" x2="12" y2="23" />
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                            <line x1="1" y1="12" x2="3" y2="12" />
+                            <line x1="21" y1="12" x2="23" y2="12" />
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
                           </svg>
                           <span>Işık Geçirgenliği: {selectedProduct.lightTransmittance}</span>
+                        </div>
+                      )}
+                      {selectedProduct.usageArea && (
+                        <div className="product-feature-item-home">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                            <circle cx="12" cy="10" r="3" />
+                          </svg>
+                          <span>Kullanım Alanı: {selectedProduct.usageArea}</span>
+                        </div>
+                      )}
+                      {selectedProduct.pieceCount && selectedProduct.pieceCount > 0 && (
+                        <div className="product-feature-item-home">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="3" y="3" width="7" height="7" />
+                            <rect x="14" y="3" width="7" height="7" />
+                            <rect x="14" y="14" width="7" height="7" />
+                            <rect x="3" y="14" width="7" height="7" />
+                          </svg>
+                          <span>Parça Sayısı: {selectedProduct.pieceCount} Adet</span>
                         </div>
                       )}
                     </div>
                   )}
 
-                  {/* Detay Butonu */}
-                  <button
-                    className="view-product-detail-btn-home"
-                    onClick={() => handleProductClick(selectedProduct.id)}
-                  >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                      <circle cx="12" cy="12" r="3" />
-                    </svg>
-                    Ürün Detayını Görüntüle
-                  </button>
+                  {/* Butonlar */}
+                  <div className="product-actions-home">
+                    <button
+                      className="view-product-detail-btn-home"
+                      onClick={() => handleProductClick(selectedProduct.id)}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                      Ürün Detayını Görüntüle
+                    </button>
+                    {category.id && (
+                      <button
+                        className="view-category-btn-home"
+                        onClick={() => navigate(`/kategori/${category.id}/${category.slug || category.name.toLowerCase().replace(/\s+/g, '-')}`)}
+                      >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <rect x="3" y="3" width="7" height="7" />
+                          <rect x="14" y="3" width="7" height="7" />
+                          <rect x="14" y="14" width="7" height="7" />
+                          <rect x="3" y="14" width="7" height="7" />
+                        </svg>
+                        Tüm {category.name} Ürünlerini Gör
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

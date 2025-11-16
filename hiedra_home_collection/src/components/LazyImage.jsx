@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
+import Loading from './Loading'
 import './LazyImage.css'
 
 const LazyImage = ({ 
@@ -56,7 +57,7 @@ const LazyImage = ({
   // Blur placeholder oluştur
   const blurPlaceholder = placeholder || (
     <div className="lazy-image-placeholder">
-      <div className="lazy-image-spinner"></div>
+      <Loading size="small" variant="image" />
     </div>
   )
 

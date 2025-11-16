@@ -139,14 +139,6 @@ const ProductCard = ({ product }) => {
                     <span className="price-label">Fiyat</span>
                     <span className="product-price">{product.price} ₺</span>
                   </div>
-                  {product.inStock && (
-                    <span className="stock-badge-large">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                      Stokta
-                    </span>
-                  )}
                 </div>
                 
                 <div className="action-buttons">

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import LazyImage from './LazyImage'
+import Loading from './Loading'
 import SEO from './SEO'
 import './Categories.css'
 
@@ -96,9 +97,7 @@ const Categories = () => {
     return (
       <div className="categories-page">
         <div className="categories-container">
-          <div className="loading-state">
-            <p>Kategoriler yükleniyor...</p>
-          </div>
+          <Loading size="large" text="Kategoriler yükleniyor..." variant="page" />
         </div>
       </div>
     )

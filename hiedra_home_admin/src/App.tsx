@@ -31,6 +31,8 @@ const OrderDetailPage = lazy(() => import('./pages/OrderDetail'))
 const AuditLogsPage = lazy(() => import('./pages/AuditLogs'))
 const UserDetailPage = lazy(() => import('./pages/UserDetail'))
 const CouponsPage = lazy(() => import('./pages/Coupons'))
+const CouponAddPage = lazy(() => import('./pages/CouponAdd'))
+const NotFoundPage = lazy(() => import('./pages/NotFound'))
 const CookiePreferencesPage = lazy(() => import('./pages/CookiePreferences'))
 const SettingsPage = lazy(() => import('./pages/Settings'))
 const UserAnalyticsPage = lazy(() => import('./pages/UserAnalytics'))
@@ -70,6 +72,7 @@ type Page =
   | 'addresses'
   | 'auditLogs'
   | 'coupons'
+  | 'couponAdd'
   | 'cookiePreferences'
   | 'settings'
   | 'userAnalytics'
@@ -357,6 +360,9 @@ function App() {
     if (currentPage === 'userDetail') {
       return 'users'
     }
+    if (currentPage === 'couponAdd') {
+      return 'coupons'
+    }
     return currentPage
   }, [currentPage])
 
@@ -500,7 +506,20 @@ function App() {
         {currentPage === 'visitors' && <VisitorsPage session={session} toast={toast} />}
         {currentPage === 'addresses' && <AddressesPage session={session} />}
         {currentPage === 'auditLogs' && <AuditLogsPage session={session} />}
-        {currentPage === 'coupons' && <CouponsPage session={session} toast={toast} />}
+        {currentPage === 'coupons' && (
+          <CouponsPage 
+            session={session} 
+            toast={toast}
+            onAddCoupon={() => handleNavigate('couponAdd')}
+          />
+        )}
+        {currentPage === 'couponAdd' && (
+          <CouponAddPage
+            session={session}
+            toast={toast}
+            onBack={() => handleNavigate('coupons')}
+          />
+        )}
         {currentPage === 'cookiePreferences' && <CookiePreferencesPage session={session} toast={toast} />}
         {currentPage === 'settings' && <SettingsPage session={session} toast={toast} />}
         {currentPage === 'userAnalytics' && <UserAnalyticsPage session={session} />}
@@ -527,6 +546,9 @@ function App() {
         )}
         {currentPage === 'categories' && <CategoriesPage session={session} toast={toast} />}
         {currentPage === 'adminManagement' && <AdminManagementPage session={session} />}
+        {!['home', 'profile', 'system', 'users', 'userDetail', 'userLogs', 'orders', 'orderDetail', 'products', 'productDetail', 'productEdit', 'productAdd', 'shipping', 'messages', 'bulkMail', 'carts', 'reviews', 'productViews', 'guests', 'visitors', 'addresses', 'auditLogs', 'coupons', 'couponAdd', 'cookiePreferences', 'settings', 'userAnalytics', 'contracts', 'contractAcceptances', 'categories', 'adminManagement'].includes(currentPage) && (
+          <NotFoundPage session={session} onNavigate={handleNavigate} />
+        )}
       </Suspense>
           </div>
         </div>

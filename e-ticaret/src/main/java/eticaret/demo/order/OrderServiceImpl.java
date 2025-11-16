@@ -316,8 +316,11 @@ public class OrderServiceImpl implements OrderService {
                     if (request.getCustomerEmail() != null) {
                         order.setCustomerEmail(request.getCustomerEmail());
                     }
-                    if (request.getCustomerPhone() != null) {
+                    if (request.getCustomerPhone() != null && !request.getCustomerPhone().isBlank()) {
                         order.setCustomerPhone(request.getCustomerPhone());
+                    } else if (order.getCustomerPhone() == null || order.getCustomerPhone().isBlank()) {
+                        // Eğer null veya boş ise varsayılan değer ata
+                        order.setCustomerPhone("Bilinmiyor");
                     }
 
                     // Adres bilgilerini güncelle

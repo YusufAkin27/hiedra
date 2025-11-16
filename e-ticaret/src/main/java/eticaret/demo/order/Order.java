@@ -284,6 +284,10 @@ public class Order {
         if (this.orderSource == null) {
             this.orderSource = "WEB";
         }
+        // customerPhone null ise varsayılan değer ata
+        if (this.customerPhone == null || this.customerPhone.isBlank()) {
+            this.customerPhone = "Bilinmiyor";
+        }
     }
 
     @PreUpdate

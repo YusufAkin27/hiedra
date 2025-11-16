@@ -21,7 +21,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class EmailVerificationSecurityService {
     
     private final AppUserRepository appUserRepository;
-    private final RateLimitingService rateLimitingService;
+    // Rate limiting devre dışı bırakıldı
+    // private final RateLimitingService rateLimitingService;
     
     // Email bazlı kod deneme sayısı (son 15 dakika)
     private final Map<String, VerificationAttempt> emailAttempts = new ConcurrentHashMap<>();
@@ -59,17 +60,18 @@ public class EmailVerificationSecurityService {
             return false;
         }
         
-        // Email bazlı rate limiting (15 dakikada 3 kod)
-        if (!rateLimitingService.isEmailAllowed(normalizedEmail, 3, 900)) {
-            log.warn("Email doğrulama kodu isteği engellendi - rate limit: {}", normalizedEmail);
-            return false;
-        }
+        // Rate limiting devre dışı bırakıldı
+        // Email bazlı rate limiting (15 dakikada 3 kod) - DEVRE DIŞI
+        // if (!rateLimitingService.isEmailAllowed(normalizedEmail, 3, 900)) {
+        //     log.warn("Email doğrulama kodu isteği engellendi - rate limit: {}", normalizedEmail);
+        //     return false;
+        // }
         
-        // IP bazlı rate limiting (15 dakikada 5 kod)
-        if (!rateLimitingService.isAllowed(ipAddress, 5, 900)) {
-            log.warn("Email doğrulama kodu isteği engellendi - IP rate limit: {}", ipAddress);
-            return false;
-        }
+        // IP bazlı rate limiting (15 dakikada 5 kod) - DEVRE DIŞI
+        // if (!rateLimitingService.isAllowed(ipAddress, 5, 900)) {
+        //     log.warn("Email doğrulama kodu isteği engellendi - IP rate limit: {}", ipAddress);
+        //     return false;
+        // }
         
         return true;
     }

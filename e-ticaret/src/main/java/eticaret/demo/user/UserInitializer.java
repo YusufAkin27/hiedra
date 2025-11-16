@@ -229,7 +229,7 @@ public class UserInitializer implements CommandLineRunner {
                         .status(status)
                         .customerName(user.getFullName())
                         .customerEmail(user.getEmail())
-                        .customerPhone(user.getPhone())
+                        .customerPhone(user.getPhone() != null && !user.getPhone().isBlank() ? user.getPhone() : "Bilinmiyor")
                         .user(user)
                         .createdAt(LocalDateTime.now().minusDays(random.nextInt(30)))
                         .orderSource("WEB")

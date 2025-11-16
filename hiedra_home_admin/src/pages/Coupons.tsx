@@ -1,5 +1,5 @@
-import { useEffect, useState, type FormEvent } from 'react'
-import { FaPlus, FaEdit, FaTrash, FaTicketAlt, FaCheckCircle, FaPause, FaClock, FaChartBar, FaDollarSign, FaChartLine, FaClipboard, FaTable, FaCalendar, FaFileAlt, FaPlay, FaStop } from 'react-icons/fa'
+import { useEffect, useState, type FormEvent, useRef } from 'react'
+import { FaPlus, FaEdit, FaTrash, FaTicketAlt, FaCheckCircle, FaPause, FaClock, FaChartBar, FaDollarSign, FaChartLine, FaClipboard, FaTable, FaCalendar, FaFileAlt, FaPlay, FaStop, FaSearch, FaTimes, FaUpload, FaSpinner } from 'react-icons/fa'
 import type { AuthResponse } from '../services/authService'
 import type { useToast } from '../components/Toast'
 import ConfirmModal from '../components/ConfirmModal'
@@ -7,6 +7,7 @@ import ConfirmModal from '../components/ConfirmModal'
 type CouponsPageProps = {
   session: AuthResponse
   toast: ReturnType<typeof useToast>
+  onAddCoupon?: () => void
 }
 
 type Coupon = {
@@ -24,6 +25,10 @@ type Coupon = {
   createdAt: string
   updatedAt: string
   minimumPurchaseAmount?: number
+  coverImageUrl?: string
+  isPersonal?: boolean
+  targetUserIds?: string
+  targetUserEmails?: string
 }
 
 type CouponUsage = {
@@ -42,12 +47,20 @@ type CouponUsage = {
 
 type ViewMode = 'table' | 'cards'
 
+type UserSearchResult = {
+  id: number
+  email: string
+  role: string
+  emailVerified: boolean
+  active: boolean
+}
+
 const DEFAULT_API_URL = 'http://localhost:8080/api'
 const apiBaseUrl = import.meta.env.VITE_API_URL ?? DEFAULT_API_URL
 
 const ITEMS_PER_PAGE = 20
 
-function CouponsPage({ session, toast }: CouponsPageProps) {
+function CouponsPage({ session, toast, onAddCoupon }: CouponsPageProps) {
   const [coupons, setCoupons] = useState<Coupon[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [showCreateForm, setShowCreateForm] = useState(false)
@@ -80,11 +93,45 @@ function CouponsPage({ session, toast }: CouponsPageProps) {
     validUntil: '',
     minimumPurchaseAmount: '',
     active: true,
+    coverImageUrl: '',
+    isPersonal: false,
+    targetUserIds: '',
+    targetUserEmails: '',
   })
+  
+  // Kullanıcı arama ve seçme
+  const [userSearchQuery, setUserSearchQuery] = useState('')
+  const [userSearchResults, setUserSearchResults] = useState<UserSearchResult[]>([])
+  const [selectedUsers, setSelectedUsers] = useState<UserSearchResult[]>([])
+  const [isSearchingUsers, setIsSearchingUsers] = useState(false)
+  const [showUserSearch, setShowUserSearch] = useState(false)
+  const userSearchTimeoutRef = useRef<number | null>(null)
+  const userSearchRef = useRef<HTMLDivElement>(null)
+  
+  // Dosya yükleme
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     fetchCoupons()
   }, [session.accessToken])
+
+  // Dışarı tıklama ile arama sonuçlarını kapat
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userSearchRef.current && !userSearchRef.current.contains(event.target as Node)) {
+        setShowUserSearch(false)
+      }
+    }
+
+    if (showUserSearch) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showUserSearch])
 
   const fetchCoupons = async () => {
     try {
@@ -151,6 +198,7 @@ function CouponsPage({ session, toast }: CouponsPageProps) {
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault()
     try {
+      const submitData = prepareFormDataForSubmit()
       const response = await fetch(`${apiBaseUrl}/admin/coupons`, {
         method: 'POST',
         headers: {
@@ -158,22 +206,34 @@ function CouponsPage({ session, toast }: CouponsPageProps) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          code: formData.code.toUpperCase(),
-          name: formData.name,
-          description: formData.description || null,
-          type: formData.type,
-          discountValue: parseFloat(formData.discountValue),
-          maxUsageCount: parseInt(formData.maxUsageCount),
-          validFrom: formData.validFrom,
-          validUntil: formData.validUntil,
-          minimumPurchaseAmount: formData.minimumPurchaseAmount ? parseFloat(formData.minimumPurchaseAmount) : null,
-          active: formData.active,
+          code: submitData.code.toUpperCase(),
+          name: submitData.name,
+          description: submitData.description || null,
+          type: submitData.type,
+          discountValue: parseFloat(submitData.discountValue),
+          maxUsageCount: parseInt(submitData.maxUsageCount),
+          validFrom: submitData.validFrom,
+          validUntil: submitData.validUntil,
+          minimumPurchaseAmount: submitData.minimumPurchaseAmount ? parseFloat(submitData.minimumPurchaseAmount) : null,
+          active: submitData.active,
+          coverImageUrl: submitData.coverImageUrl || null,
+          isPersonal: submitData.isPersonal,
+          targetUserIds: submitData.isPersonal && submitData.targetUserIds ? submitData.targetUserIds : null,
+          targetUserEmails: submitData.isPersonal && submitData.targetUserEmails ? submitData.targetUserEmails : null,
         }),
       })
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || 'Kupon oluşturulamadı.')
+        let errorMessage = 'Kupon oluşturulamadı.'
+        const responseText = await response.text()
+        try {
+          const errorData = JSON.parse(responseText)
+          errorMessage = errorData.message || errorData.data || errorMessage
+        } catch (e) {
+          // JSON parse hatası - response text'i direkt kullan
+          errorMessage = responseText || `HTTP ${response.status}: ${response.statusText}`
+        }
+        throw new Error(errorMessage)
       }
 
       toast.success('Kupon başarıyla oluşturuldu!')
@@ -191,6 +251,7 @@ function CouponsPage({ session, toast }: CouponsPageProps) {
     if (!editingCoupon) return
 
     try {
+      const submitData = prepareFormDataForSubmit()
       const response = await fetch(`${apiBaseUrl}/admin/coupons/${editingCoupon.id}`, {
         method: 'PUT',
         headers: {
@@ -198,22 +259,34 @@ function CouponsPage({ session, toast }: CouponsPageProps) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          code: formData.code.toUpperCase(),
-          name: formData.name,
-          description: formData.description || null,
-          type: formData.type,
-          discountValue: parseFloat(formData.discountValue),
-          maxUsageCount: parseInt(formData.maxUsageCount),
-          validFrom: formData.validFrom,
-          validUntil: formData.validUntil,
-          minimumPurchaseAmount: formData.minimumPurchaseAmount ? parseFloat(formData.minimumPurchaseAmount) : null,
-          active: formData.active,
+          code: submitData.code.toUpperCase(),
+          name: submitData.name,
+          description: submitData.description || null,
+          type: submitData.type,
+          discountValue: parseFloat(submitData.discountValue),
+          maxUsageCount: parseInt(submitData.maxUsageCount),
+          validFrom: submitData.validFrom,
+          validUntil: submitData.validUntil,
+          minimumPurchaseAmount: submitData.minimumPurchaseAmount ? parseFloat(submitData.minimumPurchaseAmount) : null,
+          active: submitData.active,
+          coverImageUrl: submitData.coverImageUrl || null,
+          isPersonal: submitData.isPersonal,
+          targetUserIds: submitData.isPersonal && submitData.targetUserIds ? submitData.targetUserIds : null,
+          targetUserEmails: submitData.isPersonal && submitData.targetUserEmails ? submitData.targetUserEmails : null,
         }),
       })
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || 'Kupon güncellenemedi.')
+        let errorMessage = 'Kupon güncellenemedi.'
+        const responseText = await response.text()
+        try {
+          const errorData = JSON.parse(responseText)
+          errorMessage = errorData.message || errorData.data || errorMessage
+        } catch (e) {
+          // JSON parse hatası - response text'i direkt kullan
+          errorMessage = responseText || `HTTP ${response.status}: ${response.statusText}`
+        }
+        throw new Error(errorMessage)
       }
 
       toast.success('Kupon başarıyla güncellendi!')
@@ -257,6 +330,151 @@ function CouponsPage({ session, toast }: CouponsPageProps) {
     }
   }
 
+  // Kullanıcı arama
+  const searchUsers = async (query: string) => {
+    if (!query.trim() || query.length < 1) {
+      setUserSearchResults([])
+      return
+    }
+
+    if (userSearchTimeoutRef.current) {
+      window.clearTimeout(userSearchTimeoutRef.current)
+    }
+
+    userSearchTimeoutRef.current = window.setTimeout(async () => {
+      try {
+        setIsSearchingUsers(true)
+        const response = await fetch(`${apiBaseUrl}/admin/users/search?query=${encodeURIComponent(query)}`, {
+          headers: {
+            Authorization: `Bearer ${session.accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        })
+
+        if (!response.ok) {
+          throw new Error('Kullanıcı arama yapılamadı')
+        }
+
+        const payload = (await response.json()) as {
+          isSuccess?: boolean
+          success?: boolean
+          data?: UserSearchResult[]
+        }
+
+        const success = payload.isSuccess ?? payload.success ?? false
+        if (success && payload.data) {
+          // Zaten seçili olan kullanıcıları filtrele
+          const selectedIds = selectedUsers.map(u => u.id)
+          setUserSearchResults(payload.data.filter(u => !selectedIds.includes(u.id)))
+        } else {
+          setUserSearchResults([])
+        }
+      } catch (err) {
+        console.error('Kullanıcı arama hatası:', err)
+        setUserSearchResults([])
+      } finally {
+        setIsSearchingUsers(false)
+      }
+    }, 300)
+  }
+
+  const handleUserSearchChange = (value: string) => {
+    setUserSearchQuery(value)
+    if (value.trim().length >= 1) {
+      setShowUserSearch(true)
+      searchUsers(value)
+    } else {
+      setShowUserSearch(false)
+      setUserSearchResults([])
+    }
+  }
+
+  const addUser = (user: UserSearchResult) => {
+    if (!selectedUsers.find(u => u.id === user.id)) {
+      setSelectedUsers([...selectedUsers, user])
+      setUserSearchQuery('')
+      setShowUserSearch(false)
+      setUserSearchResults([])
+    }
+  }
+
+  const removeUser = (userId: number) => {
+    setSelectedUsers(selectedUsers.filter(u => u.id !== userId))
+  }
+
+  // Dosya yükleme
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Dosya tipi kontrolü
+    if (!file.type.startsWith('image/')) {
+      toast.error('Lütfen geçerli bir resim dosyası seçin')
+      return
+    }
+
+    // Dosya boyutu kontrolü (25MB)
+    if (file.size > 25 * 1024 * 1024) {
+      toast.error('Dosya çok büyük. Maksimum boyut: 25MB')
+      return
+    }
+
+    try {
+      setIsUploadingImage(true)
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const response = await fetch(`${apiBaseUrl}/admin/coupons/upload-cover-image`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.accessToken}`,
+        },
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Resim yüklenemedi')
+      }
+
+      const payload = (await response.json()) as {
+        isSuccess?: boolean
+        success?: boolean
+        data?: string
+      }
+
+      const success = payload.isSuccess ?? payload.success ?? false
+      if (success && payload.data) {
+        setFormData(prev => ({ ...prev, coverImageUrl: payload.data! }))
+        toast.success('Kapak resmi başarıyla yüklendi!')
+      } else {
+        throw new Error('Resim yüklenemedi')
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Resim yüklenirken bir hata oluştu'
+      toast.error(message)
+    } finally {
+      setIsUploadingImage(false)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
+
+  // Form gönderilirken seçili kullanıcıları formData'ya ekle
+  const prepareFormDataForSubmit = () => {
+    if (formData.isPersonal && selectedUsers.length > 0) {
+      const userIds = selectedUsers.map(u => u.id).join(',')
+      const userEmails = selectedUsers.map(u => u.email).join(',')
+      return {
+        ...formData,
+        targetUserIds: userIds,
+        targetUserEmails: userEmails,
+      }
+    }
+    return formData
+  }
+
   const resetForm = () => {
     setFormData({
       code: '',
@@ -269,10 +487,18 @@ function CouponsPage({ session, toast }: CouponsPageProps) {
       validUntil: '',
       minimumPurchaseAmount: '',
       active: true,
+      coverImageUrl: '',
+      isPersonal: false,
+      targetUserIds: '',
+      targetUserEmails: '',
     })
+    setSelectedUsers([])
+    setUserSearchQuery('')
+    setUserSearchResults([])
+    setShowUserSearch(false)
   }
 
-  const startEdit = (coupon: Coupon) => {
+  const startEdit = async (coupon: Coupon) => {
     setEditingCoupon(coupon)
     setFormData({
       code: coupon.code,
@@ -285,7 +511,76 @@ function CouponsPage({ session, toast }: CouponsPageProps) {
       validUntil: coupon.validUntil.substring(0, 16),
       minimumPurchaseAmount: coupon.minimumPurchaseAmount?.toString() || '',
       active: coupon.active,
+      coverImageUrl: coupon.coverImageUrl || '',
+      isPersonal: coupon.isPersonal || false,
+      targetUserIds: coupon.targetUserIds || '',
+      targetUserEmails: coupon.targetUserEmails || '',
     })
+    
+    // Özel kupon ise kullanıcıları yükle
+    if (coupon.isPersonal && (coupon.targetUserIds || coupon.targetUserEmails)) {
+      const userIds = coupon.targetUserIds ? coupon.targetUserIds.split(',').map(id => id.trim()).filter(Boolean) : []
+      const userEmails = coupon.targetUserEmails ? coupon.targetUserEmails.split(',').map(email => email.trim()).filter(Boolean) : []
+      
+      const users: UserSearchResult[] = []
+      
+      // ID'lerden kullanıcıları bul
+      for (const idStr of userIds) {
+        try {
+          const userId = parseInt(idStr)
+          if (!isNaN(userId)) {
+            const response = await fetch(`${apiBaseUrl}/admin/users/${userId}`, {
+              headers: {
+                Authorization: `Bearer ${session.accessToken}`,
+                'Content-Type': 'application/json',
+              },
+            })
+            if (response.ok) {
+              const payload = await response.json()
+              if (payload.data) {
+                users.push({
+                  id: payload.data.id,
+                  email: payload.data.email,
+                  role: payload.data.role,
+                  emailVerified: payload.data.emailVerified,
+                  active: payload.data.active,
+                })
+              }
+            }
+          }
+        } catch (err) {
+          console.error('Kullanıcı yüklenemedi:', err)
+        }
+      }
+      
+      // Email'lerden kullanıcıları bul
+      for (const email of userEmails) {
+        try {
+          const response = await fetch(`${apiBaseUrl}/admin/users/search?query=${encodeURIComponent(email)}`, {
+            headers: {
+              Authorization: `Bearer ${session.accessToken}`,
+              'Content-Type': 'application/json',
+            },
+          })
+          if (response.ok) {
+            const payload = await response.json()
+            if (payload.data && payload.data.length > 0) {
+              const user = payload.data[0]
+              if (!users.find(u => u.id === user.id)) {
+                users.push(user)
+              }
+            }
+          }
+        } catch (err) {
+          console.error('Kullanıcı yüklenemedi:', err)
+        }
+      }
+      
+      setSelectedUsers(users)
+    } else {
+      setSelectedUsers([])
+    }
+    
     setShowCreateForm(true)
   }
 
@@ -399,9 +694,13 @@ function CouponsPage({ session, toast }: CouponsPageProps) {
             type="button"
             className="btn btn-primary"
             onClick={() => {
-              setShowCreateForm(true)
-              setEditingCoupon(null)
-              resetForm()
+              if (onAddCoupon) {
+                onAddCoupon()
+              } else {
+                setShowCreateForm(true)
+                setEditingCoupon(null)
+                resetForm()
+              }
             }}
           >
             <FaPlus style={{ marginRight: '0.5rem' }} /> Yeni Kupon Oluştur
@@ -792,6 +1091,280 @@ function CouponsPage({ session, toast }: CouponsPageProps) {
                 </div>
 
                 <div>
+                  <label htmlFor="coverImage" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
+                    Kapak Resmi
+                  </label>
+                  <input
+                    type="file"
+                    id="coverImage"
+                    ref={fileInputRef}
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                    style={{ display: 'none' }}
+                  />
+                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploadingImage}
+                      style={{
+                        padding: '0.75rem 1.5rem',
+                        background: isUploadingImage ? '#ccc' : '#3b82f6',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: isUploadingImage ? 'not-allowed' : 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
+                      }}
+                    >
+                      {isUploadingImage ? (
+                        <>
+                          <FaSpinner style={{ animation: 'spin 1s linear infinite' }} />
+                          Yükleniyor...
+                        </>
+                      ) : (
+                        <>
+                          <FaUpload />
+                          Resim Seç
+                        </>
+                      )}
+                    </button>
+                    {formData.coverImageUrl && (
+                      <div style={{ position: 'relative', display: 'inline-block' }}>
+                        <img 
+                          src={formData.coverImageUrl} 
+                          alt="Kapak önizleme" 
+                          style={{ 
+                            maxWidth: '200px', 
+                            maxHeight: '150px', 
+                            borderRadius: '8px', 
+                            border: '1px solid #e2e8f0',
+                            objectFit: 'cover'
+                          }}
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none'
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, coverImageUrl: '' }))}
+                          style={{
+                            position: 'absolute',
+                            top: '-8px',
+                            right: '-8px',
+                            background: '#ef4444',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '50%',
+                            width: '24px',
+                            height: '24px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '0.75rem',
+                          }}
+                        >
+                          <FaTimes />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <small style={{ color: '#666', fontSize: '0.85rem', display: 'block', marginTop: '0.5rem' }}>
+                    Maksimum dosya boyutu: 25MB. Desteklenen formatlar: JPG, PNG, GIF, WebP
+                  </small>
+                </div>
+
+                <div style={{ padding: '1rem', background: '#f7fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', marginBottom: '1rem' }}>
+                    <input
+                      type="checkbox"
+                      checked={formData.isPersonal}
+                      onChange={(e) => {
+                        setFormData({ ...formData, isPersonal: e.target.checked })
+                        if (!e.target.checked) {
+                          setSelectedUsers([])
+                        }
+                      }}
+                      style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                    />
+                    <span style={{ fontWeight: 600 }}>Özel Kupon (Sadece seçili kullanıcılara açık)</span>
+                  </label>
+                  
+                  {formData.isPersonal && (
+                    <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                      {/* Kullanıcı Arama */}
+                      <div style={{ position: 'relative' }} ref={userSearchRef}>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.9rem' }}>
+                          Kullanıcı Ara ve Ekle
+                        </label>
+                        <div style={{ position: 'relative' }}>
+                          <input
+                            type="text"
+                            value={userSearchQuery}
+                            onChange={(e) => handleUserSearchChange(e.target.value)}
+                            onFocus={() => {
+                              if (userSearchQuery.trim().length >= 1) {
+                                setShowUserSearch(true)
+                              }
+                            }}
+                            placeholder="Email veya ID ile ara..."
+                            style={{
+                              width: '100%',
+                              padding: '0.75rem 2.5rem 0.75rem 0.75rem',
+                              border: '1px solid #e2e8f0',
+                              borderRadius: '8px',
+                              fontSize: '0.9rem',
+                            }}
+                          />
+                          {isSearchingUsers && (
+                            <div style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)' }}>
+                              <FaSpinner style={{ animation: 'spin 1s linear infinite', color: '#666' }} />
+                            </div>
+                          )}
+                          {!isSearchingUsers && userSearchQuery && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setUserSearchQuery('')
+                                setShowUserSearch(false)
+                                setUserSearchResults([])
+                              }}
+                              style={{
+                                position: 'absolute',
+                                right: '0.75rem',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                background: 'transparent',
+                                border: 'none',
+                                cursor: 'pointer',
+                                color: '#666',
+                              }}
+                            >
+                              <FaTimes />
+                            </button>
+                          )}
+                        </div>
+                        
+                        {/* Arama Sonuçları */}
+                        {showUserSearch && userSearchResults.length > 0 && (
+                          <div style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: 0,
+                            right: 0,
+                            background: 'white',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '8px',
+                            marginTop: '0.25rem',
+                            maxHeight: '200px',
+                            overflowY: 'auto',
+                            zIndex: 1000,
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                          }}>
+                            {userSearchResults.map((user) => (
+                              <div
+                                key={user.id}
+                                onClick={() => addUser(user)}
+                                style={{
+                                  padding: '0.75rem',
+                                  cursor: 'pointer',
+                                  borderBottom: '1px solid #f1f5f9',
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.background = '#f7fafc'
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.background = 'white'
+                                }}
+                              >
+                                <div>
+                                  <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{user.email}</div>
+                                  <div style={{ fontSize: '0.75rem', color: '#666' }}>ID: {user.id}</div>
+                                </div>
+                                <FaPlus style={{ color: '#3b82f6', fontSize: '0.75rem' }} />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Seçili Kullanıcılar */}
+                      {selectedUsers.length > 0 && (
+                        <div>
+                          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.9rem' }}>
+                            Seçili Kullanıcılar ({selectedUsers.length})
+                          </label>
+                          <div style={{
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: '0.5rem',
+                            padding: '0.75rem',
+                            background: 'white',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '8px',
+                            minHeight: '60px',
+                          }}>
+                            {selectedUsers.map((user) => (
+                              <div
+                                key={user.id}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '0.5rem',
+                                  padding: '0.5rem 0.75rem',
+                                  background: '#eff6ff',
+                                  border: '1px solid #bfdbfe',
+                                  borderRadius: '6px',
+                                  fontSize: '0.85rem',
+                                }}
+                              >
+                                <span style={{ fontWeight: 500 }}>{user.email}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => removeUser(user.id)}
+                                  style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    color: '#ef4444',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    padding: '0.25rem',
+                                  }}
+                                >
+                                  <FaTimes style={{ fontSize: '0.75rem' }} />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {selectedUsers.length === 0 && (
+                        <div style={{
+                          padding: '1rem',
+                          background: '#fef3c7',
+                          border: '1px solid #fde68a',
+                          borderRadius: '8px',
+                          color: '#92400e',
+                          fontSize: '0.85rem',
+                        }}>
+                          ⚠️ Özel kupon için en az bir kullanıcı seçmelisiniz. Bu kupon sadece seçili kullanıcılara görünecek ve mail ile bildirilecek.
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
                     <input
                       type="checkbox"
@@ -917,7 +1490,22 @@ function CouponsPage({ session, toast }: CouponsPageProps) {
                           </div>
                         </td>
                         <td>
-                          <div className="coupons-table__name">{coupon.name}</div>
+                          <div className="coupons-table__name">
+                            {coupon.name}
+                            {coupon.isPersonal && (
+                              <span style={{ 
+                                marginLeft: '0.5rem', 
+                                padding: '0.25rem 0.5rem', 
+                                background: '#fef3c7', 
+                                color: '#92400e', 
+                                borderRadius: '4px', 
+                                fontSize: '0.75rem',
+                                fontWeight: 600
+                              }}>
+                                Özel
+                              </span>
+                            )}
+                          </div>
                           {coupon.description && (
                             <div className="coupons-table__description" title={coupon.description}>
                               {coupon.description.length > 50 ? coupon.description.substring(0, 50) + '...' : coupon.description}
@@ -1005,7 +1593,22 @@ function CouponsPage({ session, toast }: CouponsPageProps) {
                             <FaClipboard />
                           </button>
                         </div>
-                        <div className="coupon-card__name">{coupon.name}</div>
+                        <div className="coupon-card__name">
+                          {coupon.name}
+                          {coupon.isPersonal && (
+                            <span style={{ 
+                              marginLeft: '0.5rem', 
+                              padding: '0.25rem 0.5rem', 
+                              background: '#fef3c7', 
+                              color: '#92400e', 
+                              borderRadius: '4px', 
+                              fontSize: '0.75rem',
+                              fontWeight: 600
+                            }}>
+                              Özel
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <div className="coupon-card__header-right">
                         {getStatusBadge(coupon)}
