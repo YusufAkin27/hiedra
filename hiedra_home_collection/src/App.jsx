@@ -1,48 +1,66 @@
-import React from 'react'
+import React, { Suspense, lazy } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Header from './components/Header'
-import ProductList from './components/ProductList'
-import ProductDetail from './components/ProductDetail'
-import CategoryProducts from './components/CategoryProducts'
-import Categories from './components/Categories'
-import CategoryDetail from './components/CategoryDetail'
-import Cart from './components/Cart'
-import Checkout from './components/Checkout'
-import OrderLookup from './components/OrderLookup'
-import MyOrders from './components/MyOrders'
-import OrderDetail from './components/OrderDetail'
-import About from './components/About'
-import Contact from './components/Contact'
-import FAQ from './components/FAQ'
-import OrderConfirmation from './components/OrderConfirmation'
-import PaymentFailed from './components/PaymentFailed'
-import Payment3DCallback from './components/Payment3DCallback'
-import Profile from './components/Profile'
-import Login from './components/Login'
-import Addresses from './components/Addresses'
-import AddAddress from './components/AddAddress'
-import MyReviews from './components/MyReviews'
-import Coupons from './components/Coupons'
-import CouponDetail from './components/CouponDetail'
 import Footer from './components/Footer'
-import PrivacyPolicy from './components/PrivacyPolicy'
-import TermsOfService from './components/TermsOfService'
-import KVKK from './components/KVKK'
-import DistanceSelling from './components/DistanceSelling'
-import ReturnPolicy from './components/ReturnPolicy'
-import ShippingInfo from './components/ShippingInfo'
-import TrackShipment from './components/TrackShipment'
-import CookiePolicy from './components/CookiePolicy'
-import Contract from './components/Contract'
-import ContractsList from './components/ContractsList'
-import MyContracts from './components/MyContracts'
-import NotFound from './components/NotFound'
+import Loading from './components/Loading'
+
+// Critical components - direkt import (ilk yüklemede gerekli)
+// Lazy load edilmeyen: Header, Footer (her sayfada görünür)
+
+// Lazy loaded components - sadece ihtiyaç duyulduğunda yüklenir
+const ProductList = lazy(() => import('./components/ProductList'))
+const ProductDetail = lazy(() => import('./components/ProductDetail'))
+const CategoryProducts = lazy(() => import('./components/CategoryProducts'))
+const Categories = lazy(() => import('./components/Categories'))
+const CategoryDetail = lazy(() => import('./components/CategoryDetail'))
+const Cart = lazy(() => import('./components/Cart'))
+const Checkout = lazy(() => import('./components/Checkout'))
+const OrderLookup = lazy(() => import('./components/OrderLookup'))
+const MyOrders = lazy(() => import('./components/MyOrders'))
+const OrderDetail = lazy(() => import('./components/OrderDetail'))
+const About = lazy(() => import('./components/About'))
+const Contact = lazy(() => import('./components/Contact'))
+const FAQ = lazy(() => import('./components/FAQ'))
+const OrderConfirmation = lazy(() => import('./components/OrderConfirmation'))
+const PaymentFailed = lazy(() => import('./components/PaymentFailed'))
+const Payment3DCallback = lazy(() => import('./components/Payment3DCallback'))
+const Profile = lazy(() => import('./components/Profile'))
+const Login = lazy(() => import('./components/Login'))
+const Addresses = lazy(() => import('./components/Addresses'))
+const AddAddress = lazy(() => import('./components/AddAddress'))
+const MyReviews = lazy(() => import('./components/MyReviews'))
+const Coupons = lazy(() => import('./components/Coupons'))
+const CouponDetail = lazy(() => import('./components/CouponDetail'))
+const PrivacyPolicy = lazy(() => import('./components/PrivacyPolicy'))
+const TermsOfService = lazy(() => import('./components/TermsOfService'))
+const KVKK = lazy(() => import('./components/KVKK'))
+const DistanceSelling = lazy(() => import('./components/DistanceSelling'))
+const ReturnPolicy = lazy(() => import('./components/ReturnPolicy'))
+const ShippingInfo = lazy(() => import('./components/ShippingInfo'))
+const TrackShipment = lazy(() => import('./components/TrackShipment'))
+const CookiePolicy = lazy(() => import('./components/CookiePolicy'))
+const Contract = lazy(() => import('./components/Contract'))
+const ContractsList = lazy(() => import('./components/ContractsList'))
+const MyContracts = lazy(() => import('./components/MyContracts'))
+const NotFound = lazy(() => import('./components/NotFound'))
 import { CartProvider } from './context/CartContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { AuthProvider } from './context/AuthContext'
 import { ToastProvider } from './components/Toast'
 import VisitorHeartbeat from './components/VisitorHeartbeat'
 import './App.css'
+
+// Loading fallback component
+const PageLoader = () => (
+  <div style={{ 
+    display: 'flex', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    minHeight: '60vh' 
+  }}>
+    <Loading size="large" text="Sayfa yükleniyor..." variant="page" />
+  </div>
+)
 
 function App() {
   return (
@@ -54,8 +72,9 @@ function App() {
           <VisitorHeartbeat />
           <div className="app">
             <Header />
-            <main className="main-content" role="main">
-              <Routes>
+            <main id="main-content" className="main-content" role="main" tabIndex="-1">
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
                 <Route path="/" element={<ProductList />} />
                 <Route path="/product/:id" element={<ProductDetail />} />
                 <Route path="/kategoriler" element={<Categories />} />
@@ -96,7 +115,8 @@ function App() {
                 <Route path="/payment-failed" element={<PaymentFailed />} />
                 {/* 404 Sayfası - En sonda olmalı */}
                 <Route path="*" element={<NotFound />} />
-              </Routes>
+                </Routes>
+              </Suspense>
             </main>
             <Footer />
           </div>

@@ -4,6 +4,7 @@
   padding: 3rem 2rem 1.5rem;
   margin-top: 4rem;
   border-top: 2px solid var(--border-color);
+  position: relative;
 }
 
 .footer-container {

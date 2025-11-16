@@ -51,8 +51,11 @@ const ProductCard = ({ product }) => {
               <div className="product-main-image-container">
                 <LazyImage
                   src={allImages[selectedImage]}
-                  alt={`${product.name} - ${product.category} perde modeli. ${product.description.substring(0, 100)}`}
+                  alt={`${product.name} - ${product.category} perde modeli`}
                   className="product-main-image"
+                  width={400}
+                  height={400}
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 400px"
                 />
                 <div className="image-gradient-overlay"></div>
                 <div className="image-count-indicator">
@@ -67,11 +70,13 @@ const ProductCard = ({ product }) => {
                       className={`side-thumbnail-inside ${selectedImage === index ? 'active' : ''}`}
                       onClick={(e) => handleImageClick(e, index)}
                       onMouseEnter={() => setSelectedImage(index)}
+                      aria-label={`${product.name} görsel ${index + 1}'i göster`}
                     >
                       <LazyImage 
                         src={img} 
-                        alt={`${product.name} - ${product.category} perde detay görüntüsü ${index + 1}`}
+                        alt=""
                         className="thumbnail-image"
+                        aria-hidden="true"
                       />
                     </button>
                   ))}

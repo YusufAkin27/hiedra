@@ -554,11 +554,13 @@ const ProductDetail = () => {
                     className={`side-thumbnail-inside ${selectedImage === index ? 'active' : ''}`}
                     onClick={() => handleThumbnailClick(index)}
                     onMouseEnter={() => setSelectedImage(index)}
+                    aria-label={`${product.name} görsel ${index + 1}'i göster`}
                   >
                     <LazyImage 
                       src={img} 
-                      alt={`${product.name} - ${product.category} perde detay görüntüsü ${index + 1}`}
+                      alt=""
                       className="thumbnail-image"
+                      aria-hidden="true"
                     />
                   </button>
                 ))}
@@ -578,8 +580,13 @@ const ProductDetail = () => {
               
               <LazyImage 
                 src={allImages[selectedImage]} 
-                alt={`${product.name} - ${product.category} perde modeli. ${product.description.substring(0, 120)}`}
+                alt={`${product.name} - ${product.category} perde modeli`}
                 className="main-image"
+                isLCP={true}
+                fetchPriority="high"
+                width={800}
+                height={800}
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 800px"
               />
               <div className="image-gradient-overlay"></div>
               <div className="image-count-indicator">

@@ -24,7 +24,20 @@
     
     <!-- Preconnect for performance -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+    
+    <!-- Cloudinary CDN preconnect (görsel optimizasyonu için) -->
+    <link rel="preconnect" href="https://res.cloudinary.com" />
+    <link rel="dns-prefetch" href="https://res.cloudinary.com" />
+    
+    <!-- Preload critical fonts -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" /></noscript>
+    
+    <!-- Google Fonts - Non-blocking -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display&family=Cormorant+Garamond:wght@400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display&family=Cormorant+Garamond:wght@400;500;600&display=swap" rel="stylesheet" /></noscript>
     
     <!-- Cache Control Meta -->
     <meta http-equiv="Cache-Control" content="public, max-age=31536000, immutable" />
@@ -258,6 +271,16 @@
               }, 500);
             }
           } else {
+            // Back/forward cache desteği için pageshow kullan
+            window.addEventListener('pageshow', (event) => {
+              // Back/forward cache'den yüklendiyse
+              if (event.persisted) {
+                if (!processPaymentCallback()) {
+                  setTimeout(() => processPaymentCallback(), 500);
+                }
+              }
+            });
+            
             window.addEventListener('load', () => {
               if (!processPaymentCallback()) {
                 setTimeout(() => processPaymentCallback(), 500);

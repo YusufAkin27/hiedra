@@ -207,6 +207,9 @@ const CategoryProducts = () => {
                   src={selectedProduct.image} 
                   alt={selectedProduct.name}
                   className="main-product-image"
+                  width={600}
+                  height={600}
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 600px"
                 />
                 
                 {/* Detay fotoğrafı göster */}

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react'
+import React, { createContext, useContext, useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useAuth } from './AuthContext'
 
 const CartContext = createContext()
@@ -257,16 +257,22 @@ export const CartProvider = ({ children }) => {
     localStorage.removeItem(CART_STORAGE_KEY)
   }
 
-  const getCartTotal = () => {
+  // Memoize edilmiş sepet toplamı - performans için
+  const getCartTotal = useCallback(() => {
     return cartItems.reduce((total, item) => {
       const itemPrice = item.customizations?.calculatedPrice || item.price
       return total + itemPrice * item.quantity
     }, 0)
-  }
+  }, [cartItems])
 
-  const getCartItemsCount = () => {
+  // Memoize edilmiş sepet ürün sayısı - performans için
+  const getCartItemsCount = useCallback(() => {
     return cartItems.reduce((count, item) => count + item.quantity, 0)
-  }
+  }, [cartItems])
+  
+  // Memoize edilmiş değerler - component'lerde kullanım için
+  const cartTotal = useMemo(() => getCartTotal(), [getCartTotal])
+  const cartItemsCount = useMemo(() => getCartItemsCount(), [getCartItemsCount])
 
   // Backend'den sepeti yeniden yükle
   const refreshCart = async () => {
@@ -283,6 +289,8 @@ export const CartProvider = ({ children }) => {
         clearCart,
         getCartTotal,
         getCartItemsCount,
+        cartTotal,
+        cartItemsCount,
         refreshCart,
         isLoadingCart,
       }}

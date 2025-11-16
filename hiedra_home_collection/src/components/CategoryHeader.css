@@ -1,50 +1,31 @@
-/* Category Header - Tutarlı Tasarım */
+/* Category Header - Modern Minimal Tasarım */
 .category-header-home {
-  margin-bottom: 3.5rem;
-  padding-bottom: 2rem;
-  border-bottom: 2px solid var(--border-color);
+  margin-bottom: 4rem;
+  padding-bottom: 0;
+  border-bottom: none;
   position: relative;
   transition: all 0.3s ease;
 }
 
-.category-header-home::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 0;
-  width: 120px;
-  height: 3px;
-  background: linear-gradient(90deg, var(--gold-primary) 0%, var(--gold-hover) 100%);
-  border-radius: 2px;
-  transition: width 0.3s ease;
-}
-
-.category-header-home:hover::after {
-  width: 180px;
-}
-
 .category-title-home {
-  font-family: 'Playfair Display', serif;
-  font-size: 3rem;
-  font-weight: 700;
-  color: var(--text-on-dark);
-  margin: 0 0 0.75rem 0;
-  background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-hover) 50%, var(--text-on-dark) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  letter-spacing: -0.02em;
+  font-family: 'Playfair Display', 'DM Serif Display', serif;
+  font-size: 2.5rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 0.5rem 0;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
   transition: all 0.3s ease;
   position: relative;
 }
 
 .category-subtitle-home {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 1rem;
-  color: var(--text-light);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.95rem;
+  color: #6B7280;
   margin: 0;
-  font-weight: 500;
-  letter-spacing: 0.01em;
+  font-weight: 400;
+  letter-spacing: 0;
   transition: color 0.3s ease;
 }
 
@@ -52,59 +33,42 @@
 @media (max-width: 1024px) {
   .category-header-home {
     margin-bottom: 3rem;
-    padding-bottom: 1.75rem;
   }
 
   .category-title-home {
-    font-size: 2.5rem;
+    font-size: 2.25rem;
   }
 
   .category-subtitle-home {
-    font-size: 0.95rem;
-  }
-
-  .category-header-home::after {
-    width: 100px;
+    font-size: 0.9rem;
   }
 }
 
 @media (max-width: 768px) {
   .category-header-home {
     margin-bottom: 2.5rem;
-    padding-bottom: 1.5rem;
   }
 
   .category-title-home {
-    font-size: 2rem;
+    font-size: 1.875rem;
   }
 
   .category-subtitle-home {
-    font-size: 0.9rem;
-  }
-
-  .category-header-home::after {
-    width: 80px;
-    height: 2px;
+    font-size: 0.875rem;
   }
 }
 
 @media (max-width: 480px) {
   .category-header-home {
     margin-bottom: 2rem;
-    padding-bottom: 1.25rem;
   }
 
   .category-title-home {
-    font-size: 1.75rem;
+    font-size: 1.5rem;
   }
 
   .category-subtitle-home {
-    font-size: 0.85rem;
-  }
-
-  .category-header-home::after {
-    width: 60px;
-    height: 2px;
+    font-size: 0.8rem;
   }
 }
 
