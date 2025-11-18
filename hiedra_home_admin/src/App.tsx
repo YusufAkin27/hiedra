@@ -40,6 +40,7 @@ const ContractsPage = lazy(() => import('./pages/Contracts'))
 const ContractAcceptancesPage = lazy(() => import('./pages/ContractAcceptances'))
 const CategoriesPage = lazy(() => import('./pages/Categories'))
 const AdminManagementPage = lazy(() => import('./pages/AdminManagement'))
+const PaymentsPage = lazy(() => import('./pages/Payments'))
 
 // Loading fallback component
 const PageLoader = () => (
@@ -80,6 +81,7 @@ type Page =
   | 'contractAcceptances'
   | 'categories'
   | 'adminManagement'
+  | 'payments'
 
 const NAVIGATION_STORAGE_KEY = 'admin_navigation_state'
 
@@ -454,7 +456,8 @@ function App() {
         {currentPage === 'userLogs' && <UserLogsPage session={session} />}
         {currentPage === 'orders' && (
           <OrdersPage 
-            session={session} 
+            session={session}
+            onNavigate={handleNavigate}
           />
         )}
         {currentPage === 'orderDetail' && selectedOrderId && (
@@ -546,7 +549,8 @@ function App() {
         )}
         {currentPage === 'categories' && <CategoriesPage session={session} toast={toast} />}
         {currentPage === 'adminManagement' && <AdminManagementPage session={session} />}
-        {!['home', 'profile', 'system', 'users', 'userDetail', 'userLogs', 'orders', 'orderDetail', 'products', 'productDetail', 'productEdit', 'productAdd', 'shipping', 'messages', 'bulkMail', 'carts', 'reviews', 'productViews', 'guests', 'visitors', 'addresses', 'auditLogs', 'coupons', 'couponAdd', 'cookiePreferences', 'settings', 'userAnalytics', 'contracts', 'contractAcceptances', 'categories', 'adminManagement'].includes(currentPage) && (
+        {currentPage === 'payments' && <PaymentsPage session={session} />}
+        {!['home', 'profile', 'system', 'users', 'userDetail', 'userLogs', 'orders', 'orderDetail', 'products', 'productDetail', 'productEdit', 'productAdd', 'shipping', 'messages', 'bulkMail', 'carts', 'reviews', 'productViews', 'guests', 'visitors', 'addresses', 'auditLogs', 'coupons', 'couponAdd', 'cookiePreferences', 'settings', 'userAnalytics', 'contracts', 'contractAcceptances', 'categories', 'adminManagement', 'payments'].includes(currentPage) && (
           <NotFoundPage session={session} onNavigate={handleNavigate} />
         )}
       </Suspense>

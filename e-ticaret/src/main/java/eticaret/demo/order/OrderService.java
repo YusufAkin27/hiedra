@@ -20,4 +20,7 @@ public interface OrderService {
     ResponseMessage addAdminNote(String orderNumber, String note);
     ResponseMessage approveRefund(String orderNumber);
     ResponseMessage rejectRefund(String orderNumber, String reason);
+    
+    // DTO dönüştürme
+    OrderResponseDTO convertOrderToDTO(Order order);
 }

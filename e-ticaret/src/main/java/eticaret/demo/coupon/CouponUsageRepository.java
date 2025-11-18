@@ -46,5 +46,17 @@ public interface CouponUsageRepository extends JpaRepository<CouponUsage, Long> 
             @Param("userId") Long userId,
             @Param("couponId") Long couponId
     );
+    
+    // Kullanıcı ve kupon kodu için beklemede olan kullanım
+    // Sadece giriş yapmış kullanıcılar için (userId null değil)
+    @Query("SELECT cu FROM CouponUsage cu WHERE " +
+           "cu.user.id = :userId " +
+           "AND cu.coupon.code = :couponCode " +
+           "AND cu.status = 'BEKLEMEDE' " +
+           "ORDER BY cu.createdAt DESC")
+    Optional<CouponUsage> findPendingUsageByUserAndCouponCode(
+            @Param("userId") Long userId,
+            @Param("couponCode") String couponCode
+    );
 }
 

@@ -366,13 +366,35 @@ const OrderDetail = () => {
                 <div className="total-row">
                   <span>Ara Toplam:</span>
                   <span>
-                    {order.totalAmount ? (
+                    {order.subtotal ? (
+                      typeof order.subtotal === 'string' 
+                        ? parseFloat(order.subtotal).toFixed(2) 
+                        : parseFloat(order.subtotal.toString()).toFixed(2)
+                    ) : (order.totalAmount ? (
                       typeof order.totalAmount === 'string' 
                         ? parseFloat(order.totalAmount).toFixed(2) 
                         : parseFloat(order.totalAmount.toString()).toFixed(2)
-                    ) : '0.00'} ₺
+                    ) : '0.00')} ₺
                   </span>
                 </div>
+                {order.discountAmount && parseFloat(order.discountAmount) > 0 && (
+                  <div className="total-row discount-row">
+                    <span>Kupon İndirimi{order.couponCode ? ` (${order.couponCode})` : ''}:</span>
+                    <span className="discount-amount">
+                      -{typeof order.discountAmount === 'string' 
+                        ? parseFloat(order.discountAmount).toFixed(2) 
+                        : parseFloat(order.discountAmount.toString()).toFixed(2)} ₺
+                    </span>
+                  </div>
+                )}
+                {order.couponCode && (
+                  <div className="coupon-info-section">
+                    <div className="coupon-applied-info">
+                      <span className="coupon-label">Uygulanan Kupon:</span>
+                      <span className="coupon-code">{order.couponCode}</span>
+                    </div>
+                  </div>
+                )}
                 <div className="total-row final">
                   <span>Toplam:</span>
                   <span className="total-amount">

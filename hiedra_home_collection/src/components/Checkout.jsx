@@ -10,7 +10,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
 
 const Checkout = () => {
   const navigate = useNavigate()
-  const { cartItems, getCartTotal, clearCart } = useCart()
+  const { cartItems, getCartTotal, getCartSubtotal, clearCart, couponCode, discountAmount, cartId } = useCart()
   const { user, accessToken, isAuthenticated } = useAuth()
   const toast = useToast()
   const [currentStep, setCurrentStep] = useState(1)
@@ -46,16 +46,58 @@ const Checkout = () => {
     cvv: ''
   })
 
-  const totalSteps = 4
+  const totalSteps = 4 // İletişim, Adres, Ödeme, Özet
 
-  // Kullanıcı giriş yapmışsa iletişim bilgilerini otomatik doldur (sadece bir kez)
+  // Kullanıcı giriş yapmışsa profil bilgilerini backend'den çek
   useEffect(() => {
-    if (isAuthenticated && user) {
-      // Eğer iletişim bilgileri boşsa veya sadece email doluysa (kullanıcı henüz değiştirmemişse)
-      const isContactInfoEmpty = !contactInfo.firstName && !contactInfo.lastName && !contactInfo.phone
-      
-      if (isContactInfoEmpty || contactInfo.email === user.email) {
-        // fullName'i firstName ve lastName'e ayır
+    if (isAuthenticated && accessToken) {
+      loadUserProfile()
+    } else {
+      // Giriş yapmamış kullanıcı için formu temizle
+      setContactInfo({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: ''
+      })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, accessToken])
+
+  const loadUserProfile = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/user/profile`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.isSuccess || data.success) {
+          const profile = data.data || data
+          // fullName'i firstName ve lastName'e ayır
+          let firstName = ''
+          let lastName = ''
+          if (profile.fullName) {
+            const nameParts = profile.fullName.trim().split(/\s+/)
+            firstName = nameParts[0] || ''
+            lastName = nameParts.slice(1).join(' ') || ''
+          }
+          
+          setContactInfo({
+            firstName: firstName,
+            lastName: lastName,
+            email: profile.email || user?.email || '',
+            phone: profile.phone || user?.phone || ''
+          })
+        }
+      }
+    } catch (error) {
+      console.error('Profil bilgileri yüklenirken hata:', error)
+      // Hata durumunda user objesinden al
+      if (user) {
         let firstName = ''
         let lastName = ''
         if (user.fullName) {
@@ -63,17 +105,15 @@ const Checkout = () => {
           firstName = nameParts[0] || ''
           lastName = nameParts.slice(1).join(' ') || ''
         }
-        
-        setContactInfo(prev => ({
-          firstName: prev.firstName || firstName,
-          lastName: prev.lastName || lastName,
-          email: prev.email || user.email || '',
-          phone: prev.phone || user.phone || ''
-        }))
+        setContactInfo({
+          firstName: firstName,
+          lastName: lastName,
+          email: user.email || '',
+          phone: user.phone || ''
+        })
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, user])
+  }
 
 
   // Login kullanıcı için adresleri yükle ve otomatik doldur
@@ -208,14 +248,17 @@ const Checkout = () => {
   // Sonraki adıma geç
   const handleNext = () => {
     if (currentStep === 1) {
+      // İlk adım: İletişim Bilgileri
       if (validateContactInfo()) {
         setCurrentStep(2)
       }
     } else if (currentStep === 2) {
+      // İkinci adım: Adres
       if (validateAddressInfo()) {
         setCurrentStep(3)
       }
     } else if (currentStep === 3) {
+      // Üçüncü adım: Ödeme
       if (validateCardInfo()) {
         setCurrentStep(4)
       }
@@ -279,6 +322,11 @@ const Checkout = () => {
       
       // PaymentRequest objesi oluştur
       // Amount göndermiyoruz veya 0 gönderiyoruz - Backend hesaplasın
+      let guestUserId = null
+      if (!isAuthenticated || !accessToken) {
+        guestUserId = localStorage.getItem('guestUserId')
+      }
+
       const paymentRequest = {
         amount: 0, // Backend kendi hesaplamalı - Güvenlik için frontend'den fiyat göndermiyoruz
         cardNumber: cleanCardNumber,
@@ -296,7 +344,12 @@ const Checkout = () => {
         frontendCallbackUrl: window.location.origin + '/payment/3d-callback', // Frontend callback URL'i
         // Login kullanıcı için adres bilgileri
         addressId: (isAuthenticated && useSavedAddress && selectedAddressId) ? selectedAddressId : null,
-        userId: (isAuthenticated && user?.id) ? user.id : null
+        userId: (isAuthenticated && user?.id) ? user.id : null,
+        // Sepet bilgileri (kupon bilgisini almak için)
+        cartId: cartId || null,
+        guestUserId: guestUserId,
+        // Kupon bilgisi (sepetten alınacak ama frontend'den de gönderilebilir)
+        couponCode: couponCode || null
       }
 
       console.log('Ödeme isteği gönderiliyor (GÜVENLİK: Fiyatlar backend\'de hesaplanacak):', paymentRequest)
@@ -595,8 +648,23 @@ const Checkout = () => {
                   color: '#004085'
                 }}>
                   <p style={{ margin: 0 }}>
-                    <strong>Bilgi:</strong> İletişim bilgileriniz hesabınızdan otomatik olarak doldurulmuştur. 
+                    <strong>Bilgi:</strong> İletişim bilgileriniz profilinizden otomatik olarak doldurulmuştur. 
                     İsterseniz değiştirebilirsiniz.
+                  </p>
+                </div>
+              )}
+              
+              {/* Giriş yapmamış kullanıcı için bilgilendirme */}
+              {!isAuthenticated && (
+                <div style={{ 
+                  padding: '1rem', 
+                  marginBottom: '1.5rem', 
+                  backgroundColor: '#f8f9fa', 
+                  borderRadius: '4px',
+                  border: '1px solid #dee2e6'
+                }}>
+                  <p style={{ margin: 0, color: '#495057' }}>
+                    Lütfen iletişim bilgilerinizi giriniz. Tüm alanları doldurmanız gerekmektedir.
                   </p>
                 </div>
               )}
@@ -1110,8 +1178,14 @@ const Checkout = () => {
                   <div className="order-total-summary">
                     <div className="total-row">
                       <span>Ara Toplam:</span>
-                      <span>{getCartTotal().toFixed(2)} ₺</span>
+                      <span>{getCartSubtotal().toFixed(2)} ₺</span>
                     </div>
+                    {discountAmount > 0 && couponCode && (
+                      <div className="total-row discount-row">
+                        <span>Kupon İndirimi ({couponCode}):</span>
+                        <span className="discount-amount">-{discountAmount.toFixed(2)} ₺</span>
+                      </div>
+                    )}
                     <div className="total-row">
                       <span>Kargo:</span>
                       <span className="free-shipping">Ücretsiz</span>
@@ -1169,7 +1243,7 @@ const Checkout = () => {
               <div className="summary-info-content">
                 <p>{contactInfo.firstName} {contactInfo.lastName}</p>
                 <p>{contactInfo.email}</p>
-                <p>{contactInfo.phone}</p>
+                {contactInfo.phone && <p>{contactInfo.phone}</p>}
               </div>
             </div>
           )}
@@ -1219,8 +1293,14 @@ const Checkout = () => {
           <div className="summary-total">
             <div className="total-row">
               <span>Ara Toplam:</span>
-              <span>{getCartTotal().toFixed(2)} ₺</span>
+              <span>{getCartSubtotal().toFixed(2)} ₺</span>
             </div>
+            {discountAmount > 0 && couponCode && (
+              <div className="total-row discount-row">
+                <span>Kupon İndirimi ({couponCode}):</span>
+                <span className="discount-amount">-{discountAmount.toFixed(2)} ₺</span>
+              </div>
+            )}
             <div className="total-row">
               <span>Kargo:</span>
               <span className="free-shipping">Ücretsiz</span>

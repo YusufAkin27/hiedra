@@ -23,6 +23,11 @@ type Order = {
   paymentTransactionId?: string | null
   addresses?: Address[]
   orderItems?: OrderItem[]
+  subtotal?: number
+  shippingCost?: number
+  discountAmount?: number
+  taxAmount?: number
+  couponCode?: string | null
 }
 
 type Address = {
@@ -45,7 +50,9 @@ type OrderItem = {
   height: number
   pleatType: string
   quantity: number
-  price: number
+  price?: number
+  unitPrice?: number
+  totalPrice?: number
   productId?: number | null
 }
 
@@ -336,10 +343,45 @@ function OrderDetailPage({ session, orderId, onBack }: OrderDetailPageProps) {
                 </span>
               </div>
               <div style={{ marginBottom: '1rem' }}>
-                <strong>Toplam Tutar:</strong> {order.totalAmount.toFixed(2)} ₺
-              </div>
-              <div style={{ marginBottom: '1rem' }}>
                 <strong>Oluşturulma Tarihi:</strong> {new Date(order.createdAt).toLocaleString('tr-TR')}
+              </div>
+              {/* Fiyat Detayları */}
+              <div style={{ marginBottom: '1rem', padding: '1rem', background: '#f9fafb', borderRadius: '4px' }}>
+                <h3 style={{ marginBottom: '0.75rem', fontSize: '1.1rem' }}>Fiyat Detayları</h3>
+                {order.subtotal !== undefined && (
+                  <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between' }}>
+                    <strong>Ara Toplam:</strong>
+                    <span>{order.subtotal.toFixed(2)} ₺</span>
+                  </div>
+                )}
+                {order.shippingCost !== undefined && order.shippingCost > 0 && (
+                  <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between' }}>
+                    <strong>Kargo Ücreti:</strong>
+                    <span>{order.shippingCost.toFixed(2)} ₺</span>
+                  </div>
+                )}
+                {order.discountAmount !== undefined && order.discountAmount > 0 && (
+                  <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between', color: '#10b981' }}>
+                    <strong>İndirim:</strong>
+                    <span>-{order.discountAmount.toFixed(2)} ₺</span>
+                  </div>
+                )}
+                {order.couponCode && (
+                  <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between', color: '#10b981' }}>
+                    <strong>Kupon Kodu:</strong>
+                    <span>{order.couponCode}</span>
+                  </div>
+                )}
+                {order.taxAmount !== undefined && order.taxAmount > 0 && (
+                  <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between' }}>
+                    <strong>KDV:</strong>
+                    <span>{order.taxAmount.toFixed(2)} ₺</span>
+                  </div>
+                )}
+                <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.1rem' }}>
+                  <strong>Toplam Tutar:</strong>
+                  <span>{order.totalAmount.toFixed(2)} ₺</span>
+                </div>
               </div>
               {order.cancelledAt && (
                 <div style={{ marginBottom: '1rem' }}>
@@ -431,16 +473,19 @@ function OrderDetailPage({ session, orderId, onBack }: OrderDetailPageProps) {
                   </tr>
                 </thead>
                 <tbody>
-                  {order.orderItems.map((item) => (
-                    <tr key={item.id}>
-                      <td>{item.productName}</td>
-                      <td>{item.width}</td>
-                      <td>{item.height}</td>
-                      <td>{item.pleatType}</td>
-                      <td>{item.quantity}</td>
-                      <td>{item.price.toFixed(2)} ₺</td>
-                    </tr>
-                  ))}
+                  {order.orderItems.map((item) => {
+                    const itemPrice = item.totalPrice ?? item.price ?? 0
+                    return (
+                      <tr key={item.id}>
+                        <td>{item.productName}</td>
+                        <td>{item.width}</td>
+                        <td>{item.height}</td>
+                        <td>{item.pleatType}</td>
+                        <td>{item.quantity}</td>
+                        <td>{itemPrice.toFixed(2)} ₺</td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>

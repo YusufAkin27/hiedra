@@ -78,12 +78,30 @@ public class CouponService {
             throw CouponException.alreadyUsed();
         }
         
-        // 6. PENDING durumunda olan kullanım var mı kontrol et (zaten sepete eklenmiş)
+        // 6. BEKLEMEDE durumunda olan kullanım var mı kontrol et
+        // Eğer BEKLEMEDE durumunda bir kullanım varsa ve bu kullanım PENDING bir ödemeye aitse,
+        // o zaman kuponu tekrar kullanabilir (eski BEKLEMEDE kullanımı IPTAL_EDILDI yapılacak)
         // Sadece giriş yapmış kullanıcılar için kontrol
         Optional<CouponUsage> pendingUsage = couponUsageRepository.findPendingUsageByUserAndCoupon(
                 userId, coupon.getId());
         if (pendingUsage.isPresent()) {
-            throw CouponException.alreadyApplied();
+            CouponUsage usage = pendingUsage.get();
+            // Eğer bu kullanım bir Order'a bağlı değilse (henüz ödeme yapılmamış) veya
+            // Order'ın status'ü PENDING ise, kuponu tekrar kullanabilir
+            if (usage.getOrder() == null) {
+                // Order yoksa, PENDING ödeme olabilir - kuponu tekrar kullanabilir
+                // Eski BEKLEMEDE kullanımı IPTAL_EDILDI yap
+                usage.setStatus(CouponUsageStatus.IPTAL_EDILDI);
+                couponUsageRepository.save(usage);
+                log.info("BEKLEMEDE durumundaki kupon kullanımı iptal edildi (Order yok) - Kupon: {}, Kullanım ID: {}", 
+                        coupon.getCode(), usage.getId());
+            } else {
+                // Order varsa, Order'ın status'üne bak
+                // Eğer Order PENDING durumundaysa, kuponu tekrar kullanabilir
+                // Ancak Order entity'sinde status kontrolü yapmak için Order'ı yüklememiz gerekir
+                // Şimdilik, Order varsa ve BEKLEMEDE kullanım varsa, kuponu tekrar kullanılamaz
+                throw CouponException.alreadyApplied();
+            }
         }
     }
 

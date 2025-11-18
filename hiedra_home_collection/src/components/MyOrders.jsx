@@ -434,11 +434,50 @@ const MyOrders = () => {
                 <div className="order-total">
                   <span>Toplam:</span>
                   <span className="total-amount">
-                    {order.totalAmount ? (
-                      typeof order.totalAmount === 'string' 
-                        ? parseFloat(order.totalAmount).toFixed(2) 
-                        : parseFloat(order.totalAmount.toString()).toFixed(2)
-                    ) : '0.00'} ₺
+                    {(() => {
+                      // Önce totalAmount'u kontrol et (en güvenilir)
+                      if (order.totalAmount !== undefined && order.totalAmount !== null) {
+                        const totalAmount = typeof order.totalAmount === 'string' 
+                          ? parseFloat(order.totalAmount) 
+                          : parseFloat(order.totalAmount.toString())
+                        
+                        if (totalAmount > 0) {
+                          return totalAmount.toFixed(2)
+                        }
+                      }
+                      
+                      // Eğer totalAmount yoksa veya 0 ise, hesapla: subtotal + shippingCost - discountAmount + taxAmount
+                      let calculatedTotal = 0
+                      
+                      if (order.subtotal !== undefined && order.subtotal !== null) {
+                        const subtotal = typeof order.subtotal === 'string' 
+                          ? parseFloat(order.subtotal) 
+                          : parseFloat(order.subtotal.toString())
+                        
+                        const shippingCost = (order.shippingCost && order.shippingCost !== null) 
+                          ? (typeof order.shippingCost === 'string' 
+                              ? parseFloat(order.shippingCost) 
+                              : parseFloat(order.shippingCost.toString()))
+                          : 0
+                        
+                        const discountAmount = (order.discountAmount && order.discountAmount !== null) 
+                          ? (typeof order.discountAmount === 'string' 
+                              ? parseFloat(order.discountAmount) 
+                              : parseFloat(order.discountAmount.toString()))
+                          : 0
+                        
+                        const taxAmount = (order.taxAmount && order.taxAmount !== null) 
+                          ? (typeof order.taxAmount === 'string' 
+                              ? parseFloat(order.taxAmount) 
+                              : parseFloat(order.taxAmount.toString()))
+                          : 0
+                        
+                        // Gerçek toplam: subtotal + shippingCost - discountAmount + taxAmount
+                        calculatedTotal = subtotal + shippingCost - discountAmount + taxAmount
+                      }
+                      
+                      return calculatedTotal > 0 ? calculatedTotal.toFixed(2) : '0.00'
+                    })()} ₺
                   </span>
                 </div>
                 <div className="order-actions">

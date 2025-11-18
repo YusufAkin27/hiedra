@@ -26,4 +26,7 @@ public class TopUpSessionData {
     private Long cartId;
     private String guestUserId;
     private List<OrderDetail> orderDetails; // Sipariş detayları (sepet veya direkt)
+    // Kupon bilgileri
+    private String couponCode; // Uygulanan kupon kodu
+    private BigDecimal discountAmount; // Kupon indirimi
 }

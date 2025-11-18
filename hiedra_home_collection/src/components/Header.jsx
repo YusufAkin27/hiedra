@@ -14,6 +14,8 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showCategoriesMenu, setShowCategoriesMenu] = useState(false)
+  const [showMobileCategories, setShowMobileCategories] = useState(false)
+  const [showMobileUserMenu, setShowMobileUserMenu] = useState(false)
   const [categories, setCategories] = useState([])
   const [isHeaderVisible, setIsHeaderVisible] = useState(true)
   const [isScrolled, setIsScrolled] = useState(false)
@@ -63,12 +65,15 @@ const Header = () => {
     setIsMenuOpen(false)
     setShowUserMenu(false)
     setShowCategoriesMenu(false)
+    setShowMobileCategories(false)
+    setShowMobileUserMenu(false)
   }
 
   const handleCategoryClick = (categoryId, categoryName) => {
     const slug = categoryName.toLowerCase().replace(/\s+/g, '-')
     navigate(`/kategori/${categoryId}/${slug}`)
     setShowCategoriesMenu(false)
+    setShowMobileCategories(false)
     closeMenu()
   }
 
@@ -260,6 +265,22 @@ const Header = () => {
                   </div>
                 </div>
               </Link>
+              {/* Mobil görünümde giriş yap butonu */}
+              {!isAuthenticated && (
+                <Link
+                  to="/giris"
+                  className="nav-link login-link mobile-login-link"
+                  onClick={closeMenu}
+                  aria-label="Giriş yap sayfasına git"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                    <polyline points="10 17 15 12 10 7" />
+                    <line x1="15" y1="12" x2="3" y2="12" />
+                  </svg>
+                  <span>Giriş Yap</span>
+                </Link>
+              )}
             </div>
 
             <div className="nav-center" aria-label="Site navigasyonu">
@@ -342,7 +363,7 @@ const Header = () => {
                       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                       <circle cx="12" cy="7" r="4" />
                     </svg>
-                    <span className="user-email" aria-hidden="true">{user?.email || 'Kullanıcı'}</span>
+                    <span className="user-email desktop-user-email" aria-hidden="true">{user?.email || 'Kullanıcı'}</span>
                   </button>
                   {showUserMenu && (
                     <div 
@@ -435,7 +456,7 @@ const Header = () => {
               ) : (
                 <Link
                   to="/giris"
-                  className="nav-link login-link"
+                  className="nav-link login-link desktop-login-link"
                   onClick={closeMenu}
                   aria-label="Giriş yap sayfasına git"
                 >
@@ -471,18 +492,39 @@ const Header = () => {
           <nav className={`header-nav ${isMenuOpen ? 'nav-open' : ''}`} role="navigation" aria-label="Mobil navigasyon" id="mobile-navigation">
             {categories.length > 0 && (
               <div className="mobile-section">
-                <p className="mobile-section-title">Kategoriler</p>
-                <div className="mobile-categories-list">
-                  {categories.map(category => (
-                    <button
-                      key={category.id}
-                      className="mobile-category-item"
-                      onClick={() => handleCategoryClick(category.id, category.name)}
-                    >
-                      {category.name}
-                    </button>
-                  ))}
-                </div>
+                <button
+                  className="mobile-section-title-button"
+                  onClick={() => setShowMobileCategories(!showMobileCategories)}
+                  aria-expanded={showMobileCategories}
+                  aria-label={showMobileCategories ? 'Kategorileri kapat' : 'Kategorileri aç'}
+                >
+                  <span className="mobile-section-title">Kategoriler</span>
+                  <svg 
+                    width="16" 
+                    height="16" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2"
+                    className={`mobile-categories-arrow ${showMobileCategories ? 'active' : ''}`}
+                    aria-hidden="true"
+                  >
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+                {showMobileCategories && (
+                  <div className="mobile-categories-list">
+                    {categories.map(category => (
+                      <button
+                        key={category.id}
+                        className="mobile-category-item"
+                        onClick={() => handleCategoryClick(category.id, category.name)}
+                      >
+                        {category.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
             <div className="mobile-section">
@@ -495,26 +537,49 @@ const Header = () => {
             </div>
             <div className="mobile-section">
               {isAuthenticated ? (
-                <div className="mobile-user-panel">
-                  <div className="mobile-user-info">
-                    <span className="mobile-user-label">Hesap</span>
-                    <span className="mobile-user-email">{user?.email}</span>
-                  </div>
-                  <div className="mobile-user-links">
-                    <Link to="/profil" onClick={closeMenu}>Profilim</Link>
-                    <Link to="/siparislerim" onClick={closeMenu}>Siparişlerim</Link>
-                    <Link to="/adreslerim" onClick={closeMenu}>Adreslerim</Link>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        logout()
-                        closeMenu()
-                      }}
+                <>
+                  <button
+                    className="mobile-section-title-button"
+                    onClick={() => setShowMobileUserMenu(!showMobileUserMenu)}
+                    aria-expanded={showMobileUserMenu}
+                    aria-label={showMobileUserMenu ? 'Hesap menüsünü kapat' : 'Hesap menüsünü aç'}
+                  >
+                    <span className="mobile-section-title">Hesap</span>
+                    <svg 
+                      width="16" 
+                      height="16" 
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      strokeWidth="2"
+                      className={`mobile-categories-arrow ${showMobileUserMenu ? 'active' : ''}`}
+                      aria-hidden="true"
                     >
-                      Çıkış Yap
-                    </button>
-                  </div>
-                </div>
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </button>
+                  {showMobileUserMenu && (
+                    <div className="mobile-user-panel">
+                      <div className="mobile-user-info">
+                        <span className="mobile-user-email">{user?.email}</span>
+                      </div>
+                      <div className="mobile-user-links">
+                        <Link to="/profil" onClick={closeMenu}>Profilim</Link>
+                        <Link to="/siparislerim" onClick={closeMenu}>Siparişlerim</Link>
+                        <Link to="/adreslerim" onClick={closeMenu}>Adreslerim</Link>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            logout()
+                            closeMenu()
+                          }}
+                        >
+                          Çıkış Yap
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
               ) : (
                 <Link
                   to="/giris"

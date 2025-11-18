@@ -28,7 +28,8 @@ import {
   FaFileContract,
   FaCookie,
   FaUserCircle,
-  FaUserShield
+  FaUserShield,
+  FaDollarSign
 } from 'react-icons/fa'
 import type { AuthUser } from '../services/authService'
 
@@ -61,6 +62,7 @@ type Page =
   | 'contracts'
   | 'categories'
   | 'adminManagement'
+  | 'payments'
 
 type SidebarProps = {
   user: AuthUser
@@ -158,6 +160,19 @@ function Sidebar({ user, currentPage, onNavigate, isOpen, onToggle, notification
             {notificationCounts?.orders && notificationCounts.orders > 0 && (
               <span className="sidebar__nav-badge">{notificationCounts.orders > 99 ? '99+' : notificationCounts.orders}</span>
             )}
+          </button>
+
+          {/* Ödemeler - Doğrudan erişim */}
+          <button
+            type="button"
+            className={`sidebar__nav-item ${isActive('payments') ? 'sidebar__nav-item--active' : ''}`}
+            onClick={() => {
+              onNavigate('payments')
+              if (!isOpen) onToggle()
+            }}
+          >
+            <FaDollarSign className="sidebar__nav-icon" />
+            <span className="sidebar__nav-text">Ödemeler</span>
           </button>
 
           {/* Ürünler - Doğrudan erişim */}

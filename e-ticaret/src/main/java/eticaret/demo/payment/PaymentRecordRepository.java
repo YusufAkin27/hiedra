@@ -1,5 +1,7 @@
 package eticaret.demo.payment;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -55,6 +57,16 @@ public interface PaymentRecordRepository extends JpaRepository<PaymentRecord, Lo
      * Duruma göre ödemeleri getir
      */
     List<PaymentRecord> findByStatusOrderByCreatedAtDesc(PaymentStatus status);
+    
+    /**
+     * Duruma göre ödemeleri getir (pagination ile)
+     */
+    Page<PaymentRecord> findByStatusOrderByCreatedAtDesc(PaymentStatus status, Pageable pageable);
+    
+    /**
+     * Tüm ödemeleri tarihe göre sıralı getir (pagination ile)
+     */
+    Page<PaymentRecord> findAllByOrderByCreatedAtDesc(Pageable pageable);
     
     /**
      * Tarih aralığına göre ödemeleri getir

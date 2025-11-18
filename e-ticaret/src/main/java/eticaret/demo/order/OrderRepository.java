@@ -69,4 +69,10 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("SELECT o FROM Order o WHERE o.guestUserId = :guestUserId AND o.orderNumber = :orderNumber")
     Optional<Order> findByGuestUserIdAndOrderNumber(@Param("guestUserId") String guestUserId, 
                                                      @Param("orderNumber") String orderNumber);
+    
+    // Payment Transaction ID ile sipariş getir
+    Optional<Order> findByPaymentTransactionId(String paymentTransactionId);
+    
+    // Payment ID ile sipariş getir
+    Optional<Order> findByPaymentId(String paymentId);
 }

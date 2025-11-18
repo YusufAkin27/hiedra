@@ -61,6 +61,7 @@ public class OrderResponseDTO {
     private BigDecimal shippingCost;
     private BigDecimal discountAmount;
     private BigDecimal taxAmount;
+    private String couponCode; // Uygulanan kupon kodu
     
     // Diğer bilgiler
     private String orderSource;

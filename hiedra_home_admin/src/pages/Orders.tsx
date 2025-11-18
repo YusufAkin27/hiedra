@@ -7,6 +7,7 @@ import ConfirmModal from '../components/ConfirmModal'
 
 type OrdersPageProps = {
   session: AuthResponse
+  onNavigate?: (page: string, productId?: number, orderId?: number, userId?: number) => void
 }
 
 type InvoiceOrderItem = {
@@ -51,7 +52,7 @@ type ViewMode = 'table' | 'cards'
 const DEFAULT_API_URL = 'http://localhost:8080/api'
 const apiBaseUrl = import.meta.env.VITE_API_URL ?? DEFAULT_API_URL
 
-function OrdersPage({ session }: OrdersPageProps) {
+function OrdersPage({ session, onNavigate }: OrdersPageProps) {
   const toast = useToast()
   const [orders, setOrders] = useState<Order[]>([])
   const [pagination, setPagination] = useState({
@@ -1013,6 +1014,18 @@ function OrdersPage({ session }: OrdersPageProps) {
                         <td>
                           <div className="orders-table__actions">
                             <button
+                              className="orders-table__btn orders-table__btn--info"
+                              onClick={() => {
+                                if (onNavigate) {
+                                  onNavigate('orderDetail', undefined, order.id)
+                                }
+                              }}
+                              title="Detayları Gör"
+                              style={{ backgroundColor: '#17a2b8', color: 'white' }}
+                            >
+                              👁️
+                            </button>
+                            <button
                               className="orders-table__btn orders-table__btn--primary"
                               onClick={() => handleEditOrder(order)}
                               title="Düzenle"
@@ -1122,6 +1135,17 @@ function OrdersPage({ session }: OrdersPageProps) {
                       </div>
                     </div>
                     <div className="order-card__actions">
+                      <button
+                        className="order-card__btn order-card__btn--info"
+                        onClick={() => {
+                          if (onNavigate) {
+                            onNavigate('orderDetail', undefined, order.id)
+                          }
+                        }}
+                        style={{ backgroundColor: '#17a2b8', color: 'white' }}
+                      >
+                        👁️ Detayları Gör
+                      </button>
                       <button
                         className="order-card__btn order-card__btn--primary"
                         onClick={() => handleEditOrder(order)}

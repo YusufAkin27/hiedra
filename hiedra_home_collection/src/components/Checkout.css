@@ -403,6 +403,15 @@
   transition: color 0.3s ease;
 }
 
+.discount-row {
+  color: var(--success, #28a745);
+}
+
+.discount-amount {
+  color: var(--success, #28a745);
+  font-weight: 600;
+}
+
 .total-row.final {
   font-size: 1.25rem;
   font-weight: 700;

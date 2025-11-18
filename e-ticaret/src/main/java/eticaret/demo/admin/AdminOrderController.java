@@ -18,6 +18,8 @@ import eticaret.demo.mail.MailService;
 import eticaret.demo.order.Order;
 import eticaret.demo.order.OrderRepository;
 import eticaret.demo.order.OrderStatus;
+import eticaret.demo.order.OrderService;
+import eticaret.demo.order.OrderResponseDTO;
 import eticaret.demo.payment.PaymentService;
 import eticaret.demo.payment.RefundRequest;
 import eticaret.demo.common.response.DataResponseMessage;
@@ -40,6 +42,7 @@ import java.util.stream.Collectors;
 public class AdminOrderController {
 
     private final OrderRepository orderRepository;
+    private final OrderService orderService;
     private final PaymentService paymentService;
     private final MailService mailService;
     private final AuditLogService auditLogService;
@@ -85,20 +88,33 @@ public class AdminOrderController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<DataResponseMessage<Order>> getOrderById(
+    public ResponseEntity<DataResponseMessage<OrderResponseDTO>> getOrderById(
             @PathVariable Long id,
             HttpServletRequest request) {
         try {
+            // Order'ı orderItems ve addresses ile birlikte yükle
             Optional<Order> orderOpt = orderRepository.findById(id);
             if (orderOpt.isEmpty()) {
                 return ResponseEntity.notFound().build();
             }
             
             Order order = orderOpt.get();
+            
+            // Lazy loading için orderItems ve addresses'i yükle
+            if (order.getOrderItems() != null) {
+                order.getOrderItems().size(); // Lazy loading trigger
+            }
+            if (order.getAddresses() != null) {
+                order.getAddresses().size(); // Lazy loading trigger
+            }
+            
+            // OrderResponseDTO'ya çevir (orderItems ve addresses dahil)
+            OrderResponseDTO orderDTO = orderService.convertOrderToDTO(order);
+            
             auditLogService.logSimple("GET_ORDER", "Order", id,
                     "Sipariş detayı görüntülendi: " + order.getOrderNumber(), request);
             
-            return ResponseEntity.ok(DataResponseMessage.success("Sipariş başarıyla getirildi", order));
+            return ResponseEntity.ok(DataResponseMessage.success("Sipariş başarıyla getirildi", orderDTO));
         } catch (Exception e) {
             log.error("Sipariş getirilirken hata: ", e);
             return ResponseEntity.badRequest()
@@ -120,7 +136,73 @@ public class AdminOrderController {
 
             Order order = orderOpt.get();
             OrderStatus oldStatus = order.getStatus();
-            order.setStatus(request.getStatus());
+            
+            // Eğer durum IADE_YAPILDI olarak değiştiriliyorsa ve daha önce iade yapılmamışsa, İyzico iade işlemini tetikle
+            if (request.getStatus() == OrderStatus.IADE_YAPILDI && oldStatus != OrderStatus.IADE_YAPILDI) {
+                // Önce İyzico iade işlemini yap
+                try {
+                    RefundRequest refundRequest = new RefundRequest();
+                    // PaymentId olarak orderNumber veya gerçek paymentId kullan
+                    refundRequest.setPaymentId(order.getPaymentId() != null && !order.getPaymentId().isEmpty() 
+                            ? order.getPaymentId() 
+                            : (order.getPaymentTransactionId() != null && order.getPaymentTransactionId().matches("\\d+")
+                                    ? order.getPaymentTransactionId()
+                                    : order.getOrderNumber()));
+                    
+                    // İade tutarı: Kupon indirimi sonrası ödenen tutar (totalAmount)
+                    refundRequest.setRefundAmount(order.getTotalAmount());
+                    refundRequest.setReason(request.getAdminNotes() != null 
+                            ? request.getAdminNotes() 
+                            : "Admin tarafından iade yapıldı");
+                    refundRequest.setIp(httpRequest != null ? getClientIpAddress(httpRequest) : "127.0.0.1");
+                    
+                    log.info("Admin sipariş iadesi başlatılıyor - OrderNumber: {}, PaymentId: {}, RefundAmount: {} TL", 
+                            order.getOrderNumber(), refundRequest.getPaymentId(), refundRequest.getRefundAmount());
+                    
+                    ResponseMessage refundResult = paymentService.refundPayment(refundRequest, httpRequest);
+                    
+                    if (!refundResult.isSuccess()) {
+                        String errorMessage = refundResult.getMessage();
+                        log.error("İyzico iade işlemi başarısız: {}", errorMessage);
+                        
+                        // Test API'lerinde ödeme kırılımları eksik olabilir - daha açıklayıcı mesaj
+                        String userFriendlyMessage = errorMessage;
+                        if (errorMessage != null && (errorMessage.contains("kırılım") || errorMessage.contains("kaydı bulunamadı"))) {
+                            userFriendlyMessage = "Test ortamında iade işlemi başarısız oldu. " +
+                                    "Bu hata test API'lerinde ödeme kırılımlarının eksik olmasından kaynaklanabilir. " +
+                                    "Canlı ortamda bu sorun genellikle oluşmaz. " +
+                                    "Detay: " + errorMessage;
+                        }
+                        
+                        auditLogService.logError("REFUND_PAYMENT", "Order", id,
+                                "İyzico iade işlemi başarısız: " + errorMessage, 
+                                errorMessage, httpRequest);
+                        return ResponseEntity.badRequest()
+                                .body(DataResponseMessage.error("Para iadesi yapılamadı: " + userFriendlyMessage));
+                    }
+                    
+                    log.info("İyzico iade işlemi başarılı - OrderNumber: {}", order.getOrderNumber());
+                    
+                    // İade başarılı olduğunda sipariş durumunu güncelle
+                    order.setStatus(OrderStatus.IADE_YAPILDI);
+                    order.setRefundedAt(LocalDateTime.now());
+                    order.setRefundAmount(order.getTotalAmount());
+                    if (request.getAdminNotes() != null) {
+                        order.setRefundReason(request.getAdminNotes());
+                    }
+                    
+                } catch (Exception e) {
+                    log.error("İyzico iade işlemi sırasında hata: ", e);
+                    auditLogService.logError("REFUND_PAYMENT", "Order", id,
+                            "İyzico iade işlemi sırasında hata: " + e.getMessage(), 
+                            e.getMessage(), httpRequest);
+                    return ResponseEntity.badRequest()
+                            .body(DataResponseMessage.error("Para iadesi yapılırken hata oluştu: " + e.getMessage()));
+                }
+            } else {
+                // Diğer durumlar için normal güncelleme
+                order.setStatus(request.getStatus());
+            }
             
             if (request.getAdminNotes() != null) {
                 String existingNotes = order.getAdminNotes();
@@ -703,6 +785,35 @@ public class AdminOrderController {
             case IADE_YAPILDI -> "İade Yapıldı";
             case TAMAMLANDI -> "Tamamlandı";
         };
+    }
+
+    /**
+     * Client IP adresini al
+     */
+    private String getClientIpAddress(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("Proxy-Client-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("WL-Proxy-Client-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("HTTP_CLIENT_IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("HTTP_X_FORWARDED_FOR");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        
+        // X-Forwarded-For birden fazla IP içerebilir, ilkini al
+        if (ip != null && ip.contains(",")) {
+            ip = ip.split(",")[0].trim();
+        }
+        
+        return ip != null ? ip : "UNKNOWN";
     }
 
     @Data

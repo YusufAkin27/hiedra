@@ -489,6 +489,44 @@
   border-top: 2px solid var(--border-color, #e5e7eb);
 }
 
+.coupon-info-section {
+  margin: 0.75rem 0;
+  padding: 0.75rem;
+  background: linear-gradient(135deg, var(--gold-primary, #d4af37) 0%, var(--gold-hover, #f4d03f) 100%);
+  border-radius: 8px;
+  border: 2px solid var(--border-color, #e5e7eb);
+}
+
+.coupon-applied-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.coupon-label {
+  font-size: 0.9rem;
+  color: rgba(0, 0, 0, 0.7);
+  font-weight: 500;
+}
+
+.coupon-code {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #000;
+  background: rgba(255, 255, 255, 0.3);
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+}
+
+.discount-row {
+  color: var(--success, #28a745);
+}
+
+.discount-amount {
+  color: var(--success, #28a745);
+  font-weight: 600;
+}
+
 .total-row {
   display: flex;
   justify-content: space-between;

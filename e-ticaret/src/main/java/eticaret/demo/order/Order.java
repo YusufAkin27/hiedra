@@ -74,6 +74,12 @@ public class Order {
     private BigDecimal discountAmount = BigDecimal.ZERO;
 
     /**
+     * Kupon kodu (uygulanan kupon varsa)
+     */
+    @Column(name = "coupon_code", length = 50)
+    private String couponCode;
+
+    /**
      * KDV tutarı
      */
     @Column(name = "tax_amount", nullable = false, precision = 10, scale = 2)

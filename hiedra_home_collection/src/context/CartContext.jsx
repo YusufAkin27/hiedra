@@ -58,6 +58,9 @@ export const CartProvider = ({ children }) => {
   // İlk yüklemede boş sepet - sadece backend'den yüklenecek
   const [cartItems, setCartItems] = useState([])
   const [isLoadingCart, setIsLoadingCart] = useState(false)
+  const [discountAmount, setDiscountAmount] = useState(0)
+  const [couponCode, setCouponCode] = useState(null)
+  const [cartId, setCartId] = useState(null)
 
   // Backend'den sepeti çek
   const fetchCartFromBackend = async () => {
@@ -91,6 +94,11 @@ export const CartProvider = ({ children }) => {
       
       if (data.isSuccess || data.success) {
         const cart = data.data || data
+        // Sepet ID'sini kaydet
+        setCartId(cart.id || null)
+        // Kupon bilgilerini kaydet
+        setDiscountAmount(cart.discountAmount ? parseFloat(cart.discountAmount) : 0)
+        setCouponCode(cart.couponCode || null)
         // Backend'den gelen cart items'ı frontend formatına çevir
         const formattedItems = (cart.items || []).map(item => {
           // Subtotal ve unitPrice'ı doğru parse et
@@ -259,6 +267,16 @@ export const CartProvider = ({ children }) => {
 
   // Memoize edilmiş sepet toplamı - performans için
   const getCartTotal = useCallback(() => {
+    const subtotal = cartItems.reduce((total, item) => {
+      const itemPrice = item.customizations?.calculatedPrice || item.price
+      return total + itemPrice * item.quantity
+    }, 0)
+    // Kupon indirimi varsa çıkar
+    return subtotal - discountAmount
+  }, [cartItems, discountAmount])
+
+  // Ara toplam (kupon indirimi öncesi)
+  const getCartSubtotal = useCallback(() => {
     return cartItems.reduce((total, item) => {
       const itemPrice = item.customizations?.calculatedPrice || item.price
       return total + itemPrice * item.quantity
@@ -288,11 +306,17 @@ export const CartProvider = ({ children }) => {
         updateQuantity,
         clearCart,
         getCartTotal,
+        getCartSubtotal,
         getCartItemsCount,
         cartTotal,
         cartItemsCount,
         refreshCart,
         isLoadingCart,
+        discountAmount,
+        couponCode,
+        cartId,
+        setDiscountAmount,
+        setCouponCode,
       }}
     >
       {children}

@@ -78,6 +78,11 @@ public class PaymentRequest {
     // -------------------------
     private Long cartId; // Sepet ID'si (opsiyonel - eğer gönderilirse sepet kullanılır)
     private String guestUserId; // Guest kullanıcı ID'si (misafir kullanıcılar için)
+    
+    // -------------------------
+    // 2️⃣3️⃣ Kupon Bilgileri
+    // -------------------------
+    private String couponCode; // Uygulanan kupon kodu (opsiyonel)
 
     // -------------------------
     // 3️⃣ Sipariş Detayları

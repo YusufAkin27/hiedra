@@ -593,10 +593,56 @@
   font-weight: 600;
 }
 
+.mobile-section-title-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0.75rem 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  gap: 0.5rem;
+}
+
+.mobile-section-title-button:hover {
+  opacity: 0.8;
+}
+
+.mobile-section-title-button .mobile-section-title {
+  margin: 0;
+}
+
+.mobile-categories-arrow {
+  transition: transform 0.3s ease;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+
+.mobile-categories-arrow.active {
+  transform: rotate(180deg);
+}
+
 .mobile-categories-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 0.5rem;
+  margin-top: 0.75rem;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 1000px;
+  }
 }
 
 .mobile-category-item {
@@ -636,6 +682,8 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  margin-top: 0.75rem;
+  animation: slideDown 0.3s ease;
 }
 
 .mobile-user-info {
@@ -802,6 +850,14 @@
   font-weight: 600;
   outline: none;
   text-decoration: none;
+}
+
+.desktop-login-link {
+  display: flex;
+}
+
+.mobile-login-link {
+  display: none;
 }
 
 .login-link:hover,
@@ -1091,6 +1147,46 @@
     flex-wrap: wrap;
     gap: 1rem;
     padding: 0.75rem 0;
+  }
+
+  .logo-area {
+    order: 1;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .mobile-login-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+    margin-left: auto;
+  }
+
+  .desktop-login-link {
+    display: none;
+  }
+
+  .desktop-user-email {
+    display: none;
+  }
+
+  .nav-center {
+    order: 2;
+    width: 100%;
+    display: none;
+  }
+
+  .nav-actions {
+    order: 3;
+    margin-left: auto;
+    flex: 0 0 auto;
   }
 
   .logo-img {

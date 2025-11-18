@@ -11,6 +11,13 @@ const OrderConfirmation = () => {
   const [loading, setLoading] = React.useState(true)
   
   useEffect(() => {
+    // Eğer /payment-success route'undan geliyorsa, ana sayfaya yönlendir
+    if (location.pathname === '/payment-success') {
+      console.log('Payment-success sayfasından ana sayfaya yönlendiriliyor...')
+      navigate('/', { replace: true })
+      return
+    }
+    
     // ÖNCE: URL'den order parametresini al (backend redirect ile gelen: ?order=ORD-123)
     const urlOrderNumber = searchParams.get('order')
     

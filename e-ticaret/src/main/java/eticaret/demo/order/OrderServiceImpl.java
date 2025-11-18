@@ -474,6 +474,11 @@ public class OrderServiceImpl implements OrderService {
                 .orElse(new ResponseMessage("Sipariş bulunamadı.", false));
     }
 
+    @Override
+    public OrderResponseDTO convertOrderToDTO(Order order) {
+        return convertToDTO(order);
+    }
+    
     private OrderResponseDTO convertToDTO(Order order) {
         return OrderResponseDTO.builder()
                 .id(order.getId())
@@ -512,6 +517,7 @@ public class OrderServiceImpl implements OrderService {
                 .shippingCost(order.getShippingCost())
                 .discountAmount(order.getDiscountAmount())
                 .taxAmount(order.getTaxAmount())
+                .couponCode(order.getCouponCode())
                 .orderSource(order.getOrderSource())
                 .adminNotes(order.getAdminNotes())
                 .userId(order.getUser() != null ? order.getUser().getId() : null)
