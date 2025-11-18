@@ -19,13 +19,13 @@ const AddAddress = () => {
     addressDetail: '',
     city: '',
     district: '',
-    neighbourhood: '',
     isDefault: false
   })
   
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [loadingLocation, setLoadingLocation] = useState(false)
+  const [profileLoaded, setProfileLoaded] = useState(false)
 
   // Guest kullanıcıları yönlendir
   useEffect(() => {
@@ -34,14 +34,48 @@ const AddAddress = () => {
     }
   }, [isAuthenticated, navigate])
 
+  // Profil bilgilerini yükle ve form alanlarına doldur
+  useEffect(() => {
+    if (isAuthenticated && accessToken && !profileLoaded) {
+      loadUserProfile()
+    }
+  }, [isAuthenticated, accessToken, profileLoaded])
+
+  const loadUserProfile = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/user/profile`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.data) {
+          const profile = data.data
+          // Eğer profil bilgilerinde fullName ve phone varsa, form alanlarına doldur
+          if (profile.fullName || profile.phone) {
+            setFormData(prev => ({
+              ...prev,
+              fullName: profile.fullName || prev.fullName,
+              phone: profile.phone || prev.phone
+            }))
+          }
+          setProfileLoaded(true)
+        }
+      }
+    } catch (err) {
+      console.error('Profil bilgileri yüklenirken hata:', err)
+      // Hata olsa bile devam et, kullanıcı manuel girebilir
+      setProfileLoaded(true)
+    }
+  }
+
   // Konumdan adres bilgilerini al
   const getAddressFromLocation = async () => {
     if (!navigator.geolocation) {
-      toast.show({
-        title: 'Hata',
-        message: 'Tarayıcınız konum özelliğini desteklemiyor.',
-        type: 'error',
-      })
+      toast.error('Tarayıcınız konum özelliğini desteklemiyor.')
       return
     }
 
@@ -59,11 +93,7 @@ const AddAddress = () => {
           
           // Hassasiyet kontrolü (eğer çok düşükse uyar)
           if (accuracy && accuracy > 100) {
-            toast.show({
-              title: 'Dikkat',
-              message: `Konum hassasiyeti düşük (±${Math.round(accuracy)}m). Daha doğru sonuç için açık alanda tekrar deneyin.`,
-              type: 'warning',
-            })
+            toast.warning(`Konum hassasiyeti düşük (±${Math.round(accuracy)}m). Daha doğru sonuç için açık alanda tekrar deneyin.`)
           }
           
           try {
@@ -80,32 +110,20 @@ const AddAddress = () => {
               // Form alanlarını doldur
               setFormData(prev => {
                 // Display name'den bilgileri parse et
-                // Örnek: "Kültür Mahallesi, Bingöl Merkez, Bingöl, Doğu Anadolu Bölgesi, 12000, Türkiye"
                 let parsedCity = addressData.city || prev.city
                 let parsedDistrict = addressData.district || prev.district
-                let parsedNeighbourhood = addressData.neighbourhood || prev.neighbourhood
                 
                 // Eğer displayName varsa, displayName'den parse et (en güvenilir kaynak)
                 if (addressData.displayName) {
                   const displayParts = addressData.displayName.split(',').map(p => p.trim())
                   
                   // Display name formatı genellikle: Mahalle, İlçe, İl, Bölge, Posta Kodu, Ülke
-                  // Örnek: "Kültür Mahallesi, Bingöl Merkez, Bingöl, Doğu Anadolu Bölgesi, 12000, Türkiye"
                   
                   if (displayParts.length >= 3) {
                     // İl bilgisini her zaman display name'den al (üçüncü kısım) - bu en güvenilir kaynak
                     // Çünkü API'den gelen city değeri "Bingöl Merkez" gibi yanlış olabilir
                     if (displayParts[2]) {
                       parsedCity = displayParts[2]
-                    }
-                    
-                    // İlk kısım genellikle mahalle (eğer "Mahallesi" veya "Mahalle" içeriyorsa)
-                    if (!parsedNeighbourhood && displayParts[0]) {
-                      const firstPart = displayParts[0]
-                      if (firstPart.toLowerCase().includes('mahallesi') || 
-                          firstPart.toLowerCase().includes('mahalle')) {
-                        parsedNeighbourhood = firstPart
-                      }
                     }
                     
                     // İkinci kısım genellikle ilçe (örn: "Bingöl Merkez")
@@ -120,13 +138,6 @@ const AddAddress = () => {
                         }
                       }
                       parsedDistrict = districtPart
-                    }
-                    
-                    // Eğer mahalle hala boşsa ve ilk kısım mahalle değilse, ilk kısmı mahalle olarak al
-                    if (!parsedNeighbourhood && displayParts[0] && 
-                        !displayParts[0].toLowerCase().includes('merkez') &&
-                        !displayParts[0].toLowerCase().includes('bölge')) {
-                      parsedNeighbourhood = displayParts[0]
                     }
                   }
                 }
@@ -170,10 +181,9 @@ const AddAddress = () => {
                 if (addressParts.length > 0) {
                   addressLine = addressParts.join(', ')
                 } else if (addressData.displayName) {
-                  // Eğer detaylı adres yoksa, display name'den ilk kısmı al (mahalle hariç)
+                  // Eğer detaylı adres yoksa, display name'den ilk kısmı al
                   const displayParts = addressData.displayName.split(',')
                   if (displayParts.length > 1) {
-                    // İlk kısım mahalle, ikinci kısım ilçe - bunları atla, sokak varsa onu al
                     addressLine = displayParts[0].trim()
                   }
                 }
@@ -182,26 +192,17 @@ const AddAddress = () => {
                   ...prev,
                   city: parsedCity,
                   district: parsedDistrict,
-                  neighbourhood: parsedNeighbourhood,
                   addressLine: addressLine
                 }
               })
               
-              toast.show({
-                title: 'Başarılı!',
-                message: 'Konumunuzdan adres bilgileri alındı. Lütfen kontrol edin ve gerekirse düzenleyin.',
-                type: 'success',
-              })
+              toast.success('Konumunuzdan adres bilgileri alındı. Lütfen kontrol edin ve gerekirse düzenleyin.')
             } else {
               throw new Error(data.message || 'Adres bilgisi alınamadı')
             }
           } catch (err) {
             console.error('Adres bilgisi alınırken hata:', err)
-            toast.show({
-              title: 'Hata',
-              message: 'Adres bilgisi alınırken bir hata oluştu. Lütfen manuel olarak girin.',
-              type: 'error',
-            })
+            toast.error('Adres bilgisi alınırken bir hata oluştu. Lütfen manuel olarak girin.')
           } finally {
             setLoadingLocation(false)
           }
@@ -222,11 +223,7 @@ const AddAddress = () => {
               break
           }
           
-          toast.show({
-            title: 'Hata',
-            message: errorMessage,
-            type: 'error',
-          })
+          toast.error(errorMessage)
           setLoadingLocation(false)
         },
         {
@@ -237,11 +234,7 @@ const AddAddress = () => {
       )
     } catch (err) {
       console.error('Konum servisi hatası:', err)
-      toast.show({
-        title: 'Hata',
-        message: 'Konum servisi kullanılamıyor.',
-        type: 'error',
-      })
+      toast.error('Konum servisi kullanılamıyor.')
       setLoadingLocation(false)
     }
   }
@@ -274,11 +267,7 @@ const AddAddress = () => {
       const data = await response.json()
 
       if (response.ok && (data.isSuccess || data.success)) {
-        toast.show({
-          title: 'Başarılı!',
-          message: 'Adres başarıyla eklendi.',
-          type: 'success',
-        })
+        toast.success('Adres başarıyla eklendi.')
         navigate('/adreslerim')
       } else {
         setError(data.message || 'Adres eklenemedi')
@@ -362,6 +351,7 @@ const AddAddress = () => {
                     required
                     placeholder="Adınız ve soyadınız"
                   />
+                  <p className="form-hint">Kişisel bilgilerinizi kontrol edin</p>
                 </div>
                 <div className="form-group">
                   <label htmlFor="phone">Telefon *</label>
@@ -428,20 +418,6 @@ const AddAddress = () => {
                     onChange={handleInputChange}
                     required
                     placeholder="İlçe adı"
-                  />
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="neighbourhood">Mahalle</label>
-                  <input
-                    type="text"
-                    id="neighbourhood"
-                    name="neighbourhood"
-                    value={formData.neighbourhood}
-                    onChange={handleInputChange}
-                    placeholder="Mahalle adı (opsiyonel)"
                   />
                 </div>
               </div>

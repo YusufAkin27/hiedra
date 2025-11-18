@@ -14,11 +14,19 @@
   width: 100%;
   background: transparent;
   transition: background 0.3s ease;
+  padding-top: var(--header-offset-desktop);
+}
+
+@media (max-width: 1024px) {
+  .main-content {
+    padding-top: var(--header-offset-tablet);
+  }
 }
 
 @media (max-width: 768px) {
   .main-content {
     width: 100%;
+    padding-top: var(--header-offset-mobile);
   }
 }
 

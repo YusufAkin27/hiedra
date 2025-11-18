@@ -55,6 +55,32 @@
   background: #ccc;
 }
 
+.add-address-footer {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border-color, #e2e8f0);
+  text-align: center;
+}
+
+.btn-add-address-footer {
+  background: var(--gold-primary, #B08D49);
+  color: var(--text-on-gold, #ffffff);
+  border: none;
+  padding: 0.875rem 2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px var(--shadow-gold, rgba(176, 141, 73, 0.2));
+}
+
+.btn-add-address-footer:hover {
+  background: var(--gold-hover, #C9A15A);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px var(--shadow-gold, rgba(176, 141, 73, 0.3));
+}
+
 .alert {
   padding: 1rem;
   border-radius: 8px;
@@ -254,37 +280,77 @@
 
 .addresses-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  grid-template-columns: 1fr;
   gap: 1.5rem;
 }
 
+/* Tablet ve üzeri - yan yana 2 sütun */
+@media (min-width: 768px) {
+  .addresses-list {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+/* Desktop - yan yana 2 sütun */
+@media (min-width: 1024px) {
+  .addresses-list {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+  }
+}
+
+/* Büyük ekranlar - yan yana 3 sütun */
+@media (min-width: 1600px) {
+  .addresses-list {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+  }
+}
+
 .address-card {
-  background: var(--bg-secondary, #ffffff);
-  border: 1px solid var(--border-color, #e2e8f0);
-  border-radius: 12px;
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  border-radius: 16px;
   padding: 2rem;
   position: relative;
-  transition: border-color 0.3s, box-shadow 0.3s;
+  transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
   min-height: fit-content;
   width: 100%;
+  box-shadow: 0 2px 8px var(--shadow);
 }
 
 .address-card:hover {
-  box-shadow: 0 2px 8px var(--shadow, rgba(0, 0, 0, 0.1));
-  border-color: var(--border-hover, #cbd5e0);
+  box-shadow: 0 4px 16px var(--shadow-hover);
+  transform: translateY(-2px);
+  border-color: var(--gold-light);
 }
 
 .address-card.default {
-  border-color: var(--text-primary, #1e293b);
-  background: var(--bg-primary, #f8fafc);
+  border: 2px solid var(--gold-primary);
+  background: linear-gradient(135deg, rgba(176, 141, 73, 0.05) 0%, rgba(176, 141, 73, 0.02) 100%);
+  box-shadow: 0 4px 16px var(--shadow-gold);
+  position: relative;
+}
+
+.address-card.default::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--gold-primary) 0%, var(--gold-hover) 100%);
+  border-radius: 16px 16px 0 0;
 }
 
 .address-card-editing {
-  border: 2px solid var(--text-primary, #1e293b) !important;
-  box-shadow: 0 4px 16px var(--shadow, rgba(0, 0, 0, 0.15)) !important;
+  border: 2px solid var(--gold-primary) !important;
+  box-shadow: 0 4px 16px var(--shadow-gold) !important;
+  background: var(--bg-card) !important;
 }
 
 .address-form-inline {
@@ -363,116 +429,168 @@
   align-items: flex-start;
   gap: 1rem;
   padding-bottom: 1.5rem;
-  border-bottom: 1px solid var(--border-color, #e2e8f0);
+  border-bottom: 2px solid var(--border-color);
+}
+
+.address-card-title {
+  width: 100%;
+}
+
+.address-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .address-card-title h3 {
-  margin: 0 0 0.5rem 0;
-  color: var(--text-primary, #1e293b);
-  font-size: 1.25rem;
+  margin: 0;
+  color: var(--text-on-dark);
+  font-size: 1.5rem;
   font-weight: 600;
+  font-family: 'Playfair Display', serif;
+  letter-spacing: -0.01em;
+  flex: 1;
+  min-width: 0;
 }
 
 .address-card-title .address-phone {
-  color: var(--text-secondary, #475569);
+  color: var(--text-light);
   margin: 0;
   font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.address-card-title .address-phone svg {
+  flex-shrink: 0;
+  opacity: 0.7;
 }
 
 .default-badge {
-  background: var(--text-primary, #1e293b);
-  color: white;
-  padding: 0.375rem 0.875rem;
+  background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-hover) 100%);
+  color: var(--text-on-gold);
+  padding: 0.5rem 1rem;
   border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 500;
+  font-size: 0.85rem;
+  font-weight: 600;
   white-space: nowrap;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 2px 8px var(--shadow-gold);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.default-badge svg {
   flex-shrink: 0;
 }
 
 .address-info {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.25rem;
   margin-bottom: 0;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
 }
 
 .address-detail-row {
   display: grid;
-  grid-template-columns: 120px 1fr;
-  gap: 1rem;
-  align-items: center;
-  padding: 0.25rem 0;
-  min-height: 1.5rem;
-  height: 1.5rem;
+  grid-template-columns: 100px 1fr;
+  gap: 1.5rem;
+  align-items: flex-start;
+  padding: 0.5rem 0;
+  min-height: auto;
 }
 
 .address-label {
-  color: var(--text-secondary, #475569);
-  font-size: 0.9rem;
-  font-weight: 500;
+  color: var(--text-light);
+  font-size: 0.875rem;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  opacity: 0.8;
 }
 
 .address-value {
-  color: var(--text-primary, #1e293b);
-  font-size: 0.95rem;
-  line-height: 1.5;
+  color: var(--text-on-dark);
+  font-size: 1rem;
+  line-height: 1.6;
   word-break: break-word;
-  height: 1.5rem;
+  min-height: auto;
   display: flex;
-  align-items: center;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  align-items: flex-start;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .address-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.75rem;
   flex-wrap: wrap;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+  margin-top: auto;
 }
 
 .btn-set-default,
 .btn-edit,
 .btn-delete {
-  padding: 0.5rem 1rem;
+  padding: 0.625rem 1.25rem;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 0.9rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.3s ease;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .btn-set-default {
-  background: var(--text-primary, #1e293b);
-  color: white;
+  background: var(--gold-primary);
+  color: var(--text-on-gold);
+  box-shadow: 0 2px 8px var(--shadow-gold);
 }
 
 .btn-set-default:hover {
-  background: var(--text-secondary, #475569);
+  background: var(--gold-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px var(--shadow-gold);
 }
 
 .btn-edit {
-  background: var(--bg-primary, #f8fafc);
-  color: var(--text-primary, #1e293b);
-  border: 1px solid var(--border-color, #e2e8f0);
+  background: transparent;
+  color: var(--text-on-dark);
+  border: 2px solid var(--border-color);
 }
 
 .btn-edit:hover {
-  background: var(--bg-secondary, #ffffff);
-  border-color: var(--text-primary, #1e293b);
+  background: var(--bg-secondary);
+  border-color: var(--gold-primary);
+  color: var(--gold-primary);
 }
 
 .btn-delete {
-  background: var(--bg-primary, #f8fafc);
-  color: var(--danger, #ef4444);
-  border: 1px solid var(--border-color, #e2e8f0);
+  background: transparent;
+  color: var(--danger);
+  border: 2px solid var(--border-color);
 }
 
 .btn-delete:hover {
-  background: var(--bg-secondary, #ffffff);
-  border-color: var(--danger, #ef4444);
+  background: var(--bg-secondary);
+  border-color: var(--danger);
+  color: var(--danger);
 }
 
 @media (max-width: 768px) {
@@ -495,7 +613,37 @@
   }
 
   .addresses-list {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem;
+  }
+
+  .address-card {
+    padding: 1.5rem;
+    border-radius: 12px;
+  }
+
+  .address-card-title h3 {
+    font-size: 1.25rem;
+  }
+
+  .address-name-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .default-badge {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.875rem;
+  }
+
+  .address-info {
+    padding: 0.875rem;
+  }
+
+  .address-detail-row {
+    grid-template-columns: 90px 1fr;
+    gap: 1rem;
   }
 
   .address-form-content {
@@ -509,6 +657,210 @@
   .btn-set-default,
   .btn-edit,
   .btn-delete {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Silme Onay Modalı */
+.delete-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.delete-modal {
+  background: var(--bg-card);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  max-width: 400px;
+  width: 100%;
+  animation: slideUp 0.3s ease;
+  border: 1px solid var(--border-color);
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.delete-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.delete-modal-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-on-dark);
+  font-family: 'Playfair Display', serif;
+}
+
+.delete-modal-close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-light);
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.delete-modal-close:hover {
+  background: var(--bg-secondary);
+  color: var(--text-on-dark);
+}
+
+.delete-modal-body {
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.delete-modal-icon {
+  color: var(--danger);
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: center;
+}
+
+.delete-modal-icon svg {
+  width: 36px;
+  height: 36px;
+}
+
+.delete-modal-message {
+  font-size: 1rem;
+  color: var(--text-on-dark);
+  margin: 0 0 0.75rem 0;
+  line-height: 1.5;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.delete-modal-message strong {
+  color: var(--text-on-dark);
+  font-weight: 600;
+}
+
+.delete-modal-warning {
+  font-size: 0.85rem;
+  color: var(--text-light);
+  margin: 0;
+  font-style: italic;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.delete-modal-footer {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border-color);
+  justify-content: flex-end;
+}
+
+.btn-modal-cancel,
+.btn-modal-delete {
+  padding: 0.625rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.btn-modal-cancel {
+  background: transparent;
+  color: var(--text-on-dark);
+  border: 2px solid var(--border-color);
+}
+
+.btn-modal-cancel:hover {
+  background: var(--bg-secondary);
+  border-color: var(--gold-primary);
+  color: var(--gold-primary);
+}
+
+.btn-modal-delete {
+  background: var(--danger);
+  color: white;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.btn-modal-delete:hover {
+  background: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+@media (max-width: 768px) {
+  .delete-modal {
+    max-width: 90%;
+    margin: 1rem;
+  }
+
+  .delete-modal-header {
+    padding: 0.875rem 1.25rem;
+  }
+
+  .delete-modal-body {
+    padding: 1.25rem;
+  }
+
+  .delete-modal-footer {
+    padding: 0.875rem 1.25rem;
+  }
+
+  .delete-modal-header h3 {
+    font-size: 1.1rem;
+  }
+
+  .delete-modal-icon svg {
+    width: 32px;
+    height: 32px;
+  }
+
+  .delete-modal-message {
+    font-size: 0.95rem;
+  }
+
+  .delete-modal-footer {
+    flex-direction: column;
+  }
+
+  .btn-modal-cancel,
+  .btn-modal-delete {
     width: 100%;
   }
 }

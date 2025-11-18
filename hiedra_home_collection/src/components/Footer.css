@@ -297,6 +297,14 @@
   stroke: #ff0000;
 }
 
+.social-icon-pinterest:hover {
+  color: #bd081c;
+}
+
+.social-icon-pinterest:hover svg {
+  stroke: #bd081c;
+}
+
 .payment-logos {
   display: flex;
   gap: 1.5rem;

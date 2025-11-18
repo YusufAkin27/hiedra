@@ -571,8 +571,12 @@ public class UserProfileController {
                         .body(DataResponseMessage.error("Maksimum 10 adet adres ekleyebilirsiniz. Lütfen mevcut adreslerinizden birini silin."));
             }
 
+            // İlk adres otomatik olarak varsayılan adres olur
+            boolean isFirstAddress = addressCount == 0;
+            boolean isDefault = isFirstAddress || (request.getIsDefault() != null && request.getIsDefault());
+
             // Eğer varsayılan adres olarak işaretlenmişse, diğer adreslerin varsayılan durumunu kaldır
-            if (request.getIsDefault() != null && request.getIsDefault()) {
+            if (isDefault) {
                 addressRepository.clearDefaultAddresses(user.getId());
             }
 
@@ -584,7 +588,7 @@ public class UserProfileController {
                     .addressDetail(request.getAddressDetail())
                     .city(request.getCity())
                     .district(request.getDistrict())
-                    .isDefault(request.getIsDefault() != null ? request.getIsDefault() : false)
+                    .isDefault(isDefault)
                     .build();
 
             address = addressRepository.save(address);

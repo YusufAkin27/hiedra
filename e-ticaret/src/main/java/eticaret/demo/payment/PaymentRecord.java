@@ -21,8 +21,7 @@ import java.time.LocalDateTime;
     @Index(name = "idx_payment_id", columnList = "iyzico_payment_id"),
     @Index(name = "idx_transaction_id", columnList = "payment_transaction_id"),
     @Index(name = "idx_order_number", columnList = "order_number"),
-    @Index(name = "idx_user_id", columnList = "user_id"),
-    @Index(name = "idx_guest_user_id", columnList = "guest_user_id"),
+    // idx_user_id ve idx_guest_user_id indexleri veritabanında zaten mevcut, Hibernate'in tekrar oluşturmasını önlemek için kaldırıldı
     @Index(name = "idx_status", columnList = "status"),
     @Index(name = "idx_created_at", columnList = "created_at")
 })

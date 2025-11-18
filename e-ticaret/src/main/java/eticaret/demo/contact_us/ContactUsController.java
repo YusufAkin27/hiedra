@@ -3,6 +3,7 @@ package eticaret.demo.contact_us;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -12,8 +13,9 @@ import eticaret.demo.audit.AuditLogService;
 import eticaret.demo.common.response.ResponseMessage;
 
 @RestController
-@RequestMapping("/bize_ulaşın")
+@RequestMapping("/api/contact")
 @RequiredArgsConstructor
+@Slf4j
 @CrossOrigin(origins = "*")
 @Validated
 public class ContactUsController {
@@ -83,7 +85,7 @@ public class ContactUsController {
      * Kullanıcı mesaj gönderir
      * Detaylı validasyon ve spam koruması ile
      */
-    @PostMapping("/gönder")
+    @PostMapping("/send")
     public ResponseEntity<ResponseMessage> gonder(
             @Valid @RequestBody ContactUsMessage message, 
             HttpServletRequest request) {
@@ -103,6 +105,7 @@ public class ContactUsController {
                 return ResponseEntity.badRequest().body(response);
             }
         } catch (Exception e) {
+            log.error("Contact form submission error: ", e);
             auditLogService.logError("SEND_CONTACT_MESSAGE", "ContactUs", null,
                     "Beklenmeyen hata: " + e.getMessage(), e.getMessage(), request);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

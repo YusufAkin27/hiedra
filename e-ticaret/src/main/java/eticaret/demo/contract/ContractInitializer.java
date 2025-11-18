@@ -80,6 +80,14 @@ public class ContractInitializer implements CommandLineRunner {
                 getShippingPolicyContent(),
                 true
         );
+
+        // Çerez Politikası
+        createContractIfNotExists(
+                ContractType.CEREZ,
+                "Çerez Politikası",
+                getCookiePolicyContent(),
+                true
+        );
     }
 
     private void createContractIfNotExists(ContractType type, String title, String content, Boolean requiredApproval) {
@@ -258,6 +266,57 @@ public class ContractInitializer implements CommandLineRunner {
                 
                 <h3>6. TESLİMAT SORUMLULUĞU</h3>
                 <p>Ürün, kargo firmasına teslim edildikten sonra sorumluluk kargo firmasına geçer.</p>
+                """;
+    }
+
+    private String getCookiePolicyContent() {
+        return """
+                <h2>ÇEREZ POLİTİKASI</h2>
+                
+                <h3>1. ÇEREZLER HAKKINDA</h3>
+                <p>Web sitemiz, kullanıcı deneyimini iyileştirmek ve site işlevselliğini sağlamak amacıyla çerezler kullanmaktadır. Bu politika, web sitemizde kullanılan çerezler ve çerez tercihleriniz hakkında bilgilendirme amacıyla hazırlanmıştır.</p>
+                
+                <h3>2. ÇEREZ NEDİR?</h3>
+                <p>Çerezler, bir web sitesini ziyaret ettiğinizde tarayıcınız tarafından cihazınıza kaydedilen küçük metin dosyalarıdır. Çerezler, web sitesinin daha iyi çalışmasını sağlar ve kullanıcı deneyimini iyileştirir.</p>
+                
+                <h3>3. ÇEREZ TÜRLERİ</h3>
+                <h4>3.1. Zorunlu Çerezler</h4>
+                <p>Bu çerezler, web sitesinin temel işlevlerinin çalışması için gereklidir. Site güvenliği, oturum yönetimi ve temel işlevsellik için kullanılır. Bu çerezler olmadan web sitesi düzgün çalışmaz.</p>
+                
+                <h4>3.2. Analitik Çerezler</h4>
+                <p>Bu çerezler, web sitesinin nasıl kullanıldığını anlamamıza yardımcı olur. Ziyaretçi sayısı, sayfa görüntüleme sayıları ve kullanıcı davranışları hakkında bilgi toplar. Bu bilgiler, web sitesini iyileştirmemize yardımcı olur.</p>
+                
+                <h4>3.3. Pazarlama Çerezleri</h4>
+                <p>Bu çerezler, size daha uygun reklamlar ve içerikler sunmak için kullanılır. İlgi alanlarınızı ve ziyaret geçmişinizi analiz ederek kişiselleştirilmiş deneyim sunar.</p>
+                
+                <h4>3.4. Kişiselleştirme Çerezleri</h4>
+                <p>Bu çerezler, web sitesini ziyaretleriniz sırasında tercihlerinizi hatırlar ve size özel içerikler sunar.</p>
+                
+                <h3>4. ÇEREZ KULLANIM AMAÇLARI</h3>
+                <p>Çerezler aşağıdaki amaçlarla kullanılmaktadır:</p>
+                <ul>
+                    <li>Web sitesinin temel işlevlerinin sağlanması</li>
+                    <li>Kullanıcı oturumlarının yönetilmesi</li>
+                    <li>Site güvenliğinin sağlanması</li>
+                    <li>Kullanıcı deneyiminin iyileştirilmesi</li>
+                    <li>Site kullanım istatistiklerinin toplanması</li>
+                    <li>Kişiselleştirilmiş içerik ve reklamların sunulması</li>
+                </ul>
+                
+                <h3>5. ÇEREZ YÖNETİMİ</h3>
+                <p>Tarayıcı ayarlarınızdan çerezleri yönetebilir, silebilir veya engelleyebilirsiniz. Ancak, zorunlu çerezleri engellemeniz durumunda web sitesinin bazı özellikleri çalışmayabilir.</p>
+                
+                <h3>6. ÜÇÜNCÜ TARAF ÇEREZLER</h3>
+                <p>Web sitemizde, analitik ve pazarlama amaçlı üçüncü taraf çerezler kullanılmaktadır. Bu çerezler, ilgili üçüncü taraf şirketlerin gizlilik politikalarına tabidir.</p>
+                
+                <h3>7. ÇEREZ TERCIHLERINIZ</h3>
+                <p>Çerez tercihlerinizi web sitemiz üzerinden yönetebilir ve istediğiniz zaman değiştirebilirsiniz. Tercihlerinizi değiştirmek için çerez ayarları sayfasını ziyaret edebilirsiniz.</p>
+                
+                <h3>8. GÜNCELLEMELER</h3>
+                <p>Bu çerez politikası, gerektiğinde güncellenebilir. Önemli değişiklikler durumunda size bildirim yapılacaktır.</p>
+                
+                <h3>9. İLETİŞİM</h3>
+                <p>Çerezler hakkında sorularınız için bizimle iletişime geçebilirsiniz.</p>
                 """;
     }
 }

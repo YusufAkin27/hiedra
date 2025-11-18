@@ -108,17 +108,18 @@ public class ContactUsServiceImpl implements ContactUsServis {
             // 10. E-posta gönderimi
             try {
                 String emailBody = buildVerificationEmail(cleanedName, verificationCode);
-            EmailMessage emailMessage = EmailMessage.builder()
+                EmailMessage emailMessage = EmailMessage.builder()
                         .toEmail(message.getEmail().toLowerCase().trim())
                         .subject("E-posta Doğrulama Kodu - HIEDRA HOME COLLECTION")
-                    .body(emailBody)
-                    .isHtml(true)
-                    .build();
-            mailService.queueEmail(emailMessage);
+                        .body(emailBody)
+                        .isHtml(true)
+                        .build();
+                mailService.queueEmail(emailMessage);
                 log.info("Doğrulama emaili kuyruğa eklendi: {}", message.getEmail());
             } catch (Exception e) {
                 log.error("Email gönderilirken hata: {}", e.getMessage(), e);
                 // Email gönderilemese bile mesaj kaydedildi, kullanıcıya bilgi ver
+                // Ancak mesaj kaydedildiği için başarılı yanıt döndür
                 return new ResponseMessage(
                         "Mesajınız kaydedildi ancak doğrulama emaili gönderilemedi. Lütfen daha sonra tekrar deneyin.",
                         false
@@ -391,7 +392,7 @@ public class ContactUsServiceImpl implements ContactUsServis {
                     contact.getId(), contact.getEmail(), contact.getSubject());
 
             return new ResponseMessage(
-                    "E-posta adresiniz başarıyla doğrulandı! Mesajınız en kısa sürede yanıtlanacaktır. Teşekkür ederiz.",
+                    "E-posta adresiniz başarıyla doğrulandı! Mesajınız alındı ve en kısa sürede size e-posta yoluyla dönüş yapacağız. Teşekkür ederiz.",
                     true
             );
 

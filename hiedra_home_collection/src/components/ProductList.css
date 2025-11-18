@@ -5,19 +5,32 @@
   overflow-x: hidden;
   position: relative;
   background: #FFFFFF;
+  margin-top: calc(-1 * var(--header-offset-desktop));
+}
+
+@media (max-width: 1024px) {
+  .product-list-container {
+    margin-top: calc(-1 * var(--header-offset-tablet));
+  }
+}
+
+@media (max-width: 768px) {
+  .product-list-container {
+    margin-top: calc(-1 * var(--header-offset-mobile));
+  }
 }
 
 /* Modern Hero Section - Normal Document Flow */
 .hero-section-modern {
   position: relative;
   width: 100%;
-  min-height: 100vh;
-  height: 100vh;
+  min-height: calc(100vh - var(--header-offset-desktop));
+  height: calc(100vh - var(--header-offset-desktop));
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0 2rem;
-  margin: 0;
+  margin-top: var(--header-offset-desktop);
   background-image: url('/images/arkaplan.png');
   background-size: cover;
   background-position: center center;
@@ -48,8 +61,8 @@
   align-items: center;
   justify-content: center;
   gap: 2.5rem;
-  padding: calc(32px + 84px + 2rem) 2rem 2rem;
-  min-height: 100vh;
+  padding: 2rem;
+  min-height: calc(100vh - var(--header-offset-desktop));
   animation: heroContentFadeIn 1.2s ease-out;
 }
 
@@ -633,17 +646,30 @@
   display: none;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .hero-section-modern {
-    min-height: 100vh;
-    height: 100vh;
-    padding: 0 1rem;
+    min-height: calc(100vh - var(--header-offset-tablet));
+    height: calc(100vh - var(--header-offset-tablet));
+    margin-top: var(--header-offset-tablet);
   }
 
   .hero-content-modern {
-    padding: calc(32px + 70px + 2rem) 1rem 2rem;
+    min-height: calc(100vh - var(--header-offset-tablet));
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-section-modern {
+    min-height: calc(100vh - var(--header-offset-mobile));
+    height: calc(100vh - var(--header-offset-mobile));
+    padding: 0 1rem;
+    margin-top: var(--header-offset-mobile);
+  }
+
+  .hero-content-modern {
+    padding: 2rem 1rem;
     gap: 2rem;
-    min-height: 100vh;
+    min-height: calc(100vh - var(--header-offset-mobile));
   }
 
   .hero-title-modern {

@@ -37,7 +37,6 @@ const KVKK = lazy(() => import('./components/KVKK'))
 const DistanceSelling = lazy(() => import('./components/DistanceSelling'))
 const ReturnPolicy = lazy(() => import('./components/ReturnPolicy'))
 const ShippingInfo = lazy(() => import('./components/ShippingInfo'))
-const TrackShipment = lazy(() => import('./components/TrackShipment'))
 const CookiePolicy = lazy(() => import('./components/CookiePolicy'))
 const Contract = lazy(() => import('./components/Contract'))
 const ContractsList = lazy(() => import('./components/ContractsList'))
@@ -105,7 +104,6 @@ function App() {
                 <Route path="/mesafeli-satis-sozlesmesi" element={<DistanceSelling />} />
                 <Route path="/iade-degisim" element={<ReturnPolicy />} />
                 <Route path="/kargo-teslimat" element={<ShippingInfo />} />
-                <Route path="/kargo-takip" element={<TrackShipment />} />
                 <Route path="/cerez-politikasi" element={<CookiePolicy />} />
                 {/* Sözleşmeler */}
                 <Route path="/sozlesmeler" element={<ContractsList />} />

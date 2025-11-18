@@ -182,11 +182,6 @@ public class GeocodingService {
                                  addressNode.get("state_district").asText();
                 responseBuilder.district(district);
             }
-            if (addressNode.has("suburb") || addressNode.has("neighbourhood")) {
-                String neighbourhood = addressNode.has("suburb") ? addressNode.get("suburb").asText() :
-                                     addressNode.get("neighbourhood").asText();
-                responseBuilder.neighbourhood(neighbourhood);
-            }
             if (addressNode.has("road")) {
                 responseBuilder.road(addressNode.get("road").asText());
             }

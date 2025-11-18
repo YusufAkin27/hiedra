@@ -12,7 +12,6 @@ public class ContactUsMessage {
     
     @NotBlank(message = "Ad Soyad alanı zorunludur")
     @Size(min = 2, max = 200, message = "Ad Soyad 2 ile 200 karakter arasında olmalıdır")
-    @Pattern(regexp = "^[a-zA-ZçğıöşüÇĞIİÖŞÜ\\s]+$", message = "Ad Soyad sadece harf ve boşluk içerebilir")
     private String name;
     
     @NotBlank(message = "E-posta adresi zorunludur")
@@ -25,7 +24,6 @@ public class ContactUsMessage {
     private String message;
     
     @Size(max = 20, message = "Telefon numarası en fazla 20 karakter olabilir")
-    @Pattern(regexp = "^[0-9+\\s\\-()]*$", message = "Geçerli bir telefon numarası formatı giriniz")
     private String phone;
     
     @NotBlank(message = "Konu alanı zorunludur")

@@ -1,7 +1,7 @@
 .add-address-page {
   min-height: calc(100vh - 200px);
   padding: 2rem 0;
-  background: var(--bg-primary, #f8fafc);
+  background: var(--bg-primary);
 }
 
 .add-address-container {
@@ -18,7 +18,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  color: var(--text-secondary, #475569);
+  color: var(--text-light);
   text-decoration: none;
   font-size: 0.95rem;
   margin-bottom: 1.5rem;
@@ -26,28 +26,33 @@
 }
 
 .back-link:hover {
-  color: var(--text-primary, #1e293b);
+  color: var(--gold-primary);
 }
 
 .add-address-header h1 {
-  font-size: 2rem;
-  color: var(--text-primary, #1e293b);
+  font-family: 'Playfair Display', 'DM Serif Display', serif;
+  font-size: 2.5rem;
+  color: var(--text-on-dark);
   margin: 0 0 0.5rem 0;
   font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
 }
 
 .page-subtitle {
-  color: var(--text-secondary, #475569);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: var(--text-light);
   font-size: 1rem;
   margin: 0;
+  font-weight: 400;
 }
 
 .add-address-form-wrapper {
-  background: var(--bg-secondary, #ffffff);
-  border: 1px solid var(--border-color, #e2e8f0);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 2.5rem;
-  box-shadow: 0 2px 8px var(--shadow, rgba(0, 0, 0, 0.05));
+  box-shadow: 0 2px 12px var(--shadow);
 }
 
 .add-address-form {
@@ -59,7 +64,7 @@
 .form-section {
   margin-bottom: 2rem;
   padding-bottom: 2rem;
-  border-bottom: 1px solid var(--border-color, #e2e8f0);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .form-section:last-of-type {
@@ -78,10 +83,12 @@
 }
 
 .form-section-title {
-  font-size: 1.25rem;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
   font-weight: 600;
-  color: var(--text-primary, #1e293b);
+  color: var(--text-on-dark);
   margin: 0;
+  letter-spacing: -0.01em;
 }
 
 .form-group {
@@ -96,32 +103,42 @@
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 500;
-  color: var(--text-primary, #1e293b);
+  color: var(--text-on-dark);
   font-size: 0.95rem;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .form-group input[type="text"],
 .form-group input[type="tel"] {
   width: 100%;
   padding: 0.75rem 1rem;
-  border: 1px solid var(--border-color, #e2e8f0);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   font-size: 1rem;
-  color: var(--text-primary, #1e293b);
-  background: var(--bg-secondary, #ffffff);
-  transition: all 0.2s;
-  font-family: inherit;
+  color: var(--text-on-dark);
+  background: var(--bg-secondary);
+  transition: all 0.3s ease;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   box-sizing: border-box;
 }
 
 .form-group input:focus {
   outline: none;
-  border-color: var(--text-primary, #1e293b);
-  box-shadow: 0 0 0 3px rgba(30, 41, 59, 0.1);
+  border-color: var(--gold-primary);
+  box-shadow: 0 0 0 3px var(--gold-light);
+  background: var(--bg-card);
 }
 
 .form-group input::placeholder {
-  color: var(--text-light, #64748b);
+  color: var(--text-light);
+}
+
+.form-hint {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-light);
+  font-style: italic;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .form-row {
@@ -143,7 +160,7 @@
   width: 20px;
   height: 20px;
   cursor: pointer;
-  accent-color: var(--text-primary, #1e293b);
+  accent-color: var(--gold-primary);
 }
 
 .form-actions {
@@ -152,7 +169,7 @@
   justify-content: flex-end;
   margin-top: 2rem;
   padding-top: 2rem;
-  border-top: 1px solid var(--border-color, #e2e8f0);
+  border-top: 1px solid var(--border-color);
 }
 
 .btn-cancel,
@@ -171,23 +188,27 @@
 }
 
 .btn-cancel {
-  background: var(--bg-primary, #f8fafc);
-  color: var(--text-primary, #1e293b);
-  border: 1px solid var(--border-color, #e2e8f0);
+  background: transparent;
+  color: var(--text-on-dark);
+  border: 2px solid var(--border-color);
 }
 
 .btn-cancel:hover {
-  background: var(--bg-secondary, #ffffff);
-  border-color: var(--text-primary, #1e293b);
+  background: var(--bg-secondary);
+  border-color: var(--gold-primary);
+  color: var(--gold-primary);
 }
 
 .btn-submit {
-  background: var(--text-primary, #1e293b);
-  color: white;
+  background: var(--gold-primary);
+  color: var(--text-on-gold);
+  box-shadow: 0 2px 8px var(--shadow-gold);
 }
 
 .btn-submit:hover:not(:disabled) {
-  background: var(--text-secondary, #475569);
+  background: var(--gold-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px var(--shadow-gold);
 }
 
 .btn-submit:disabled {
@@ -202,9 +223,9 @@
 }
 
 .alert-error {
-  background: var(--bg-primary, #f8fafc);
-  color: var(--danger, #ef4444);
-  border: 1px solid var(--border-color, #e2e8f0);
+  background: var(--bg-card);
+  color: var(--danger);
+  border: 1px solid var(--danger);
 }
 
 @keyframes spin {
@@ -219,16 +240,17 @@
 .location-button-container {
   margin-top: 1.5rem;
   padding: 1.5rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, rgba(176, 141, 73, 0.15) 0%, rgba(176, 141, 73, 0.08) 100%);
+  border: 1px solid var(--gold-transparent);
   border-radius: 12px;
   text-align: center;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 2px 8px var(--shadow-gold);
 }
 
 .location-button-primary {
   padding: 1rem 2rem;
-  background-color: white;
-  color: #667eea;
+  background-color: var(--gold-primary);
+  color: var(--text-on-gold);
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -237,57 +259,65 @@
   display: inline-flex;
   align-items: center;
   gap: 0.75rem;
-  transition: all 0.3s;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px var(--shadow-gold);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .location-button-primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  background-color: #f8f9fa;
+  box-shadow: 0 4px 12px var(--shadow-gold);
+  background-color: var(--gold-hover);
 }
 
 .location-button-primary:disabled {
-  background-color: rgba(255, 255, 255, 0.7);
+  background-color: var(--gold-light);
+  color: var(--text-light);
   cursor: not-allowed;
-  opacity: 0.8;
+  opacity: 0.6;
 }
 
 .location-hint {
   margin-top: 0.75rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-light);
   font-size: 0.875rem;
   margin-bottom: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .location-button {
   padding: 0.5rem 1rem;
-  background-color: #007bff;
-  color: white;
+  background-color: var(--gold-primary);
+  color: var(--text-on-gold);
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 0.9rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  transition: background-color 0.3s;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px var(--shadow-gold);
 }
 
 .location-button:hover:not(:disabled) {
-  background-color: #0056b3;
+  background-color: var(--gold-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px var(--shadow-gold);
 }
 
 .location-button:disabled {
-  background-color: #ccc;
+  background-color: var(--gold-light);
+  color: var(--text-light);
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .loading-spinner {
   display: inline-block;
   width: 14px;
   height: 14px;
-  border: 2px solid #fff;
+  border: 2px solid var(--text-on-gold);
   border-top: 2px solid transparent;
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -296,6 +326,10 @@
 @media (max-width: 768px) {
   .add-address-container {
     padding: 0 1rem;
+  }
+
+  .add-address-header h1 {
+    font-size: 2rem;
   }
 
   .add-address-form-wrapper {

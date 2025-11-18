@@ -237,7 +237,7 @@ const MyOrders = () => {
       
       <header className="my-orders-header">
         <h1>Siparişlerim</h1>
-        <p>Siparişlerinizin durumunu takip edebilirsiniz</p>
+        <p>Tüm siparişlerinizi buradan görüntüleyebilir ve takip edebilirsiniz</p>
       </header>
 
       {error && !isLoading && (

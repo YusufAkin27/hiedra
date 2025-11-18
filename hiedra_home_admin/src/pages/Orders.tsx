@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback } from 'react'
-import { FaBox, FaChartBar, FaCheckCircle, FaTable, FaCalendar, FaDollarSign, FaCog, FaExclamationTriangle, FaEdit, FaSync, FaUser, FaEnvelope } from 'react-icons/fa'
+import { useEffect, useState, useCallback, useRef } from 'react'
+import { FaBox, FaChartBar, FaCheckCircle, FaTable, FaCalendar, FaDollarSign, FaCog, FaExclamationTriangle, FaEdit, FaSync, FaUser, FaEnvelope, FaPrint } from 'react-icons/fa'
 import type { AuthResponse } from '../services/authService'
 import { getAdminHeaders } from '../services/authService'
 import { useToast } from '../components/Toast'
@@ -7,6 +7,18 @@ import ConfirmModal from '../components/ConfirmModal'
 
 type OrdersPageProps = {
   session: AuthResponse
+}
+
+type InvoiceOrderItem = {
+  id: number
+  productName: string
+  quantity: number
+  price?: number
+  unitPrice?: number
+  totalPrice?: number
+  width?: number
+  height?: number
+  pleatType?: string
 }
 
 type Order = {
@@ -20,6 +32,7 @@ type Order = {
   createdAt: string
   adminNotes?: string
   paymentTransactionId?: string
+  orderItems?: InvoiceOrderItem[]
 }
 
 type PaginatedResponse = {
@@ -88,6 +101,11 @@ function OrdersPage({ session }: OrdersPageProps) {
     reason: '',
     adminNotes: '',
   })
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false)
+  const [invoiceNotes, setInvoiceNotes] = useState('')
+  const [invoiceOrderDetail, setInvoiceOrderDetail] = useState<Order | null>(null)
+  const [isInvoiceLoading, setIsInvoiceLoading] = useState(false)
+  const [invoiceError, setInvoiceError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean
@@ -98,6 +116,59 @@ function OrdersPage({ session }: OrdersPageProps) {
     message: '',
     onConfirm: () => {},
   })
+  const invoiceRef = useRef<HTMLDivElement>(null)
+  const formatCurrency = (value: number) =>
+    value.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })
+  const INVOICE_TAX_RATE = 0.2
+  const invoiceSource = invoiceOrderDetail ?? selectedOrder
+  const invoiceAmounts = invoiceSource
+    ? {
+        subtotal: invoiceSource.totalAmount,
+        taxAmount: invoiceSource.totalAmount * INVOICE_TAX_RATE,
+        total: invoiceSource.totalAmount * (1 + INVOICE_TAX_RATE),
+      }
+    : null
+  const invoiceItems: InvoiceOrderItem[] = invoiceOrderDetail?.orderItems ?? []
+  const invoiceTableItems: InvoiceOrderItem[] =
+    invoiceItems.length > 0
+      ? invoiceItems
+      : invoiceSource
+        ? [
+            {
+              id: invoiceSource.id,
+              productName: `Sipariş ${invoiceSource.orderNumber}`,
+              quantity: 1,
+              price: invoiceSource.totalAmount,
+            },
+          ]
+        : []
+  const getItemLineTotal = (item: InvoiceOrderItem) => {
+    if (typeof item.totalPrice === 'number') return item.totalPrice
+    if (typeof item.price === 'number') return item.price
+    if (typeof item.unitPrice === 'number' && item.quantity) {
+      return item.unitPrice * item.quantity
+    }
+    return 0
+  }
+  const getItemUnitPrice = (item: InvoiceOrderItem) => {
+    if (typeof item.unitPrice === 'number') return item.unitPrice
+    const lineTotal = getItemLineTotal(item)
+    if (item.quantity && item.quantity > 0) {
+      return lineTotal / item.quantity
+    }
+    return lineTotal
+  }
+  const getItemMeasurement = (item: InvoiceOrderItem) => {
+    if (item.width && item.height) {
+      const pleatText = item.pleatType ? ` · Pile ${item.pleatType}` : ''
+      return `${item.width}cm x ${item.height}cm${pleatText}`
+    }
+    if (item.pleatType) {
+      return `Pile ${item.pleatType}`
+    }
+    return null
+  }
+  const invoiceTaxPercent = Math.round(INVOICE_TAX_RATE * 100)
 
   const getStatusFromTab = (tab: TabType): string | null => {
     switch (tab) {
@@ -307,6 +378,129 @@ function OrdersPage({ session }: OrdersPageProps) {
     setSelectedOrder(order)
     setRefundRejectionForm({ reason: '', adminNotes: '' })
     setIsRefundRejectionModalOpen(true)
+  }
+
+  const loadInvoiceDetails = useCallback(
+    async (orderId: number) => {
+      if (!session?.accessToken) {
+        setInvoiceError('Oturum bulunamadı.')
+        return
+      }
+      try {
+        setIsInvoiceLoading(true)
+        setInvoiceError(null)
+        const response = await fetch(`${apiBaseUrl}/admin/orders/${orderId}`, {
+          headers: getAdminHeaders(session.accessToken),
+        })
+
+        if (!response.ok) {
+          throw new Error('Fatura verileri alınamadı.')
+        }
+
+        const payload = (await response.json()) as {
+          data?: Order
+          success?: boolean
+          isSuccess?: boolean
+          message?: string
+        }
+
+        const success = payload.isSuccess ?? payload.success ?? false
+        if (!success || !payload.data) {
+          throw new Error(payload.message ?? 'Fatura verileri alınamadı.')
+        }
+
+        setInvoiceOrderDetail(payload.data)
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Fatura verileri alınamadı.'
+        setInvoiceError(message)
+      } finally {
+        setIsInvoiceLoading(false)
+      }
+    },
+    [session?.accessToken, apiBaseUrl]
+  )
+
+  const handleOpenInvoice = (order: Order) => {
+    setSelectedOrder(order)
+    setInvoiceNotes('')
+    setInvoiceOrderDetail(null)
+    setInvoiceError(null)
+    setIsInvoiceModalOpen(true)
+    loadInvoiceDetails(order.id)
+  }
+
+  const handlePrintInvoice = () => {
+    if (isInvoiceLoading) {
+      toast.info('Fatura hazırlanıyor, lütfen bekleyin.')
+      return
+    }
+
+    if (invoiceError) {
+      toast.error('Fatura verileri yüklenemedi. Tekrar deneyin.')
+      return
+    }
+
+    if (!invoiceRef.current || !invoiceSource) {
+      toast.warning('Fatura içeriği oluşturulamadı.')
+      return
+    }
+
+    const printWindow = window.open('', 'PRINT', 'height=900,width=700')
+    if (!printWindow) {
+      toast.error('Yazdırma penceresi açılamadı. Pop-up engellemesini kontrol edin.')
+      return
+    }
+
+    printWindow.document.write(`<!doctype html>
+      <html lang="tr">
+        <head>
+          <meta charset="utf-8" />
+          <title>Fatura ${selectedOrder.orderNumber}</title>
+          <style>
+            * { box-sizing: border-box; }
+            body { font-family: 'Inter', 'Segoe UI', sans-serif; margin: 0; padding: 32px; color: #0f172a; background: #f3f4f8; }
+            h1, h2, h3, h4, h5 { margin: 0; }
+            .invoice-layout { max-width: 900px; margin: 0 auto; border-radius: 24px; overflow: hidden; background: #ffffff; box-shadow: 0 35px 70px rgba(15, 23, 42, 0.08); border: 1px solid #e5e7eb; }
+            .invoice-brand { max-width: 60%; }
+            .invoice-hero { background: #f7f7f7; color: #111827; padding: 34px 40px; display: flex; justify-content: space-between; gap: 32px; align-items: flex-start; border-bottom: 1px solid #e5e7eb; }
+            .invoice-logo { font-size: 30px; letter-spacing: 0.18em; font-weight: 700; }
+            .invoice-tagline { margin-top: 6px; font-weight: 500; color: #4b5563; }
+            .invoice-address { margin-top: 14px; font-size: 14px; line-height: 1.6; color: #6b7280; }
+            .invoice-meta { text-align: right; display: grid; gap: 12px; font-size: 15px; color: #111827; }
+            .invoice-meta__label { text-transform: uppercase; letter-spacing: 0.1em; font-size: 12px; color: #6b7280; }
+            .invoice-meta__value { font-size: 20px; font-weight: 700; }
+            .invoice-body { padding: 34px 40px; background: #ffffff; }
+            .invoice-info { display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 32px; }
+            .invoice-card { flex: 1; min-width: 280px; background: #fff; border-radius: 16px; padding: 20px 24px; border: 1px solid #e5e7eb; }
+            .invoice-card__label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: #6b7280; margin-bottom: 10px; font-weight: 600; }
+            .invoice-card h4 { font-size: 18px; margin-bottom: 6px; color: #111827; }
+            .invoice-card p { margin: 0; line-height: 1.5; font-size: 14px; color: #4b5563; }
+            .invoice-table-wrapper { border: 1px solid #e5e7eb; border-radius: 16px; overflow: hidden; }
+            .invoice-table { width: 100%; border-collapse: collapse; }
+            .invoice-table thead { background: #f9fafb; font-size: 13px; letter-spacing: 0.05em; text-transform: uppercase; color: #6b7280; }
+            .invoice-table th { padding: 14px 18px; text-align: left; }
+            .invoice-table td { padding: 16px 18px; border-top: 1px solid #e5e7eb; font-size: 15px; color: #0f172a; }
+            .invoice-summary { display: flex; flex-wrap: wrap; gap: 24px; margin-top: 30px; }
+            .invoice-notes { flex: 1; min-width: 260px; background: #f9fafb; border-radius: 16px; padding: 20px 24px; border: 1px solid #e5e7eb; font-size: 14px; line-height: 1.6; color: #475467; }
+            .invoice-totals { min-width: 260px; flex: 0 0 auto; border-radius: 16px; border: 1px solid #e5e7eb; padding: 20px 28px; background: #fff; }
+            .invoice-totals__row { display: flex; justify-content: space-between; font-size: 15px; margin-bottom: 12px; }
+            .invoice-totals__row--grand { font-size: 20px; font-weight: 700; margin-top: 8px; }
+            .invoice-footer { margin-top: 32px; padding-top: 24px; border-top: 1px dashed #cbd5f5; display: flex; flex-wrap: wrap; gap: 24px; align-items: center; justify-content: space-between; font-size: 14px; color: #4b5563; }
+            .invoice-thanks { font-weight: 600; color: #111827; }
+            .invoice-disclaimer { margin-top: 24px; text-align: center; font-size: 12px; color: #6b7280; }
+            @media print {
+              body { padding: 0; background: #fff; }
+              .invoice-layout { box-shadow: none; border-radius: 0; }
+            }
+          </style>
+        </head>
+        <body>${invoiceRef.current.innerHTML}</body>
+      </html>
+    `)
+    printWindow.document.close()
+    printWindow.focus()
+    printWindow.print()
+    printWindow.close()
   }
 
   const handleSubmitApproval = async () => {
@@ -832,6 +1026,13 @@ function OrdersPage({ session }: OrdersPageProps) {
                             >
                               <FaSync />
                             </button>
+                            <button
+                              className="orders-table__btn orders-table__btn--info"
+                              onClick={() => handleOpenInvoice(order)}
+                              title="Faturalandır & Yazdır"
+                            >
+                              <FaPrint />
+                            </button>
                             {order.status === 'CANCELLED' && (
                               <button
                                 className="orders-table__btn orders-table__btn--success"
@@ -932,6 +1133,12 @@ function OrdersPage({ session }: OrdersPageProps) {
                         onClick={() => handleUpdateStatus(order)}
                       >
                         <FaSync style={{ marginRight: '0.25rem' }} /> Durum
+                      </button>
+                      <button
+                        className="order-card__btn order-card__btn--info"
+                        onClick={() => handleOpenInvoice(order)}
+                      >
+                        <FaPrint style={{ marginRight: '0.25rem' }} /> Faturalandır
                       </button>
                       {order.status === 'CANCELLED' && (
                         <button
@@ -1232,6 +1439,185 @@ function OrdersPage({ session }: OrdersPageProps) {
               </button>
               <button className="btn btn--danger" onClick={handleSubmitRefundRejection} disabled={isSubmitting}>
                 {isSubmitting ? 'İşleniyor...' : 'Reddet'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Fatura Modal */}
+      {isInvoiceModalOpen && selectedOrder && (
+        <div className="modal-overlay" onClick={() => setIsInvoiceModalOpen(false)}>
+          <div className="modal-content modal-content--wide" onClick={(e) => e.stopPropagation()}>
+            <h2>Fatura Önizleme - {selectedOrder.orderNumber}</h2>
+            {isInvoiceLoading ? (
+              <div className="invoice-status">Fatura detayları hazırlanıyor...</div>
+            ) : invoiceError ? (
+              <div className="invoice-status invoice-status--error">
+                <p>{invoiceError}</p>
+                {selectedOrder && (
+                  <button className="btn btn--primary" onClick={() => loadInvoiceDetails(selectedOrder.id)}>
+                    Tekrar Dene
+                  </button>
+                )}
+              </div>
+            ) : (
+              invoiceSource && (
+                <div ref={invoiceRef} className="invoice-preview">
+                  <div className="invoice-layout">
+                    <header className="invoice-hero">
+                      <div className="invoice-brand">
+                        <div className="invoice-logo">HIEDRA</div>
+                        <p className="invoice-tagline">Ev Koleksiyonu</p>
+                        <div className="invoice-address">
+                          <span>Atatürk Mah. Gazi Bulvarı No: 12</span>
+                          <span>İstanbul / Türkiye</span>
+                          <span>support@hiedra.com</span>
+                          <span>+90 555 123 45 67</span>
+                        </div>
+                      </div>
+                      <div className="invoice-meta">
+                        <div>
+                          <p className="invoice-meta__label">Fatura No</p>
+                          <p className="invoice-meta__value">{invoiceSource.orderNumber}</p>
+                        </div>
+                        <div>
+                          <p className="invoice-meta__label">Tarih</p>
+                          <p className="invoice-meta__value">
+                            {new Date(invoiceSource.createdAt).toLocaleDateString('tr-TR', {
+                              day: '2-digit',
+                              month: 'long',
+                              year: 'numeric',
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                    </header>
+                    <div className="invoice-body">
+                      <section className="invoice-info">
+                        <div className="invoice-card">
+                          <p className="invoice-card__label">Fatura Eden</p>
+                          <h4>Hiedra İç ve Dış Ticaret Ltd. Şti.</h4>
+                          <p>Vergi No: 1234567890</p>
+                          <p>Atatürk Mah. Gazi Bulvarı No: 12</p>
+                          <p>İstanbul / Türkiye</p>
+                          <p>support@hiedra.com</p>
+                        </div>
+                        <div className="invoice-card">
+                          <p className="invoice-card__label">Alıcı Bilgileri</p>
+                          <h4>{invoiceSource.customerName}</h4>
+                          <p>{invoiceSource.customerEmail}</p>
+                          <p>{invoiceSource.customerPhone}</p>
+                          {(invoiceOrderDetail ?? invoiceSource).paymentTransactionId && (
+                            <p>Ödeme Ref: {(invoiceOrderDetail ?? invoiceSource).paymentTransactionId}</p>
+                          )}
+                        </div>
+                      </section>
+                      <section className="invoice-table-wrapper">
+                        <table className="invoice-table">
+                          <thead>
+                            <tr>
+                              <th>Açıklama</th>
+                              <th>Adet</th>
+                              <th>KDV</th>
+                              <th>Birim Fiyat</th>
+                              <th>Satır Tutarı</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {invoiceTableItems.map((item) => {
+                              const measurement = getItemMeasurement(item)
+                              const quantity = item.quantity ?? 1
+                              const unitPrice = getItemUnitPrice(item)
+                              const lineTotal = getItemLineTotal(item)
+                              return (
+                                <tr key={`${item.id}-${item.productName}`}>
+                                  <td>
+                                    <div className="invoice-table__product">
+                                      <span>{item.productName}</span>
+                                      {measurement && (
+                                        <span className="invoice-table__muted">{measurement}</span>
+                                      )}
+                                    </div>
+                                  </td>
+                                  <td>{quantity}</td>
+                                  <td>%{invoiceTaxPercent}</td>
+                                  <td>{formatCurrency(unitPrice)}</td>
+                                  <td>{formatCurrency(lineTotal)}</td>
+                                </tr>
+                              )
+                            })}
+                          </tbody>
+                        </table>
+                      </section>
+                      <section className="invoice-summary">
+                        <div className="invoice-notes">
+                          <p className="invoice-card__label">Notlar</p>
+                          <p>
+                            {invoiceNotes.trim()
+                              ? invoiceNotes
+                              : `Sayın ${invoiceSource.customerName}, siparişiniz hazırlandığında tarafınıza bilgilendirme yapılacaktır.`}
+                          </p>
+                        </div>
+                        <div className="invoice-totals">
+                          <div className="invoice-totals__row">
+                            <span>Ara Toplam</span>
+                            <strong>
+                              {invoiceAmounts ? formatCurrency(invoiceAmounts.subtotal) : '-'}
+                            </strong>
+                          </div>
+                          <div className="invoice-totals__row">
+                            <span>KDV (%{invoiceTaxPercent})</span>
+                            <strong>
+                              {invoiceAmounts ? formatCurrency(invoiceAmounts.taxAmount) : '-'}
+                            </strong>
+                          </div>
+                          <div className="invoice-totals__row invoice-totals__row--grand">
+                            <span>Genel Toplam</span>
+                            <strong>
+                              {invoiceAmounts ? formatCurrency(invoiceAmounts.total) : '-'}
+                            </strong>
+                          </div>
+                        </div>
+                      </section>
+                      <section className="invoice-footer">
+                        <div>
+                          <p className="invoice-card__label">Ödeme Bilgisi</p>
+                          <p>Hesap Adı: Hiedra İç ve Dış Ticaret Ltd. Şti.</p>
+                          <p>IBAN: TR00 0000 0000 0000 0000 0000 00</p>
+                          <p>Ödeme Vadesi: Sipariş tarihinden itibaren 7 gün</p>
+                        </div>
+                        <p className="invoice-thanks">Bizi tercih ettiğiniz için teşekkür ederiz.</p>
+                      </section>
+                      <p className="invoice-disclaimer">
+                        Bu belge elektronik ortamda oluşturulmuştur, imza gerektirmez.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )
+            )}
+            <div className="modal-form" style={{ marginTop: '1rem' }}>
+              <div className="form-group">
+                <label>Fatura Notları:</label>
+                <textarea
+                  value={invoiceNotes}
+                  onChange={(e) => setInvoiceNotes(e.target.value)}
+                  placeholder="Opsiyonel açıklamalar ekleyin..."
+                  rows={3}
+                />
+              </div>
+            </div>
+            <div className="modal-actions">
+              <button className="btn btn--secondary" onClick={() => setIsInvoiceModalOpen(false)}>
+                Kapat
+              </button>
+              <button
+                className="btn btn--primary"
+                onClick={handlePrintInvoice}
+                disabled={isInvoiceLoading || !!invoiceError}
+              >
+                <FaPrint style={{ marginRight: '0.5rem' }} /> Yazdır
               </button>
             </div>
           </div>

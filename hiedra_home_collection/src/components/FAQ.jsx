@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { Link } from 'react-router-dom'
 import SEO from './SEO'
 import './FAQ.css'
 
@@ -121,7 +122,7 @@ const FAQ = () => {
 
         <div className="faq-contact">
           <p>Cevaplayamadığınız bir sorunuz mu var?</p>
-          <a href="/iletisim" className="contact-link">Bize Ulaşın</a>
+          <Link to="/iletisim" className="contact-link">Bize Ulaşın</Link>
         </div>
       </div>
     </div>

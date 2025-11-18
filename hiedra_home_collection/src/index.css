@@ -53,6 +53,11 @@
   --btn-secondary-text: #B08D49;
   --btn-secondary-hover-bg: rgba(176, 141, 73, 0.2);
   
+  /* Layout Dimensions */
+  --header-offset-desktop: 140px;
+  --header-offset-tablet: 120px;
+  --header-offset-mobile: 100px;
+
   /* Legacy support */
   --primary: var(--gold-primary);
 }

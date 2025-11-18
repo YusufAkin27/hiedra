@@ -57,10 +57,6 @@ public class Address {
     @Size(min = 2, max = 50, message = "İlçe 2-50 karakter arasında olmalıdır")
     private String district;
 
-    @Column(name = "neighbourhood", length = 100)
-    @Size(max = 100, message = "Mahalle en fazla 100 karakter olabilir")
-    private String neighbourhood; // Mahalle (opsiyonel)
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = true)
     @JsonIgnore // User bilgisi frontend'e gönderilmez

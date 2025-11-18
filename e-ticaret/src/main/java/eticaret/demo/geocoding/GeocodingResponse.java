@@ -30,7 +30,6 @@ public class GeocodingResponse {
     private String state;
     private String city;
     private String district;
-    private String neighbourhood;
     private String road;
     private String houseNumber;
     private String postalCode;
