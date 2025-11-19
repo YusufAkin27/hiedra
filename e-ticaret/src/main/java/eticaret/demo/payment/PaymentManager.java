@@ -45,6 +45,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
@@ -627,7 +628,7 @@ public class PaymentManager implements PaymentService {
             }
 
             topUpSessionCache.remove(conversationId);
-            sendOrderConfirmationEmail(order.getCustomerEmail(), order.getCustomerName(), orderNumber, order.getTotalAmount());
+            sendOrderConfirmationEmail(order);
 
             log.info("Sipariş kaydedildi: {} - İade bilgileri bellekte saklandı, sepet temizlendi", orderNumber);
 
@@ -643,49 +644,56 @@ public class PaymentManager implements PaymentService {
         }
     }
 
-    private void sendOrderConfirmationEmail(String toEmail, String fullName, String orderNumber, BigDecimal totalAmount) {
+    private void sendOrderConfirmationEmail(Order order) {
         try {
-            String subject = "Siparişiniz Alındı - #" + orderNumber;
+            String subject = "Siparişiniz Alındı - #" + order.getOrderNumber();
 
-            String body = """
-                <html>
-                <body style="font-family: Arial, sans-serif; background-color: #f8f9fa; padding: 20px;">
-                    <div style="max-width: 600px; margin: auto; background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                        <h2 style="color: #007bff;">Siparişiniz Başarıyla Alındı!</h2>
-                        <p>Merhaba <b>%s</b>,</p>
-                        <p>Siparişiniz başarıyla alındı. Aşağıda sipariş detaylarınızı bulabilirsiniz:</p>
-                        <table style="width:100%%; border-collapse: collapse;">
-                            <tr>
-                                <td style="padding:8px; border-bottom:1px solid #ddd;">Sipariş Numarası:</td>
-                                <td style="padding:8px; border-bottom:1px solid #ddd;"><b>#%s</b></td>
-                            </tr>
-                            <tr>
-                                <td style="padding:8px; border-bottom:1px solid #ddd;">Toplam Tutar:</td>
-                                <td style="padding:8px; border-bottom:1px solid #ddd;"><b>₺%s</b></td>
-                            </tr>
-                        </table>
-                        <p style="margin-top:20px;">Siparişiniz kısa süre içinde hazırlanacaktır. Kargo süreci başladığında size bilgi vereceğiz.</p>
-                        <p style="margin-top:20px;">Bizden alışveriş yaptığınız için teşekkür ederiz 💙</p>
-                        <hr>
-                        <p style="font-size:12px; color:gray;">Bu e-posta otomatik olarak gönderilmiştir. Lütfen yanıtlamayınız.</p>
-                    </div>
-                </body>
-                </html>
-                """.formatted(fullName, orderNumber, totalAmount);
+            List<MailService.OrderEmailItem> items = order.getOrderItems() != null
+                    ? order.getOrderItems().stream()
+                    .map(item -> new MailService.OrderEmailItem(
+                            item.getProductName(),
+                            buildEmailItemDescription(item),
+                            item.getQuantity(),
+                            item.getTotalPrice()))
+                    .collect(Collectors.toList())
+                    : List.of();
+
+            MailService.OrderEmailPayload payload = new MailService.OrderEmailPayload(
+                    order.getCustomerName(),
+                    order.getOrderNumber(),
+                    order.getSubtotal(),
+                    order.getDiscountAmount(),
+                    order.getTotalAmount(),
+                    items,
+                    appUrlConfig.getFrontendUrl() + "/siparislerim"
+            );
+
+            String body = mailService.buildOrderCreatedEmail(payload);
 
             EmailMessage emailMessage = EmailMessage.builder()
-                    .toEmail(toEmail)
+                    .toEmail(order.getCustomerEmail())
                     .subject(subject)
                     .body(body)
                     .isHtml(true)
                     .build();
 
-            mailService.queueEmail(emailMessage);  // ✅ mevcut mail kuyruğunu kullanır
-            log.info("Sipariş onay maili gönderildi: {}", toEmail);
+            mailService.queueEmail(emailMessage);
+            log.info("Sipariş onay maili gönderildi: {}", order.getCustomerEmail());
 
         } catch (Exception e) {
             log.error("Sipariş onay maili gönderilemedi: {}", e.getMessage());
         }
+    }
+
+    private String buildEmailItemDescription(OrderItem item) {
+        List<String> parts = new ArrayList<>();
+        if (item.getWidth() != null && item.getHeight() != null) {
+            parts.add(String.format("Ölçü: %.0f x %.0f cm", item.getWidth(), item.getHeight()));
+        }
+        if (item.getPleatType() != null) {
+            parts.add("Pile: " + item.getPleatType());
+        }
+        return String.join(" • ", parts);
     }
 
     @Override
@@ -1811,75 +1819,6 @@ public class PaymentManager implements PaymentService {
                 item.setPrice(detail.getPrice());
                 basketItems.add(item);
             }
-        }
-        
-        return basketItems;
-    }
-
-    /**
-     * Order'dan basket items oluştur (iade için)
-     */
-    private List<BasketItem> createRefundBasketItemsFromOrder(List<OrderItem> orderItems, 
-                                                               BigDecimal refundAmount,
-                                                               BigDecimal originalTotalAmount,
-                                                               BigDecimal discountAmount) {
-        List<BasketItem> basketItems = new ArrayList<>();
-        int index = 1;
-        
-        if (orderItems == null || orderItems.isEmpty()) {
-            log.warn("OrderItems boş, basket items oluşturulamadı");
-            return basketItems;
-        }
-        
-        // OrderItems'ların toplam fiyatını hesapla
-        BigDecimal orderItemsToplam = orderItems.stream()
-                .map(OrderItem::getTotalPrice)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        
-        // İade tutarı orijinal tutardan küçük veya eşit olmalı
-        BigDecimal finalRefundAmount = refundAmount.compareTo(originalTotalAmount) > 0 
-                ? originalTotalAmount 
-                : refundAmount;
-        
-        // İade tutarına göre orantılı fiyatlar hesapla
-        if (orderItemsToplam.compareTo(BigDecimal.ZERO) > 0) {
-            // İade oranı hesapla
-            BigDecimal refundRatio = finalRefundAmount.divide(originalTotalAmount, 4, java.math.RoundingMode.HALF_UP);
-            
-            BigDecimal toplamKontrol = BigDecimal.ZERO;
-            for (int i = 0; i < orderItems.size(); i++) {
-                OrderItem orderItem = orderItems.get(i);
-                BasketItem item = new BasketItem();
-                item.setId("ITEM-" + index++);
-                item.setName(orderItem.getProductName() != null ? orderItem.getProductName() : "Ürün");
-                item.setCategory1("Perde");
-                item.setCategory2(orderItem.getPleatType() != null ? orderItem.getPleatType() : "1x1");
-                item.setItemType(BasketItemType.PHYSICAL.name());
-                
-                // İade tutarına göre orantılı fiyat
-                BigDecimal itemRefundPrice = orderItem.getTotalPrice().multiply(refundRatio)
-                        .setScale(2, java.math.RoundingMode.HALF_UP);
-                
-                // Son item'da kalan farkı düzelt
-                if (i == orderItems.size() - 1) {
-                    BigDecimal mevcutToplam = toplamKontrol.add(itemRefundPrice);
-                    BigDecimal fark = finalRefundAmount.subtract(mevcutToplam);
-                    itemRefundPrice = itemRefundPrice.add(fark);
-                    if (itemRefundPrice.compareTo(BigDecimal.ZERO) < 0) {
-                        itemRefundPrice = BigDecimal.ZERO;
-                    }
-                }
-                
-                item.setPrice(itemRefundPrice);
-                toplamKontrol = toplamKontrol.add(itemRefundPrice);
-                basketItems.add(item);
-            }
-            
-            // Basket items toplamını kontrol et ve düzelt
-            adjustBasketItemsTotal(basketItems, finalRefundAmount);
-            
-            log.info("Order'dan basket items oluşturuldu - OrderItems: {}, İade Tutarı: {} TL, Orijinal Tutar: {} TL", 
-                    orderItems.size(), finalRefundAmount, originalTotalAmount);
         }
         
         return basketItems;

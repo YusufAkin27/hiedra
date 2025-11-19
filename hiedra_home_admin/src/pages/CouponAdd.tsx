@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent, useRef } from 'react'
-import { FaPlus, FaTimes, FaUpload, FaSpinner, FaArrowLeft } from 'react-icons/fa'
+import { FaPlus, FaTimes, FaSpinner, FaArrowLeft, FaCloudUploadAlt } from 'react-icons/fa'
 import type { AuthResponse } from '../services/authService'
 import type { useToast } from '../components/Toast'
 
@@ -447,32 +447,30 @@ function CouponAddPage({ session, toast, onBack }: CouponAddPageProps) {
                   ref={fileInputRef}
                   accept="image/*"
                   onChange={handleFileSelect}
-                  style={{ display: 'none' }}
+                  className="upload-card__input"
                 />
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploadingImage}
-                    className="btn btn-primary"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                    }}
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                  <label
+                    htmlFor="coverImage"
+                    className={`upload-card upload-card--compact ${formData.coverImageUrl ? 'upload-card--selected' : ''} ${
+                      isUploadingImage ? 'upload-card--disabled' : ''
+                    }`}
+                    style={{ flex: '1 1 260px', minWidth: '240px' }}
+                    aria-disabled={isUploadingImage}
                   >
-                    {isUploadingImage ? (
-                      <>
-                        <FaSpinner style={{ animation: 'spin 1s linear infinite' }} />
-                        Yükleniyor...
-                      </>
-                    ) : (
-                      <>
-                        <FaUpload />
-                        Resim Seç
-                      </>
+                    <span className="upload-card__badge">Kapak görseli</span>
+                    <span className="upload-card__icon">
+                      {isUploadingImage ? <FaSpinner style={{ animation: 'spin 1s linear infinite' }} /> : <FaCloudUploadAlt />}
+                    </span>
+                    <span className="upload-card__title">
+                      {isUploadingImage ? 'Fotoğraf yükleniyor...' : 'Fotoğraf seçmek için tıklayın'}
+                    </span>
+                    <span className="upload-card__hint">PNG, JPG veya WEBP • Maksimum 25MB</span>
+                    {formData.coverImageUrl && !isUploadingImage && (
+                      <span className="upload-card__file">Yeni kapak görseli hazır</span>
                     )}
-                  </button>
+                    {isUploadingImage && <span className="upload-card__file">Yükleniyor...</span>}
+                  </label>
                   {formData.coverImageUrl && (
                     <div style={{ position: 'relative', display: 'inline-block' }}>
                       <img 

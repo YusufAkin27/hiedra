@@ -8,11 +8,14 @@ import org.springframework.transaction.annotation.Transactional;
 import eticaret.demo.auth.AppUser;
 import eticaret.demo.mail.EmailMessage;
 import eticaret.demo.mail.MailService;
+import eticaret.demo.mail.EmailTemplateBuilder;
+import eticaret.demo.mail.EmailTemplateModel;
 import eticaret.demo.product.Product;
 import eticaret.demo.product.ProductRepository;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -352,64 +355,28 @@ public class MarketingEmailScheduler {
                         }
                     ));
             
-            StringBuilder productHtml = new StringBuilder();
-            
+            LinkedHashMap<String, String> details = new LinkedHashMap<>();
             for (Product product : selectedProducts) {
-                String description = product.getDescription() != null && product.getDescription().length() > 100 
-                    ? product.getDescription().substring(0, 100) + "..." 
-                    : (product.getDescription() != null ? product.getDescription() : "Kaliteli ve şık perde seçenekleri");
-                
-                productHtml.append(String.format("""
-                    <div style="background: white; padding: 15px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #667eea;">
-                        <h3 style="color: #2d3748; margin: 0 0 10px 0;">%s</h3>
-                        <p style="color: #4a5568; margin: 5px 0;">%s</p>
-                        <p style="color: #27ae60; font-weight: bold; font-size: 18px; margin: 10px 0;">%s ₺/metre</p>
-                    </div>
-                    """, 
-                    sanitizeHtml(product.getName()),
-                    sanitizeHtml(description),
-                    product.getPrice() != null ? product.getPrice() : "0"));
+                String description = product.getDescription() != null && product.getDescription().length() > 100
+                        ? product.getDescription().substring(0, 100) + "..."
+                        : (product.getDescription() != null ? product.getDescription() : "Kaliteli ve şık perde seçenekleri");
+                details.put(sanitizeHtml(product.getName()),
+                        sanitizeHtml(description) + " • " + formatPrice(product.getPrice()));
             }
-            
-            return String.format("""
-                <!DOCTYPE html>
-                <html lang="tr">
-                <head>
-                    <meta charset="UTF-8">
-                    <style>
-                        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                        .header { background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-                        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-                        .button { display: inline-block; background: #27ae60; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin-top: 20px; }
-                        .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
-                    </style>
-                </head>
-                <body>
-                    <div class="container">
-                        <div class="header">
-                            <h1>🎨 Yeni Ürünlerimiz Hazır!</h1>
-                            <p style="margin-top: 10px; font-size: 18px; font-weight: 600;">HIEDRA HOME COLLECTION</p>
-                        </div>
-                        <div class="content">
-                            <p>Merhaba <strong>%s</strong>,</p>
-                            <p>Koleksiyonumuza yeni eklenen ürünleri keşfetmeye hazır mısınız? Size özel seçtiğimiz ürünler:</p>
-                            %s
-                            <div style="text-align: center; margin-top: 30px;">
-                                <a href="https://yusufakin.online/products" class="button">Tüm Ürünleri Görüntüle</a>
-                            </div>
-                            <p style="margin-top: 30px; color: #666;">Ev dekorasyonunuzda kalite ve şıklığı bir araya getirin!</p>
-                        </div>
-                        <div class="footer">
-                            <p style="font-weight: bold; font-size: 14px; margin-bottom: 10px;">HIEDRA HOME COLLECTION</p>
-                            <p>© 2024 HIEDRA HOME COLLECTION. Tüm hakları saklıdır.</p>
-                        </div>
-                    </div>
-                </body>
-                </html>
-                """, 
-                sanitizeHtml(user.getFullName() != null ? user.getFullName() : "Değerli Müşterimiz"),
-                productHtml.toString());
+
+            return EmailTemplateBuilder.build(EmailTemplateModel.builder()
+                    .title("Yeni Ürünlerimiz Hazır!")
+                    .preheader("Koleksiyonumuza eklenen en yeni tasarımlar.")
+                    .greeting("Merhaba " + sanitizeHtml(user.getFullName() != null ? user.getFullName() : "Değerli Müşterimiz") + ",")
+                    .paragraphs(List.of(
+                            "Koleksiyonumuza yeni eklenen ürünleri keşfetmeye hazır mısınız? Size özel seçtiğimiz ürünler aşağıda.",
+                            "Ev dekorasyonunuzda kalite ve şıklığı bir araya getirin!"
+                    ))
+                    .details(details)
+                    .actionText("Tüm Ürünleri Görüntüle")
+                    .actionUrl("https://yusufakin.online/products")
+                    .footerNote("Bu e-posta otomatik gönderilmiştir; abonelik tercihlerinizi güncellemek için hesabınızı ziyaret edebilirsiniz.")
+                    .build());
         } catch (Exception e) {
             log.error("Yeni ürünler email şablonu oluşturulurken hata: {}", e.getMessage());
             return buildGenericMarketingEmail(user);
@@ -420,153 +387,66 @@ public class MarketingEmailScheduler {
      * Özel fırsatlar email şablonu
      */
     private String buildSpecialOffersEmail(AppUser user) {
-        return String.format("""
-            <!DOCTYPE html>
-            <html lang="tr">
-            <head>
-                <meta charset="UTF-8">
-                <style>
-                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                    .header { background: linear-gradient(135deg, #f093fb 0%%, #f5576c 100%%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-                    .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-                    .offer-box { background: linear-gradient(135deg, #ffd700 0%%, #ffed4e 100%%); padding: 25px; border-radius: 10px; text-align: center; margin: 20px 0; }
-                    .button { display: inline-block; background: #f5576c; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin-top: 20px; }
-                    .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <h1>✨ Özel Fırsatlar Sizi Bekliyor!</h1>
-                        <p style="margin-top: 10px; font-size: 18px; font-weight: 600;">HIEDRA HOME COLLECTION</p>
-                    </div>
-                    <div class="content">
-                        <p>Merhaba <strong>%s</strong>,</p>
-                        <p>Size özel hazırladığımız fırsatları kaçırmayın! Ev dekorasyonunuzu yenilerken kalite ve uygun fiyatı bir arada bulun.</p>
-                        <div class="offer-box">
-                            <h2 style="margin: 0; color: #2d3748;">🎁 Özel Kampanyalar</h2>
-                            <p style="font-size: 18px; margin: 10px 0; color: #2d3748;">Sitemizi ziyaret edin ve fırsatları keşfedin!</p>
-                        </div>
-                        <div style="text-align: center; margin-top: 30px;">
-                            <a href="https://yusufakin.online" class="button">Fırsatları Görüntüle</a>
-                        </div>
-                        <p style="margin-top: 30px; color: #666;">Bu fırsatlar sınırlı süre için geçerlidir!</p>
-                    </div>
-                    <div class="footer">
-                        <p style="font-weight: bold; font-size: 14px; margin-bottom: 10px;">HIEDRA HOME COLLECTION</p>
-                        <p>© 2024 HIEDRA HOME COLLECTION. Tüm hakları saklıdır.</p>
-                    </div>
-                </div>
-            </body>
-            </html>
-            """, 
-            sanitizeHtml(user.getFullName() != null ? user.getFullName() : "Değerli Müşterimiz"));
+        LinkedHashMap<String, String> details = new LinkedHashMap<>();
+        details.put("Kampanya", "Özel indirimler ve sınırlı süreli fırsatlar sizi bekliyor");
+
+        return EmailTemplateBuilder.build(EmailTemplateModel.builder()
+                .title("Özel Fırsatlar Sizi Bekliyor!")
+                .preheader("Limiti kampanyalarla evinize değer katın.")
+                .greeting("Merhaba " + sanitizeHtml(user.getFullName() != null ? user.getFullName() : "Değerli Müşterimiz") + ",")
+                .paragraphs(List.of(
+                        "Size özel hazırladığımız fırsatları kaçırmayın! Ev dekorasyonunuzu yenilerken kalite ve uygun fiyatı bir arada bulun.",
+                        "Sitemizi ziyaret edin ve kampanyaları keşfedin."
+                ))
+                .details(details)
+                .actionText("Fırsatları Görüntüle")
+                .actionUrl("https://yusufakin.online")
+                .footerNote("Bu fırsatlar sınırlı süre için geçerlidir.")
+                .build());
     }
 
     /**
      * İlham email şablonu
      */
     private String buildInspirationEmail(AppUser user) {
-        return String.format("""
-            <!DOCTYPE html>
-            <html lang="tr">
-            <head>
-                <meta charset="UTF-8">
-                <style>
-                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                    .header { background: linear-gradient(135deg, #4facfe 0%%, #00f2fe 100%%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-                    .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-                    .inspiration-box { background: white; padding: 20px; border-radius: 10px; margin: 20px 0; border-left: 4px solid #4facfe; }
-                    .button { display: inline-block; background: #4facfe; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin-top: 20px; }
-                    .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <h1>🏠 Ev Dekorasyonunda İlham Alın!</h1>
-                        <p style="margin-top: 10px; font-size: 18px; font-weight: 600;">HIEDRA HOME COLLECTION</p>
-                    </div>
-                    <div class="content">
-                        <p>Merhaba <strong>%s</strong>,</p>
-                        <p>Ev dekorasyonunuzu yenilemek için ilham mı arıyorsunuz? Size özel hazırladığımız koleksiyonumuzu keşfedin ve evinize yeni bir hava katın!</p>
-                        <div class="inspiration-box">
-                            <h3 style="color: #2d3748; margin: 0 0 10px 0;">💡 Dekorasyon İpuçları</h3>
-                            <ul style="color: #4a5568; line-height: 1.8;">
-                                <li>Doğru perde seçimi ile mekanınızı büyütün</li>
-                                <li>Renk uyumu ile modern bir görünüm yakalayın</li>
-                                <li>Kaliteli kumaşlar ile uzun ömürlü çözümler</li>
-                            </ul>
-                        </div>
-                        <div style="text-align: center; margin-top: 30px;">
-                            <a href="https://yusufakin.online/products" class="button">Koleksiyonumuzu Keşfedin</a>
-                        </div>
-                        <p style="margin-top: 30px; color: #666;">Eviniz için en uygun ürünleri bulmak için sitemizi ziyaret edin!</p>
-                    </div>
-                    <div class="footer">
-                        <p style="font-weight: bold; font-size: 14px; margin-bottom: 10px;">HIEDRA HOME COLLECTION</p>
-                        <p>© 2024 HIEDRA HOME COLLECTION. Tüm hakları saklıdır.</p>
-                    </div>
-                </div>
-            </body>
-            </html>
-            """, 
-            sanitizeHtml(user.getFullName() != null ? user.getFullName() : "Değerli Müşterimiz"));
+        LinkedHashMap<String, String> details = new LinkedHashMap<>();
+        details.put("Dekorasyon İpuçları", "Doğru perde seçimiyle mekanınızı büyütün; renk uyumuyla modern bir görünüm yakalayın; kaliteli kumaşlar uzun ömür sağlar.");
+
+        return EmailTemplateBuilder.build(EmailTemplateModel.builder()
+                .title("Ev Dekorasyonunda İlham Alın")
+                .preheader("Evinizi yenilemek için ilham dolu öneriler.")
+                .greeting("Merhaba " + sanitizeHtml(user.getFullName() != null ? user.getFullName() : "Değerli Müşterimiz") + ",")
+                .paragraphs(List.of(
+                        "Ev dekorasyonunuzu yenilemek için ilham mı arıyorsunuz? Size özel hazırladığımız koleksiyonumuzdan bazı ipuçları derledik.",
+                        "Hiedra'nın seçkin ürünleriyle evinize yeni bir hava katın."
+                ))
+                .details(details)
+                .actionText("Koleksiyonumuzu Keşfedin")
+                .actionUrl("https://yusufakin.online/products")
+                .footerNote("Eviniz için en uygun ürünleri bulmak için her zaman yanınızdayız.")
+                .build());
     }
 
     /**
      * Sitemizi ziyaret edin email şablonu
      */
     private String buildVisitWebsiteEmail(AppUser user) {
-        return String.format("""
-            <!DOCTYPE html>
-            <html lang="tr">
-            <head>
-                <meta charset="UTF-8">
-                <style>
-                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                    .header { background: linear-gradient(135deg, #fa709a 0%%, #fee140 100%%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-                    .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-                    .highlight-box { background: white; padding: 20px; border-radius: 10px; margin: 20px 0; border: 2px solid #fa709a; }
-                    .button { display: inline-block; background: #fa709a; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin-top: 20px; }
-                    .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <h1>👀 Sitemizi Ziyaret Edin, Farkı Görün!</h1>
-                        <p style="margin-top: 10px; font-size: 18px; font-weight: 600;">HIEDRA HOME COLLECTION</p>
-                    </div>
-                    <div class="content">
-                        <p>Merhaba <strong>%s</strong>,</p>
-                        <p>HIEDRA HOME COLLECTION olarak, ev dekorasyonunuz için geniş ürün yelpazemizle hizmetinizdeyiz!</p>
-                        <div class="highlight-box">
-                            <h3 style="color: #2d3748; margin: 0 0 10px 0;">🎯 Neden Bizi Seçmelisiniz?</h3>
-                            <ul style="color: #4a5568; line-height: 1.8;">
-                                <li>✅ Geniş ürün çeşitliliği</li>
-                                <li>✅ Kaliteli ve dayanıklı malzemeler</li>
-                                <li>✅ Uygun fiyat garantisi</li>
-                                <li>✅ Hızlı ve güvenli teslimat</li>
-                            </ul>
-                        </div>
-                        <div style="text-align: center; margin-top: 30px;">
-                            <a href="https://yusufakin.online" class="button">Sitemizi Ziyaret Edin</a>
-                        </div>
-                        <p style="margin-top: 30px; color: #666;">Sitemizde yeni ürünler ve özel fırsatlar sizi bekliyor!</p>
-                    </div>
-                    <div class="footer">
-                        <p style="font-weight: bold; font-size: 14px; margin-bottom: 10px;">HIEDRA HOME COLLECTION</p>
-                        <p>© 2024 HIEDRA HOME COLLECTION. Tüm hakları saklıdır.</p>
-                    </div>
-                </div>
-            </body>
-            </html>
-            """, 
-            sanitizeHtml(user.getFullName() != null ? user.getFullName() : "Değerli Müşterimiz"));
+        LinkedHashMap<String, String> details = new LinkedHashMap<>();
+        details.put("Sizi Bekleyenler", "Yeni sezon ürünleri • Özel indirimler • İlham verici kombin önerileri • Hızlı teslimat");
+
+        return EmailTemplateBuilder.build(EmailTemplateModel.builder()
+                .title("Sitemizi Ziyaret Edin, Farkı Görün!")
+                .preheader("Yeni trendler ve fırsatlar sizi bekliyor.")
+                .greeting("Merhaba " + sanitizeHtml(user.getFullName() != null ? user.getFullName() : "Değerli Müşterimiz") + ",")
+                .paragraphs(List.of(
+                        "Hiedra Home Collection olarak ev dekorasyonunuz için geniş ürün yelpazemizle hizmetinizdeyiz.",
+                        "Sitemizi ziyaret ederek yeni sezon ürünlerini ve avantajlı kampanyalarımızı keşfedebilirsiniz."
+                ))
+                .details(details)
+                .actionText("Sitemizi Ziyaret Edin")
+                .actionUrl("https://yusufakin.online")
+                .footerNote("Sitemizde yeni ürünler ve özel fırsatlar sizi bekliyor!")
+                .build());
     }
 
     /**
@@ -590,62 +470,28 @@ public class MarketingEmailScheduler {
                         }
                     ));
             
-            StringBuilder productHtml = new StringBuilder();
-            
+            LinkedHashMap<String, String> details = new LinkedHashMap<>();
             for (Product product : recommendedProducts) {
-                productHtml.append(String.format("""
-                    <div style="background: white; padding: 15px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #8e44ad;">
-                        <h3 style="color: #2d3748; margin: 0 0 10px 0;">⭐ %s</h3>
-                        <p style="color: #4a5568; margin: 5px 0;">%s</p>
-                        <p style="color: #8e44ad; font-weight: bold; font-size: 18px; margin: 10px 0;">%s ₺/metre</p>
-                    </div>
-                    """, 
-                    sanitizeHtml(product.getName()),
-                    sanitizeHtml(product.getDescription() != null && product.getDescription().length() > 80 
-                        ? product.getDescription().substring(0, 80) + "..." 
-                        : (product.getDescription() != null ? product.getDescription() : "Size özel önerimiz")),
-                    product.getPrice() != null ? product.getPrice() : "0"));
+                String description = product.getDescription() != null && product.getDescription().length() > 80
+                        ? product.getDescription().substring(0, 80) + "..."
+                        : (product.getDescription() != null ? product.getDescription() : "Size özel önerimiz");
+                details.put("⭐ " + sanitizeHtml(product.getName()),
+                        sanitizeHtml(description) + " • " + formatPrice(product.getPrice()));
             }
-            
-            return String.format("""
-                <!DOCTYPE html>
-                <html lang="tr">
-                <head>
-                    <meta charset="UTF-8">
-                    <style>
-                        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                        .header { background: linear-gradient(135deg, #8e44ad 0%%, #9b59b6 100%%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-                        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-                        .button { display: inline-block; background: #8e44ad; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin-top: 20px; }
-                        .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
-                    </style>
-                </head>
-                <body>
-                    <div class="container">
-                        <div class="header">
-                            <h1>💡 Size Özel Ürün Önerilerimiz!</h1>
-                            <p style="margin-top: 10px; font-size: 18px; font-weight: 600;">HIEDRA HOME COLLECTION</p>
-                        </div>
-                        <div class="content">
-                            <p>Merhaba <strong>%s</strong>,</p>
-                            <p>Sizin için özel olarak seçtiğimiz ürünlerimiz var! Bu ürünler ev dekorasyonunuz için mükemmel bir seçim olabilir:</p>
-                            %s
-                            <div style="text-align: center; margin-top: 30px;">
-                                <a href="https://yusufakin.online/products" class="button">Tüm Ürünleri İncele</a>
-                            </div>
-                            <p style="margin-top: 30px; color: #666;">Bu öneriler sizin için özel olarak hazırlandı!</p>
-                        </div>
-                        <div class="footer">
-                            <p style="font-weight: bold; font-size: 14px; margin-bottom: 10px;">HIEDRA HOME COLLECTION</p>
-                            <p>© 2024 HIEDRA HOME COLLECTION. Tüm hakları saklıdır.</p>
-                        </div>
-                    </div>
-                </body>
-                </html>
-                """, 
-                sanitizeHtml(user.getFullName() != null ? user.getFullName() : "Değerli Müşterimiz"),
-                productHtml.toString());
+
+            return EmailTemplateBuilder.build(EmailTemplateModel.builder()
+                    .title("Size Özel Ürün Önerilerimiz")
+                    .preheader("Sizin için seçtiğimiz ürün önerileri.")
+                    .greeting("Merhaba " + sanitizeHtml(user.getFullName() != null ? user.getFullName() : "Değerli Müşterimiz") + ",")
+                    .paragraphs(List.of(
+                            "Sizin için özel olarak seçtiğimiz ürünlerimiz var! Bu ürünler ev dekorasyonunuz için mükemmel bir seçim olabilir.",
+                            "Size özel önerilerimizi aşağıda bulabilirsiniz."
+                    ))
+                    .details(details)
+                    .actionText("Tüm Ürünleri İncele")
+                    .actionUrl("https://yusufakin.online/products")
+                    .footerNote("Bu öneriler size özeldir; hesabınızdan tercihlerinizi güncelleyebilirsiniz.")
+                    .build());
         } catch (Exception e) {
             log.error("Ürün önerileri email şablonu oluşturulurken hata: {}", e.getMessage());
             return buildGenericMarketingEmail(user);
@@ -709,5 +555,12 @@ public class MarketingEmailScheduler {
                 .replace(">", "&gt;")
                 .replace("\"", "&quot;")
                 .replace("'", "&#x27;");
+    }
+
+    private String formatPrice(java.math.BigDecimal price) {
+        if (price == null) {
+            return "0,00 ₺";
+        }
+        return price.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString() + " ₺";
     }
 }

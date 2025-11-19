@@ -14,6 +14,7 @@ import eticaret.demo.product.Product;
 import eticaret.demo.product.ProductRepository;
 import eticaret.demo.product.ProductReviewRepository;
 import eticaret.demo.product.ProductViewRepository;
+import eticaret.demo.cart.CartItemRepository;
 import eticaret.demo.common.response.DataResponseMessage;
 import eticaret.demo.audit.AuditLogService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -40,6 +41,7 @@ public class AdminProductController {
     private final MediaUploadService mediaUploadService;
     private final ProductReviewRepository reviewRepository;
     private final ProductViewRepository productViewRepository;
+    private final CartItemRepository cartItemRepository;
     private final AuditLogService auditLogService;
 
     /**
@@ -337,59 +339,42 @@ public class AdminProductController {
 
             // Önce ürünü güncelle
             Product updatedProduct = productRepository.save(product);
-            final Long productId = updatedProduct.getId();
 
-            // Kapak fotoğrafı güncelle (asenkron - arka planda, optimize edilmiş)
+            // Kapak fotoğrafı güncelle (senkron - response'da güncellenmiş URL dönsün)
             if (coverImage != null && !coverImage.isEmpty()) {
                 try {
-                    mediaUploadService.uploadAndOptimizeProductImageAsync(coverImage)
-                            .thenAccept(result -> {
-                                try {
-                                    // Yeni transaction içinde güncelle (optimize edilmiş URL kullan)
-                                    updateProductImageUrl(productId, result.getOptimizedUrl(), true);
-                                    log.info("Ana fotoğraf optimize edilerek güncellendi: {} (Orijinal: {} MB, Optimize: {} MB, Sıkıştırma: {:.2f}%)", 
+                    log.info("Ana fotoğraf yükleniyor ve optimize ediliyor...");
+                    var result = mediaUploadService.uploadAndOptimizeProductImage(coverImage);
+                    updatedProduct.setCoverImageUrl(result.getOptimizedUrl());
+                    updatedProduct = productRepository.save(updatedProduct);
+                    log.info("Ana fotoğraf optimize edilerek güncellendi: {} (Orijinal: {} MB, Optimize: {} MB, Sıkıştırma: {:.2f}%)", 
                             result.getOptimizedUrl(),
                             result.getOriginalSize() != null ? result.getOriginalSize() / (1024.0 * 1024.0) : 0,
                             result.getOptimizedSize() != null ? result.getOptimizedSize() / (1024.0 * 1024.0) : 0,
                             result.getCompressionRatio());
-                                } catch (Exception e) {
-                                    log.error("Ana fotoğraf URL'si güncellenirken hata: ", e);
-                                }
-                            })
-                            .exceptionally(ex -> {
-                                log.error("Ana fotoğraf optimizasyonu hatası: ", ex);
-                                return null;
-                            });
                 } catch (Exception e) {
-                    log.error("Ana fotoğraf yükleme başlatılırken hata: ", e);
-                    // Hata olsa bile devam et
+                    log.error("Ana fotoğraf yükleme hatası: ", e);
+                    return ResponseEntity.badRequest()
+                            .body(DataResponseMessage.error("Ana fotoğraf yüklenirken hata: " + e.getMessage()));
                 }
             }
 
-            // Detay fotoğrafı güncelle (asenkron - arka planda, optimize edilmiş)
+            // Detay fotoğrafı güncelle (senkron - response'da güncellenmiş URL dönsün)
             if (detailImage != null && !detailImage.isEmpty()) {
                 try {
-                    mediaUploadService.uploadAndOptimizeProductImageAsync(detailImage)
-                            .thenAccept(result -> {
-                                try {
-                                    // Yeni transaction içinde güncelle (optimize edilmiş URL kullan)
-                                    updateProductImageUrl(productId, result.getOptimizedUrl(), false);
-                                    log.info("Detay fotoğrafı optimize edilerek güncellendi: {} (Orijinal: {} MB, Optimize: {} MB, Sıkıştırma: {:.2f}%)", 
+                    log.info("Detay fotoğrafı yükleniyor ve optimize ediliyor...");
+                    var result = mediaUploadService.uploadAndOptimizeProductImage(detailImage);
+                    updatedProduct.setDetailImageUrl(result.getOptimizedUrl());
+                    updatedProduct = productRepository.save(updatedProduct);
+                    log.info("Detay fotoğrafı optimize edilerek güncellendi: {} (Orijinal: {} MB, Optimize: {} MB, Sıkıştırma: {:.2f}%)", 
                             result.getOptimizedUrl(),
                             result.getOriginalSize() != null ? result.getOriginalSize() / (1024.0 * 1024.0) : 0,
                             result.getOptimizedSize() != null ? result.getOptimizedSize() / (1024.0 * 1024.0) : 0,
                             result.getCompressionRatio());
-                                } catch (Exception e) {
-                                    log.error("Detay fotoğrafı URL'si güncellenirken hata: ", e);
-                                }
-                            })
-                            .exceptionally(ex -> {
-                                log.error("Detay fotoğrafı optimizasyonu hatası: ", ex);
-                                return null;
-                            });
                 } catch (Exception e) {
-                    log.error("Detay fotoğrafı yükleme başlatılırken hata: ", e);
-                    // Hata olsa bile devam et
+                    log.error("Detay fotoğrafı yükleme hatası: ", e);
+                    return ResponseEntity.badRequest()
+                            .body(DataResponseMessage.error("Detay fotoğrafı yüklenirken hata: " + e.getMessage()));
                 }
             }
 
@@ -432,14 +417,32 @@ public class AdminProductController {
     /**
      * Ürün sil (admin)
      * DELETE /api/admin/products/{id}
+     * Ürün silinmeden önce kullanıcıların sepetlerinden de silinir
      */
     @DeleteMapping("/{id}")
+    @Transactional
     public ResponseEntity<DataResponseMessage<Void>> deleteProduct(@PathVariable Long id) {
-        if (productRepository.existsById(id)) {
-            productRepository.deleteById(id);
-            return ResponseEntity.ok(new DataResponseMessage<>("Ürün başarıyla silindi", true, null));
-        } else {
+        if (!productRepository.existsById(id)) {
             return ResponseEntity.notFound().build();
+        }
+        
+        try {
+            // Önce ürünle ilişkili sepet öğelerini sil
+            int deletedCartItems = cartItemRepository.findByProduct_Id(id).size();
+            cartItemRepository.deleteByProduct_Id(id);
+            
+            if (deletedCartItems > 0) {
+                log.info("Ürün {} silinirken {} adet sepet öğesi de silindi", id, deletedCartItems);
+            }
+            
+            // Sonra ürünü sil
+            productRepository.deleteById(id);
+            
+            log.info("Ürün başarıyla silindi: {}", id);
+            return ResponseEntity.ok(new DataResponseMessage<>("Ürün başarıyla silindi", true, null));
+        } catch (Exception e) {
+            log.error("Ürün silinirken hata oluştu: {}", id, e);
+            throw e;
         }
     }
 

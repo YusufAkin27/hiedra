@@ -115,7 +115,7 @@ public class MediaUploadService {
         
         // Transformation oluştur - kaliteyi koruyarak WebP'ye dönüştür
         Transformation transformation = new Transformation()
-                .quality("auto:good") // Daha yüksek kalite (auto:best çok agresif)
+                .quality("auto:best") // En yüksek kalite, minimum sıkıştırma
                 .fetchFormat("webp") // WebP formatına dönüştür
                 .flags("progressive") // Progressive JPEG/WebP (yavaş bağlantılar için)
                 .dpr("auto"); // Device Pixel Ratio - retina ekranlar için
@@ -308,7 +308,7 @@ public class MediaUploadService {
                         "unique_filename", true,
                         "overwrite", false,
                         "invalidate", true,
-                        "quality", "auto:good",
+                        "quality", "auto:best", // En yüksek kalite, minimum sıkıştırma
                         "format", "auto"
                 );
 
@@ -332,7 +332,7 @@ public class MediaUploadService {
                 .width(400)
                 .height(400)
                 .crop("limit")
-                .quality("auto:good") // Daha yüksek kalite
+                .quality("auto:best") // En yüksek kalite, minimum sıkıştırma
                 .fetchFormat("webp") // WebP formatına dönüştür
                 .flags("progressive") // Progressive loading
                 .dpr("auto")); // Retina ekranlar için
@@ -342,7 +342,7 @@ public class MediaUploadService {
                 .width(800)
                 .height(800)
                 .crop("limit")
-                .quality("auto:good")
+                .quality("auto:best") // En yüksek kalite, minimum sıkıştırma
                 .fetchFormat("webp")
                 .flags("progressive")
                 .dpr("auto"));
@@ -352,7 +352,7 @@ public class MediaUploadService {
                 .width(1200)
                 .height(1200)
                 .crop("limit")
-                .quality("auto:good")
+                .quality("auto:best") // En yüksek kalite, minimum sıkıştırma
                 .fetchFormat("webp")
                 .flags("progressive")
                 .dpr("auto"));
@@ -362,7 +362,7 @@ public class MediaUploadService {
                 .width(1920)
                 .height(1920)
                 .crop("limit")
-                .quality("auto:good")
+                .quality("auto:best") // En yüksek kalite, minimum sıkıştırma
                 .fetchFormat("webp")
                 .flags("progressive")
                 .dpr("auto"));
@@ -372,7 +372,7 @@ public class MediaUploadService {
                 .width(2560)
                 .height(2560)
                 .crop("limit")
-                .quality("auto:good")
+                .quality("auto:best") // En yüksek kalite, minimum sıkıştırma
                 .fetchFormat("webp")
                 .flags("progressive")
                 .dpr("auto"));
@@ -392,26 +392,26 @@ public class MediaUploadService {
 
         // Büyük dosyalar için (10 MB+) önce küçük bir versiyon yükle, sonra eager transformations ile büyük versiyonlar oluştur
         if (isLargeFile) {
-            // Büyük dosyalar için önce optimize edilmiş versiyon yükle (yüksek kalite, WebP)
+            // Büyük dosyalar için önce optimize edilmiş versiyon yükle (en yüksek kalite, WebP)
             optimizedParams.put("transformation", new Transformation()
                     .width(1920)
                     .height(1920)
                     .crop("limit")
-                    .quality("auto:good") // Daha yüksek kalite (auto:best çok agresif)
+                    .quality("auto:best") // En yüksek kalite, minimum sıkıştırma
                     .fetchFormat("webp") // WebP formatına dönüştür
                     .flags("progressive") // Progressive loading
                     .dpr("auto")); // Retina ekranlar için
             
             log.info("Büyük dosya için optimize edilmiş versiyon yükleniyor (1920x1920, WebP, auto:good)...");
         } else {
-            // Küçük dosyalar için normal optimizasyon (yüksek kalite, WebP)
-            optimizedParams.put("quality", "auto:good");
+            // Küçük dosyalar için normal optimizasyon (en yüksek kalite, WebP)
+            optimizedParams.put("quality", "auto:best"); // En yüksek kalite, minimum sıkıştırma
             optimizedParams.put("fetch_format", "webp");
             optimizedParams.put("transformation", new Transformation()
                     .width(1920)
                     .height(1920)
                     .crop("limit")
-                    .quality("auto:good")
+                    .quality("auto:best") // En yüksek kalite, minimum sıkıştırma
                     .fetchFormat("webp")
                     .flags("progressive")
                     .dpr("auto"));
@@ -421,10 +421,10 @@ public class MediaUploadService {
         byte[] processedImageBytes = imageBytes;
         if (isLargeFile) {
             try {
-                // Hedef: %75 sıkıştırma (20 MB -> 5 MB)
-                // Kaliteyi yüksek tutarak (0.90) boyutu düşürmek için resize yapıyoruz
-                log.info("Büyük dosya tespit edildi, Java tarafında ön işleme yapılıyor (1920x1920, kalite: 0.90 - yüksek kalite, %75 sıkıştırma hedefi)...");
-                processedImageBytes = resizeImageBeforeUpload(imageBytes, 1920, 1920, 0.90f);
+                // Minimum sıkıştırma, maksimum kalite
+                // Kaliteyi çok yüksek tutarak (0.95) görsel kalitesini koruyoruz
+                log.info("Büyük dosya tespit edildi, Java tarafında ön işleme yapılıyor (1920x1920, kalite: 0.95 - en yüksek kalite, minimum sıkıştırma)...");
+                processedImageBytes = resizeImageBeforeUpload(imageBytes, 1920, 1920, 0.95f);
                 log.info("Ön işleme tamamlandı. Orijinal: {} MB, İşlenmiş: {} MB", 
                         originalSize / (1024.0 * 1024.0),
                         processedImageBytes.length / (1024.0 * 1024.0));
@@ -453,14 +453,14 @@ public class MediaUploadService {
                     }
                     
                     // Her denemede daha agresif optimizasyon - Java tarafında resize (kaliteyi mümkün olduğunca koru)
-                    // %75 sıkıştırma hedefi için kaliteyi yüksek tutuyoruz
+                    // Minimum sıkıştırma için kaliteyi çok yüksek tutuyoruz
                     int[] widths = {1600, 1200, 1000};
-                    float[] qualities = {0.88f, 0.85f, 0.82f}; // Kaliteyi yüksek tut (%75 sıkıştırma için)
+                    float[] qualities = {0.95f, 0.92f, 0.90f}; // Çok yüksek kalite (görsel kalitesi bozulmasın)
                     
                     int width = retryCount <= widths.length ? widths[retryCount - 1] : 1000;
                     float quality = retryCount <= qualities.length ? qualities[retryCount - 1] : 0.82f;
                     
-                    log.warn("Deneme {} başarısız, Java tarafında resize yapılıyor ({}x{}, kalite: {} - yüksek kalite, %75 sıkıştırma hedefi)...", 
+                    log.warn("Deneme {} başarısız, Java tarafında resize yapılıyor ({}x{}, kalite: {} - en yüksek kalite, minimum sıkıştırma)...", 
                             retryCount, width, width, quality);
                     
                     try {
@@ -476,7 +476,7 @@ public class MediaUploadService {
                             .width(width)
                             .height(width)
                             .crop("limit")
-                            .quality("auto:good") // Daha yüksek kalite
+                            .quality("auto:best") // En yüksek kalite, minimum sıkıştırma
                             .fetchFormat("webp") // WebP formatına dönüştür
                             .flags("progressive")
                             .dpr("auto"));
@@ -490,7 +490,7 @@ public class MediaUploadService {
                                     .width(eagerWidths[i])
                                     .height(eagerWidths[i])
                                     .crop("limit")
-                                    .quality("auto:good") // Daha yüksek kalite
+                                    .quality("auto:best") // En yüksek kalite, minimum sıkıştırma
                                     .fetchFormat("webp") // WebP formatına dönüştür
                                     .flags("progressive")
                                     .dpr("auto"));
@@ -772,14 +772,14 @@ public class MediaUploadService {
 
         Map<String, Object> uploadResult = cloudinary.uploader().upload(photo.getBytes(), ObjectUtils.asMap(
                 "folder", "perde_thumbnails",
-                "quality", "auto:good", // Daha yüksek kalite
+                "quality", "auto:best", // En yüksek kalite, minimum sıkıştırma
                 "fetch_format", "webp", // WebP formatına dönüştür
                 "transformation", new Transformation()
                         .width(400)
                         .height(400)
                         .crop("fill")
                         .gravity("auto")
-                        .quality("auto:good")
+                        .quality("auto:best") // En yüksek kalite, minimum sıkıştırma
                         .fetchFormat("webp")
                         .flags("progressive")
                         .dpr("auto")
@@ -858,9 +858,9 @@ public class MediaUploadService {
             
             if (param.canWriteCompressed()) {
                 param.setCompressionMode(javax.imageio.ImageWriteParam.MODE_EXPLICIT);
-                // Kaliteyi yüksek tut (%75 sıkıştırma için 0.88-0.90 arası ideal)
-                // Cloudinary WebP'ye dönüştürürken ek sıkıştırma yapacak
-                float actualQuality = Math.max(quality, 0.88f); // Minimum 0.88 kalite
+                // Kaliteyi çok yüksek tut (görsel kalitesi bozulmasın)
+                // Cloudinary WebP'ye dönüştürürken minimum sıkıştırma yapacak (auto:best)
+                float actualQuality = Math.max(quality, 0.95f); // Minimum 0.95 kalite (çok yüksek)
                 param.setCompressionQuality(actualQuality);
             }
             

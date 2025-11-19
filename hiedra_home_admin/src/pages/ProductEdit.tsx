@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { FaCloudUploadAlt } from 'react-icons/fa'
 import type { AuthResponse } from '../services/authService'
 import type { useToast } from '../components/Toast'
 
@@ -193,7 +194,7 @@ function ProductEditPage({ session, productId, onBack, toast }: ProductEditPageP
     }
 
     fetchData()
-  }, [productId, session.accessToken, toast])
+  }, [productId, session.accessToken])
 
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes'
@@ -479,6 +480,7 @@ function ProductEditPage({ session, productId, onBack, toast }: ProductEditPageP
         isSuccess?: boolean
         success?: boolean
         message?: string
+        data?: Product
       }
 
       const success = payload.isSuccess ?? payload.success ?? false
@@ -487,8 +489,26 @@ function ProductEditPage({ session, productId, onBack, toast }: ProductEditPageP
         throw new Error(payload.message ?? 'Ürün güncellenemedi.')
       }
 
+      // Güncellenmiş ürün bilgilerini state'e kaydet (fotoğraflar dahil)
+      if (payload.data) {
+        setProduct(payload.data)
+        // Fotoğraf preview'larını güncelle
+        if (payload.data.coverImageUrl) {
+          setCoverImagePreview(payload.data.coverImageUrl)
+        }
+        if (payload.data.detailImageUrl) {
+          setDetailImagePreview(payload.data.detailImageUrl)
+        }
+        // Yüklenen dosyaları temizle (artık preview'da görünüyor)
+        setCoverImage(null)
+        setDetailImage(null)
+      }
+
       toast.success('Ürün başarıyla güncellendi.')
-      onBack()
+      // Kısa bir gecikme ile geri dön (kullanıcı güncellenmiş fotoğrafları görebilsin)
+      setTimeout(() => {
+        onBack()
+      }, 1000)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Ürün güncellenemedi.'
       toast.error(message)
@@ -869,12 +889,29 @@ function ProductEditPage({ session, productId, onBack, toast }: ProductEditPageP
                   type="file"
                   accept="image/*"
                   onChange={handleCoverImageChange}
+                  className="upload-card__input"
                 />
-                {coverImage && (
-                  <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#64748b' }}>
-                    Dosya: {coverImage.name} ({formatFileSize(coverImage.size)})
-                  </div>
-                )}
+                <label
+                  htmlFor="coverImage"
+                  className={`upload-card ${coverImage ? 'upload-card--selected' : ''}`}
+                >
+                  <span className="upload-card__badge">Ana fotoğraf</span>
+                  <span className="upload-card__icon">
+                    <FaCloudUploadAlt />
+                  </span>
+                  <span className="upload-card__title">
+                    {coverImage ? 'Yeni bir fotoğraf seçmek için tıklayın' : 'Fotoğraf yüklemek için tıklayın veya sürükleyin'}
+                  </span>
+                  <span className="upload-card__hint">PNG, JPG veya WEBP • Maksimum 100MB</span>
+                  {coverImage && (
+                    <span className="upload-card__file">
+                      {coverImage.name} ({formatFileSize(coverImage.size)})
+                    </span>
+                  )}
+                  {!coverImage && coverImagePreview && (
+                    <span className="upload-card__file">Mevcut fotoğraf korunacak</span>
+                  )}
+                </label>
                 {coverImagePreview && (
                   <div 
                     className="dashboard-card__image-preview" 
@@ -988,12 +1025,29 @@ function ProductEditPage({ session, productId, onBack, toast }: ProductEditPageP
                   type="file"
                   accept="image/*"
                   onChange={handleDetailImageChange}
+                  className="upload-card__input"
                 />
-                {detailImage && (
-                  <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#64748b' }}>
-                    Dosya: {detailImage.name} ({formatFileSize(detailImage.size)})
-                  </div>
-                )}
+                <label
+                  htmlFor="detailImage"
+                  className={`upload-card upload-card--compact ${detailImage ? 'upload-card--selected' : ''}`}
+                >
+                  <span className="upload-card__badge">Detay fotoğrafı</span>
+                  <span className="upload-card__icon">
+                    <FaCloudUploadAlt />
+                  </span>
+                  <span className="upload-card__title">
+                    {detailImage ? 'Yeni bir fotoğraf seçmek için tıklayın' : 'Fotoğraf yüklemek için tıklayın veya sürükleyin'}
+                  </span>
+                  <span className="upload-card__hint">PNG, JPG veya WEBP • Maksimum 100MB</span>
+                  {detailImage && (
+                    <span className="upload-card__file">
+                      {detailImage.name} ({formatFileSize(detailImage.size)})
+                    </span>
+                  )}
+                  {!detailImage && detailImagePreview && (
+                    <span className="upload-card__file">Mevcut fotoğraf korunacak</span>
+                  )}
+                </label>
                 {detailImagePreview && (
                   <div 
                     className="dashboard-card__image-preview" 

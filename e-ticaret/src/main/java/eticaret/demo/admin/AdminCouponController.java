@@ -14,6 +14,7 @@ import eticaret.demo.coupon.CouponService;
 import eticaret.demo.coupon.CouponType;
 import eticaret.demo.coupon.CouponUsage;
 import eticaret.demo.coupon.CouponUsageRepository;
+import eticaret.demo.common.config.AppUrlConfig;
 import eticaret.demo.common.response.DataResponseMessage;
 import eticaret.demo.auth.AppUser;
 import eticaret.demo.auth.AppUserRepository;
@@ -25,6 +26,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -46,6 +48,7 @@ public class AdminCouponController {
     private final MailService mailService;
     private final AppUserRepository userRepository;
     private final MediaUploadService mediaUploadService;
+    private final AppUrlConfig appUrlConfig;
 
     /**
      * Yeni kupon oluştur
@@ -333,7 +336,7 @@ public class AdminCouponController {
 
             // Email template oluştur
             String subject = "🎉 Yeni Kupon: " + coupon.getName();
-            String htmlBody = createCouponEmailTemplate(coupon);
+            String htmlBody = mailService.buildCouponEmail(buildCouponEmailPayload(coupon));
 
             int successCount = 0;
             int failCount = 0;
@@ -404,7 +407,7 @@ public class AdminCouponController {
             
             // Email template oluştur
             String subject = "🎁 Size Özel Kupon: " + coupon.getName();
-            String htmlBody = createCouponEmailTemplate(coupon);
+            String htmlBody = mailService.buildCouponEmail(buildCouponEmailPayload(coupon));
             
             int successCount = 0;
             int failCount = 0;
@@ -436,6 +439,30 @@ public class AdminCouponController {
         } catch (Exception e) {
             log.error("Özel kupon bildirimi gönderilirken genel hata: {}", e.getMessage(), e);
         }
+    }
+
+    private MailService.CouponEmailPayload buildCouponEmailPayload(Coupon coupon) {
+        return new MailService.CouponEmailPayload(
+                coupon.getName(),
+                coupon.getCode(),
+                coupon.getDescription(),
+                buildCouponDiscountText(coupon),
+                coupon.getValidFrom() != null ? coupon.getValidFrom().toLocalDate() : null,
+                coupon.getValidUntil() != null ? coupon.getValidUntil().toLocalDate() : null,
+                coupon.getMinimumPurchaseAmount(),
+                appUrlConfig.getFrontendUrl(),
+                coupon.getCoverImageUrl()
+        );
+    }
+
+    private String buildCouponDiscountText(Coupon coupon) {
+        if (coupon.getType() == CouponType.YUZDE) {
+            return "%" + coupon.getDiscountValue().stripTrailingZeros().toPlainString() + " indirim";
+        }
+        BigDecimal value = coupon.getDiscountValue() != null
+                ? coupon.getDiscountValue().setScale(2, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+        return value.toPlainString() + " ₺ indirim";
     }
     
     /**
@@ -554,7 +581,7 @@ public class AdminCouponController {
 
         // Kupon açıklaması
         String description = coupon.getDescription() != null && !coupon.getDescription().isEmpty()
-                ? "<p style=\"color: #666; font-size: 15px; line-height: 1.6;\">" + escapeHtml(coupon.getDescription()) + "</p>"
+                ? "<p style=\"color: #000000; font-size: 15px; line-height: 1.7;\">" + escapeHtml(coupon.getDescription()) + "</p>"
                 : "";
 
         return "<!DOCTYPE html>\n" +
@@ -564,56 +591,69 @@ public class AdminCouponController {
                 "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n" +
                 "    <title>Yeni Kupon: " + escapeHtml(coupon.getName()) + "</title>\n" +
                 "    <style>\n" +
-                "        * {\n" +
-                "            margin: 0;\n" +
-                "            padding: 0;\n" +
-                "            box-sizing: border-box;\n" +
+                "        :root {\n" +
+                "            color-scheme: light dark;\n" +
                 "        }\n" +
                 "        body {\n" +
-                "            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;\n" +
+                "            margin: 0;\n" +
+                "            padding: 0;\n" +
+                "            font-family: 'SF Pro Display', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;\n" +
+                "            background-color: #f6f7fb;\n" +
+                "            color: #000000;\n" +
                 "            line-height: 1.6;\n" +
-                "            color: #333333;\n" +
-                "            background-color: #f5f5f5;\n" +
                 "        }\n" +
-                "        .email-container {\n" +
+                "        .wrapper {\n" +
                 "            max-width: 600px;\n" +
                 "            margin: 0 auto;\n" +
-                "            background-color: #ffffff;\n" +
+                "            padding: 32px 16px;\n" +
                 "        }\n" +
-                "        .email-header {\n" +
-                "            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n" +
-                "            color: #ffffff;\n" +
-                "            padding: 40px 30px;\n" +
-                "            text-align: center;\n" +
+                "        .card {\n" +
+                "            background: #ffffff;\n" +
+                "            border-radius: 32px;\n" +
+                "            padding: 48px 40px;\n" +
+                "            position: relative;\n" +
+                "            overflow: hidden;\n" +
+                "            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);\n" +
+                "            border: 2px solid #000000;\n" +
                 "        }\n" +
-                "        .email-header h1 {\n" +
+                "        h1 {\n" +
                 "            font-size: 28px;\n" +
-                "            font-weight: 700;\n" +
-                "            margin-bottom: 10px;\n" +
+                "            margin: 0 0 12px 0;\n" +
                 "            letter-spacing: -0.5px;\n" +
+                "            color: #000000;\n" +
+                "            font-weight: 700;\n" +
                 "        }\n" +
-                "        .email-body {\n" +
-                "            padding: 40px 30px;\n" +
+                "        p {\n" +
+                "            margin: 0 0 16px 0;\n" +
+                "            color: #000000;\n" +
+                "            font-size: 15px;\n" +
+                "            line-height: 1.7;\n" +
                 "        }\n" +
                 "        .coupon-code-box {\n" +
-                "            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);\n" +
-                "            color: white;\n" +
+                "            background: #f8f9fa;\n" +
+                "            border: 2px solid #000000;\n" +
                 "            padding: 30px;\n" +
-                "            border-radius: 12px;\n" +
+                "            border-radius: 20px;\n" +
                 "            text-align: center;\n" +
                 "            margin: 30px 0;\n" +
-                "            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);\n" +
+                "        }\n" +
+                "        .coupon-code-label {\n" +
+                "            font-size: 14px;\n" +
+                "            color: #000000;\n" +
+                "            opacity: 0.8;\n" +
+                "            margin-bottom: 10px;\n" +
                 "        }\n" +
                 "        .coupon-code {\n" +
                 "            font-size: 36px;\n" +
                 "            font-weight: 700;\n" +
                 "            letter-spacing: 3px;\n" +
                 "            margin: 15px 0;\n" +
-                "            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);\n" +
+                "            color: #000000;\n" +
                 "        }\n" +
                 "        .discount-badge {\n" +
                 "            display: inline-block;\n" +
-                "            background: rgba(255, 255, 255, 0.3);\n" +
+                "            background: #000000;\n" +
+                "            color: #ffffff;\n" +
                 "            padding: 8px 20px;\n" +
                 "            border-radius: 20px;\n" +
                 "            font-size: 18px;\n" +
@@ -622,45 +662,57 @@ public class AdminCouponController {
                 "        }\n" +
                 "        .coupon-details {\n" +
                 "            background: #f8f9fa;\n" +
-                "            padding: 20px;\n" +
-                "            border-radius: 8px;\n" +
-                "            margin: 20px 0;\n" +
+                "            border: 2px solid #000000;\n" +
+                "            padding: 24px 28px;\n" +
+                "            border-radius: 24px;\n" +
+                "            margin: 24px 0;\n" +
                 "        }\n" +
                 "        .detail-item {\n" +
-                "            margin: 10px 0;\n" +
-                "            font-size: 14px;\n" +
-                "            color: #555;\n" +
+                "            margin: 12px 0;\n" +
+                "            font-size: 15px;\n" +
+                "            color: #000000;\n" +
                 "        }\n" +
                 "        .detail-label {\n" +
                 "            font-weight: 600;\n" +
-                "            color: #333;\n" +
+                "            color: #000000;\n" +
                 "        }\n" +
-                "        .email-footer {\n" +
-                "            background-color: #f8f9fa;\n" +
-                "            padding: 30px;\n" +
+                "        .button {\n" +
+                "            display: inline-block;\n" +
+                "            background: #000000;\n" +
+                "            color: #ffffff !important;\n" +
+                "            padding: 14px 28px;\n" +
+                "            text-decoration: none;\n" +
+                "            border-radius: 999px;\n" +
+                "            font-weight: 600;\n" +
+                "            font-size: 16px;\n" +
+                "            letter-spacing: 0.2px;\n" +
+                "        }\n" +
+                "        .footer {\n" +
                 "            text-align: center;\n" +
-                "            border-top: 1px solid #e9ecef;\n" +
+                "            margin-top: 32px;\n" +
+                "            color: #000000;\n" +
+                "            font-size: 13px;\n" +
+                "            opacity: 0.8;\n" +
                 "        }\n" +
-                "        .email-footer .logo {\n" +
+                "        .footer .logo {\n" +
                 "            font-size: 20px;\n" +
                 "            font-weight: 700;\n" +
-                "            color: #667eea;\n" +
+                "            color: #000000;\n" +
                 "            margin-bottom: 10px;\n" +
                 "        }\n" +
-                "        .email-footer .info {\n" +
+                "        .footer .info {\n" +
                 "            font-size: 12px;\n" +
-                "            color: #6c757d;\n" +
+                "            color: #000000;\n" +
+                "            opacity: 0.8;\n" +
                 "            margin-top: 15px;\n" +
                 "        }\n" +
-                "        @media only screen and (max-width: 600px) {\n" +
-                "            .email-header {\n" +
-                "                padding: 30px 20px;\n" +
+                "        @media (max-width: 600px) {\n" +
+                "            .card {\n" +
+                "                padding: 28px 24px;\n" +
+                "                border-radius: 24px;\n" +
                 "            }\n" +
-                "            .email-header h1 {\n" +
+                "            h1 {\n" +
                 "                font-size: 24px;\n" +
-                "            }\n" +
-                "            .email-body {\n" +
-                "                padding: 30px 20px;\n" +
                 "            }\n" +
                 "            .coupon-code {\n" +
                 "                font-size: 28px;\n" +
@@ -669,14 +721,12 @@ public class AdminCouponController {
                 "    </style>\n" +
                 "</head>\n" +
                 "<body>\n" +
-                "    <div class=\"email-container\">\n" +
-                "        <div class=\"email-header\">\n" +
+                "    <div class=\"wrapper\">\n" +
+                "        <div class=\"card\">\n" +
                 "            <h1>🎉 Yeni Kupon!</h1>\n" +
-                "            <p style=\"font-size: 16px; opacity: 0.9;\">" + escapeHtml(coupon.getName()) + "</p>\n" +
-                "        </div>\n" +
-                "        <div class=\"email-body\">\n" +
+                "            <p style=\"font-size: 16px; font-weight: 600;\">" + escapeHtml(coupon.getName()) + "</p>\n" +
                 "            <div class=\"coupon-code-box\">\n" +
-                "                <div style=\"font-size: 14px; opacity: 0.9;\">Kupon Kodu</div>\n" +
+                "                <div class=\"coupon-code-label\">Kupon Kodu</div>\n" +
                 "                <div class=\"coupon-code\">" + escapeHtml(coupon.getCode()) + "</div>\n" +
                 "                <div class=\"discount-badge\">" + discountInfo + "</div>\n" +
                 "            </div>\n" +
@@ -694,14 +744,14 @@ public class AdminCouponController {
                 "                </div>\n" +
                 "            </div>\n" +
                 "            <p style=\"text-align: center; margin-top: 30px;\">\n" +
-                "                <a href=\"#\" style=\"display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;\">Hemen Kullan</a>\n" +
+                "                <a href=\"#\" class=\"button\">Hemen Kullan</a>\n" +
                 "            </p>\n" +
-                "        </div>\n" +
-                "        <div class=\"email-footer\">\n" +
-                "            <div class=\"logo\">HIEDRA COLLECTION</div>\n" +
-                "            <div class=\"info\">\n" +
-                "                Bu e-posta HIEDRA COLLECTION tarafından gönderilmiştir.<br>\n" +
-                "                Sorularınız için bizimle iletişime geçebilirsiniz.\n" +
+                "            <div class=\"footer\">\n" +
+                "                <div class=\"logo\">HIEDRA COLLECTION</div>\n" +
+                "                <div class=\"info\">\n" +
+                "                    Bu e-posta HIEDRA COLLECTION tarafından gönderilmiştir.<br>\n" +
+                "                    Sorularınız için bizimle iletişime geçebilirsiniz.\n" +
+                "                </div>\n" +
                 "            </div>\n" +
                 "        </div>\n" +
                 "    </div>\n" +

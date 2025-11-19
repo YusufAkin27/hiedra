@@ -17,12 +17,13 @@ import eticaret.demo.address.AdresRepository;
 import eticaret.demo.audit.AuditLogService;
 import eticaret.demo.auth.AppUser;
 import eticaret.demo.auth.AppUserRepository;
-import eticaret.demo.auth.AuthService;
 import eticaret.demo.auth.AuthVerificationCodeRepository;
 import eticaret.demo.auth.AuthVerificationCode;
 import eticaret.demo.auth.VerificationChannel;
 import eticaret.demo.mail.EmailMessage;
 import eticaret.demo.mail.MailService;
+import eticaret.demo.mail.EmailTemplateBuilder;
+import eticaret.demo.mail.EmailTemplateModel;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import eticaret.demo.coupon.CouponUsage;
@@ -36,6 +37,7 @@ import eticaret.demo.product.ProductReviewRepository;
 import eticaret.demo.common.response.DataResponseMessage;
 
 import java.math.BigDecimal;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -52,7 +54,6 @@ public class UserProfileController {
     private final CouponUsageRepository couponUsageRepository;
     private final OrderRepository orderRepository;
     private final ProductReviewRepository productReviewRepository;
-    private final AuthService authService;
     private final AuthVerificationCodeRepository verificationCodeRepository;
     private final MailService mailService;
     private static final SecureRandom RANDOM = new SecureRandom();
@@ -369,114 +370,23 @@ public class UserProfileController {
     }
 
     private String buildEmailChangeVerificationEmailTemplate(String currentEmail, String newEmail, String code) {
-        return String.format("""
-                <!DOCTYPE html>
-                <html lang="tr">
-                <head>
-                    <meta charset="UTF-8" />
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-                    <style>
-                        * { margin: 0; padding: 0; box-sizing: border-box; }
-                        body { 
-                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; 
-                            background-color: #f5f5f5; 
-                            margin: 0; 
-                            padding: 0; 
-                            line-height: 1.6;
-                        }
-                        .container { 
-                            max-width: 600px; 
-                            margin: 40px auto; 
-                            padding: 20px; 
-                        }
-                        .card { 
-                            background-color: #ffffff; 
-                            border-radius: 12px; 
-                            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); 
-                            overflow: hidden; 
-                            border: 1px solid #e0e0e0; 
-                        }
-                        .header { 
-                            background-color: #000000; 
-                            color: #ffffff; 
-                            padding: 40px 32px; 
-                            text-align: center; 
-                        }
-                        .header h1 { 
-                            font-size: 24px; 
-                            font-weight: 600; 
-                            margin: 0; 
-                        }
-                        .content { 
-                            padding: 40px 32px; 
-                        }
-                        .code-box { 
-                            background-color: #f8f9fa; 
-                            border: 2px dashed #dee2e6; 
-                            border-radius: 8px; 
-                            padding: 24px; 
-                            text-align: center; 
-                            margin: 24px 0; 
-                        }
-                        .code { 
-                            font-size: 32px; 
-                            font-weight: 700; 
-                            letter-spacing: 4px; 
-                            color: #000000; 
-                            font-family: 'Courier New', monospace; 
-                        }
-                        .footer { 
-                            background-color: #f8f9fa; 
-                            padding: 24px 32px; 
-                            text-align: center; 
-                            color: #6c757d; 
-                            font-size: 14px; 
-                        }
-                        .warning { 
-                            background-color: #fff3cd; 
-                            border-left: 4px solid #ffc107; 
-                            padding: 16px; 
-                            margin: 24px 0; 
-                            border-radius: 4px; 
-                        }
-                        .info-box {
-                            background-color: #e7f3ff;
-                            border-left: 4px solid #2563eb;
-                            padding: 16px;
-                            margin: 24px 0;
-                            border-radius: 4px;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="container">
-                        <div class="card">
-                            <div class="header">
-                                <h1>Email Değişikliği Doğrulama</h1>
-                            </div>
-                            <div class="content">
-                                <p>Merhaba,</p>
-                                <p>Email adresinizi <strong>%s</strong> olarak değiştirmek için aşağıdaki doğrulama kodunu kullanın:</p>
-                                <div class="code-box">
-                                    <div class="code">%s</div>
-                                </div>
-                                <div class="info-box">
-                                    <strong>Bilgi:</strong> Bu kod mevcut email adresinize (<strong>%s</strong>) gönderilmiştir. 
-                                    Email değişikliğini onaylamak için bu kodu admin panelinde giriniz.
-                                </div>
-                                <p>Bu kod 10 dakika süreyle geçerlidir.</p>
-                                <div class="warning">
-                                    <strong>Güvenlik Uyarısı:</strong> Bu kodu kimseyle paylaşmayın. Eğer bu işlemi siz yapmadıysanız, lütfen hemen bizimle iletişime geçin.
-                                </div>
-                            </div>
-                            <div class="footer">
-                                <p>Bu email otomatik olarak gönderilmiştir. Lütfen yanıtlamayın.</p>
-                            </div>
-                        </div>
-                    </div>
-                </body>
-                </html>
-                """, newEmail, code, currentEmail);
+        LinkedHashMap<String, String> details = new LinkedHashMap<>();
+        details.put("Mevcut E-posta", currentEmail);
+        details.put("Yeni E-posta", newEmail);
+        details.put("Kod Geçerlilik", "10 dakika");
+
+        return EmailTemplateBuilder.build(EmailTemplateModel.builder()
+                .title("Email Değişikliği Doğrulama Kodu")
+                .preheader("Hesabınız için güvenlik doğrulaması.")
+                .greeting("Merhaba,")
+                .paragraphs(List.of(
+                        "Email adresinizi " + newEmail + " olarak değiştirmek için aşağıdaki doğrulama kodunu kullanın.",
+                        "Bu işlemi siz başlatmadıysanız lütfen hesabınızı güvenlik altına almak için bizimle iletişime geçin."
+                ))
+                .highlight("Doğrulama Kodunuz: " + code)
+                .details(details)
+                .footerNote("Kod 10 dakika boyunca geçerlidir ve tek kullanımlıktır.")
+                .build());
     }
 
     /**

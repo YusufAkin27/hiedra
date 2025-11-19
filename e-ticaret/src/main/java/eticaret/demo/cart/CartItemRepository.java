@@ -15,5 +15,11 @@ public interface CartItemRepository extends JpaRepository<CartItem, Long> {
     
     // Sepetten öğe sil
     void deleteByCart_Id(Long cartId);
+    
+    // Ürüne göre tüm sepet öğelerini sil
+    void deleteByProduct_Id(Long productId);
+    
+    // Ürüne göre sepet öğelerini bul
+    List<CartItem> findByProduct_Id(Long productId);
 }
 

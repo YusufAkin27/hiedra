@@ -6,13 +6,17 @@ import eticaret.demo.auth.UserRole;
 import eticaret.demo.common.config.AppUrlConfig;
 import eticaret.demo.mail.EmailMessage;
 import eticaret.demo.mail.MailService;
+import eticaret.demo.mail.EmailTemplateBuilder;
+import eticaret.demo.mail.EmailTemplateModel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 @Service
@@ -137,331 +141,64 @@ public class AdminNotificationService {
 
     private String buildSystemErrorEmailTemplate(String errorMessage, String errorDetails) {
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"));
-        return String.format("""
-                <!DOCTYPE html>
-                <html lang="tr">
-                <head>
-                    <meta charset="UTF-8" />
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-                    <style>
-                        * { margin: 0; padding: 0; box-sizing: border-box; }
-                        body { 
-                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', Arial, sans-serif; 
-                            background-color: #f5f5f5; 
-                            margin: 0; 
-                            padding: 0; 
-                            line-height: 1.6;
-                        }
-                        .container { max-width: 600px; margin: 40px auto; padding: 20px; }
-                        .card { 
-                            background-color: #ffffff; 
-                            border-radius: 12px; 
-                            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); 
-                            overflow: hidden; 
-                            border: 1px solid #e0e0e0; 
-                        }
-                        .header { 
-                            background-color: #dc3545; 
-                            color: #ffffff; 
-                            padding: 30px; 
-                            text-align: center; 
-                        }
-                        .header h1 { margin: 0; font-size: 24px; font-weight: 700; }
-                        .content { padding: 30px; color: #1a1a1a; }
-                        .error-box {
-                            background-color: #fff5f5;
-                            border-left: 4px solid #dc3545;
-                            padding: 16px;
-                            margin: 20px 0;
-                            border-radius: 4px;
-                        }
-                        .error-box strong { color: #dc3545; display: block; margin-bottom: 8px; }
-                        .error-box p { color: #721c24; margin: 0; font-size: 14px; }
-                        .details-box {
-                            background-color: #f9f9f9;
-                            border: 1px solid #e0e0e0;
-                            padding: 16px;
-                            margin: 20px 0;
-                            border-radius: 8px;
-                            font-family: 'Courier New', monospace;
-                            font-size: 12px;
-                            color: #333;
-                            white-space: pre-wrap;
-                            word-break: break-all;
-                        }
-                        .footer { 
-                            padding: 20px; 
-                            font-size: 12px; 
-                            color: #999999; 
-                            text-align: center; 
-                            background-color: #f9f9f9;
-                            border-top: 1px solid #e0e0e0;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="container">
-                        <div class="card">
-                            <div class="header">
-                                <h1>⚠️ Sistem Hatası</h1>
-                            </div>
-                            <div class="content">
-                                <p><strong>Sayın Yönetici,</strong></p>
-                                <p>Sistemde bir hata oluştu. Detaylar aşağıda yer almaktadır.</p>
-                                
-                                <div class="error-box">
-                                    <strong>Hata Mesajı</strong>
-                                    <p>%s</p>
-                                </div>
-                                
-                                <div class="details-box">%s</div>
-                                
-                                <p style="margin-top: 20px; font-size: 14px; color: #666;">
-                                    <strong>Zaman:</strong> %s
-                                </p>
-                                
-                                <p style="margin-top: 10px; font-size: 14px; color: #666;">
-                                    Lütfen bu hatayı inceleyip gerekli önlemleri alın.
-                                </p>
-                            </div>
-                            <div class="footer">
-                                <p><strong>HIEDRA HOME COLLECTION</strong></p>
-                                <p>Sistem Bildirim Sistemi</p>
-                            </div>
-                        </div>
-                    </div>
-                </body>
-                </html>
-                """, errorMessage, errorDetails != null ? errorDetails : "Detay bulunamadı", timestamp);
+        LinkedHashMap<String, String> details = new LinkedHashMap<>();
+        details.put("Zaman", timestamp);
+
+        return EmailTemplateBuilder.build(EmailTemplateModel.builder()
+                .title("Sistem Hatası Bildirimi")
+                .preheader("Sistemde kritik bir hata algılandı.")
+                .greeting("Merhaba,")
+                .paragraphs(List.of(
+                        "Sistemde bir hata oluştu. Ayrıntılar aşağıda listelendi.",
+                        errorDetails != null ? "Hata Detayı: " + errorDetails : "Ek hata detayı bulunamadı."
+                ))
+                .details(details)
+                .highlight("Hata Mesajı: " + errorMessage)
+                .footerNote("Lütfen gerekli incelemeyi yaparak önlem alın.")
+                .build());
     }
 
-    private String buildOrderNotificationEmailTemplate(String orderNumber, String customerEmail, 
+    private String buildOrderNotificationEmailTemplate(String orderNumber, String customerEmail,
                                                        String customerName, java.math.BigDecimal totalAmount) {
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"));
         String adminUrl = appUrlConfig.getFrontendAdminUrl() + "/orders";
-        
-        return String.format("""
-                <!DOCTYPE html>
-                <html lang="tr">
-                <head>
-                    <meta charset="UTF-8" />
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-                    <style>
-                        * { margin: 0; padding: 0; box-sizing: border-box; }
-                        body { 
-                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', Arial, sans-serif; 
-                            background-color: #f5f5f5; 
-                            margin: 0; 
-                            padding: 0; 
-                            line-height: 1.6;
-                        }
-                        .container { max-width: 600px; margin: 40px auto; padding: 20px; }
-                        .card { 
-                            background-color: #ffffff; 
-                            border-radius: 12px; 
-                            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); 
-                            overflow: hidden; 
-                            border: 1px solid #e0e0e0; 
-                        }
-                        .header { 
-                            background-color: #000000; 
-                            color: #ffffff; 
-                            padding: 30px; 
-                            text-align: center; 
-                        }
-                        .header h1 { margin: 0; font-size: 24px; font-weight: 700; }
-                        .content { padding: 30px; color: #1a1a1a; }
-                        .info-box {
-                            background-color: #f9f9f9;
-                            border: 1px solid #e0e0e0;
-                            padding: 16px;
-                            margin: 20px 0;
-                            border-radius: 8px;
-                        }
-                        .info-row {
-                            display: flex;
-                            justify-content: space-between;
-                            padding: 8px 0;
-                            border-bottom: 1px solid #e0e0e0;
-                        }
-                        .info-row:last-child { border-bottom: none; }
-                        .info-label { font-weight: 600; color: #333; }
-                        .info-value { color: #666; }
-                        .button {
-                            display: inline-block;
-                            background-color: #000000;
-                            color: #ffffff;
-                            padding: 12px 24px;
-                            text-decoration: none;
-                            border-radius: 8px;
-                            font-weight: 600;
-                            margin-top: 20px;
-                        }
-                        .footer { 
-                            padding: 20px; 
-                            font-size: 12px; 
-                            color: #999999; 
-                            text-align: center; 
-                            background-color: #f9f9f9;
-                            border-top: 1px solid #e0e0e0;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="container">
-                        <div class="card">
-                            <div class="header">
-                                <h1>Yeni Sipariş</h1>
-                            </div>
-                            <div class="content">
-                                <p><strong>Sayın Yönetici,</strong></p>
-                                <p>Yeni bir sipariş alındı. Detaylar aşağıda yer almaktadır.</p>
-                                
-                                <div class="info-box">
-                                    <div class="info-row">
-                                        <span class="info-label">Sipariş No:</span>
-                                        <span class="info-value">%s</span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span class="info-label">Müşteri:</span>
-                                        <span class="info-value">%s</span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span class="info-label">E-posta:</span>
-                                        <span class="info-value">%s</span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span class="info-label">Toplam Tutar:</span>
-                                        <span class="info-value">%s ₺</span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span class="info-label">Tarih:</span>
-                                        <span class="info-value">%s</span>
-                                    </div>
-                                </div>
-                                
-                                <a href="%s" class="button">Siparişi Görüntüle</a>
-                            </div>
-                            <div class="footer">
-                                <p><strong>HIEDRA HOME COLLECTION</strong></p>
-                                <p>Yönetici Bildirim Sistemi</p>
-                            </div>
-                        </div>
-                    </div>
-                </body>
-                </html>
-                """, orderNumber, customerName != null ? customerName : "Bilinmiyor", 
-                customerEmail, totalAmount != null ? totalAmount.toString() : "0.00", 
-                timestamp, adminUrl);
+        LinkedHashMap<String, String> details = new LinkedHashMap<>();
+        details.put("Sipariş No", orderNumber);
+        details.put("Müşteri", customerName != null ? customerName : "Bilinmiyor");
+        details.put("E-posta", customerEmail);
+        details.put("Toplam Tutar", formatCurrency(totalAmount));
+        details.put("Tarih", timestamp);
+
+        return EmailTemplateBuilder.build(EmailTemplateModel.builder()
+                .title("Yeni Sipariş Bildirimi")
+                .preheader("Yeni bir sipariş oluşturuldu.")
+                .greeting("Merhaba,")
+                .paragraphs(List.of("Sisteme yeni bir sipariş düştü. Özet bilgilere aşağıdan ulaşabilirsiniz."))
+                .details(details)
+                .actionText("Siparişi Görüntüle")
+                .actionUrl(adminUrl)
+                .footerNote("Hiedra Home Collection • Yönetici Bildirim Sistemi")
+                .build());
     }
 
     private String buildUserNotificationEmailTemplate(String userEmail, String userName) {
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"));
         String adminUrl = appUrlConfig.getFrontendAdminUrl() + "/users";
-        
-        return String.format("""
-                <!DOCTYPE html>
-                <html lang="tr">
-                <head>
-                    <meta charset="UTF-8" />
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-                    <style>
-                        * { margin: 0; padding: 0; box-sizing: border-box; }
-                        body { 
-                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', Arial, sans-serif; 
-                            background-color: #f5f5f5; 
-                            margin: 0; 
-                            padding: 0; 
-                            line-height: 1.6;
-                        }
-                        .container { max-width: 600px; margin: 40px auto; padding: 20px; }
-                        .card { 
-                            background-color: #ffffff; 
-                            border-radius: 12px; 
-                            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); 
-                            overflow: hidden; 
-                            border: 1px solid #e0e0e0; 
-                        }
-                        .header { 
-                            background-color: #000000; 
-                            color: #ffffff; 
-                            padding: 30px; 
-                            text-align: center; 
-                        }
-                        .header h1 { margin: 0; font-size: 24px; font-weight: 700; }
-                        .content { padding: 30px; color: #1a1a1a; }
-                        .info-box {
-                            background-color: #f9f9f9;
-                            border: 1px solid #e0e0e0;
-                            padding: 16px;
-                            margin: 20px 0;
-                            border-radius: 8px;
-                        }
-                        .info-row {
-                            display: flex;
-                            justify-content: space-between;
-                            padding: 8px 0;
-                            border-bottom: 1px solid #e0e0e0;
-                        }
-                        .info-row:last-child { border-bottom: none; }
-                        .info-label { font-weight: 600; color: #333; }
-                        .info-value { color: #666; }
-                        .button {
-                            display: inline-block;
-                            background-color: #000000;
-                            color: #ffffff;
-                            padding: 12px 24px;
-                            text-decoration: none;
-                            border-radius: 8px;
-                            font-weight: 600;
-                            margin-top: 20px;
-                        }
-                        .footer { 
-                            padding: 20px; 
-                            font-size: 12px; 
-                            color: #999999; 
-                            text-align: center; 
-                            background-color: #f9f9f9;
-                            border-top: 1px solid #e0e0e0;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="container">
-                        <div class="card">
-                            <div class="header">
-                                <h1>Yeni Kullanıcı Kaydı</h1>
-                            </div>
-                            <div class="content">
-                                <p><strong>Sayın Yönetici,</strong></p>
-                                <p>Yeni bir kullanıcı sisteme kayıt oldu. Detaylar aşağıda yer almaktadır.</p>
-                                
-                                <div class="info-box">
-                                    <div class="info-row">
-                                        <span class="info-label">E-posta:</span>
-                                        <span class="info-value">%s</span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span class="info-label">Ad Soyad:</span>
-                                        <span class="info-value">%s</span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span class="info-label">Kayıt Tarihi:</span>
-                                        <span class="info-value">%s</span>
-                                    </div>
-                                </div>
-                                
-                                <a href="%s" class="button">Kullanıcıları Görüntüle</a>
-                            </div>
-                            <div class="footer">
-                                <p><strong>HIEDRA HOME COLLECTION</strong></p>
-                                <p>Yönetici Bildirim Sistemi</p>
-                            </div>
-                        </div>
-                    </div>
-                </body>
-                </html>
-                """, userEmail, userName != null ? userName : "Bilinmiyor", timestamp, adminUrl);
+        LinkedHashMap<String, String> details = new LinkedHashMap<>();
+        details.put("Ad Soyad", userName != null ? userName : "Bilinmiyor");
+        details.put("E-posta", userEmail);
+        details.put("Kayıt Tarihi", timestamp);
+
+        return EmailTemplateBuilder.build(EmailTemplateModel.builder()
+                .title("Yeni Kullanıcı Kaydı")
+                .preheader("Platforma yeni bir kullanıcı eklendi.")
+                .greeting("Merhaba,")
+                .paragraphs(List.of("Platformumuza yeni bir kullanıcı katıldı. Bilgileri aşağıda bulabilirsiniz."))
+                .details(details)
+                .actionText("Kullanıcıları Görüntüle")
+                .actionUrl(adminUrl)
+                .footerNote("Hiedra Home Collection • Yönetici Bildirim Sistemi")
+                .build());
     }
 
     /**
@@ -509,102 +246,29 @@ public class AdminNotificationService {
         if (!startDate.equals(endDate)) {
             dateRange += " - " + endDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"));
         }
-        
-        return String.format("""
-                <!DOCTYPE html>
-                <html lang="tr">
-                <head>
-                    <meta charset="UTF-8" />
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-                    <style>
-                        * { margin: 0; padding: 0; box-sizing: border-box; }
-                        body { 
-                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', Arial, sans-serif; 
-                            background-color: #f5f5f5; 
-                            margin: 0; 
-                            padding: 0; 
-                            line-height: 1.6;
-                        }
-                        .container { max-width: 600px; margin: 40px auto; padding: 20px; }
-                        .card { 
-                            background-color: #ffffff; 
-                            border-radius: 12px; 
-                            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); 
-                            overflow: hidden; 
-                            border: 1px solid #e0e0e0; 
-                        }
-                        .header { 
-                            background-color: #000000; 
-                            color: #ffffff; 
-                            padding: 30px; 
-                            text-align: center; 
-                        }
-                        .header h1 { margin: 0; font-size: 24px; font-weight: 700; }
-                        .content { padding: 30px; color: #1a1a1a; }
-                        .info-box {
-                            background-color: #f9f9f9;
-                            border: 1px solid #e0e0e0;
-                            padding: 16px;
-                            margin: 20px 0;
-                            border-radius: 8px;
-                        }
-                        .info-row {
-                            display: flex;
-                            justify-content: space-between;
-                            padding: 8px 0;
-                            border-bottom: 1px solid #e0e0e0;
-                        }
-                        .info-row:last-child { border-bottom: none; }
-                        .info-label { font-weight: 600; color: #333; }
-                        .info-value { color: #666; }
-                        .footer { 
-                            padding: 20px; 
-                            font-size: 12px; 
-                            color: #999999; 
-                            text-align: center; 
-                            background-color: #f9f9f9;
-                            border-top: 1px solid #e0e0e0;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="container">
-                        <div class="card">
-                            <div class="header">
-                                <h1>%s Rapor</h1>
-                            </div>
-                            <div class="content">
-                                <p><strong>Sayın Yönetici,</strong></p>
-                                <p>%s raporunuz hazırlanmıştır. Detaylı rapor e-postanıza PDF dosyası olarak eklenmiştir.</p>
-                                
-                                <div class="info-box">
-                                    <div class="info-row">
-                                        <span class="info-label">Rapor Tipi:</span>
-                                        <span class="info-value">%s</span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span class="info-label">Tarih Aralığı:</span>
-                                        <span class="info-value">%s</span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span class="info-label">Oluşturulma Tarihi:</span>
-                                        <span class="info-value">%s</span>
-                                    </div>
-                                </div>
-                                
-                                <p style="margin-top: 20px; font-size: 14px; color: #666;">
-                                    PDF dosyasını e-postanızın eklerinden indirebilirsiniz.
-                                </p>
-                            </div>
-                            <div class="footer">
-                                <p><strong>HIEDRA HOME COLLECTION</strong></p>
-                                <p>Otomatik Rapor Sistemi</p>
-                            </div>
-                        </div>
-                    </div>
-                </body>
-                </html>
-                """, reportType, reportType, reportType, dateRange, timestamp);
+
+        LinkedHashMap<String, String> details = new LinkedHashMap<>();
+        details.put("Rapor Tipi", reportType);
+        details.put("Tarih Aralığı", dateRange);
+        details.put("Oluşturulma Tarihi", timestamp);
+
+        return EmailTemplateBuilder.build(EmailTemplateModel.builder()
+                .title(reportType + " Raporu")
+                .preheader("Talep ettiğiniz rapor hazır.")
+                .greeting("Merhaba,")
+                .paragraphs(List.of(
+                        reportType + " raporunuz hazırlanmıştır. Detaylı rapor e-postanızın ekinde PDF olarak yer alıyor."
+                ))
+                .details(details)
+                .footerNote("PDF dosyasını e-postanın eklerinden indirebilirsiniz.")
+                .build());
+    }
+
+    private String formatCurrency(java.math.BigDecimal amount) {
+        if (amount == null) {
+            return "0,00 ₺";
+        }
+        return amount.setScale(2, RoundingMode.HALF_UP).toPlainString() + " ₺";
     }
 }
 

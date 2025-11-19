@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.*;
 import eticaret.demo.audit.AuditLogService;
 import eticaret.demo.mail.EmailMessage;
 import eticaret.demo.mail.MailService;
+import eticaret.demo.mail.EmailTemplateBuilder;
+import eticaret.demo.mail.EmailTemplateModel;
 import eticaret.demo.order.Order;
 import eticaret.demo.order.OrderRepository;
 import eticaret.demo.order.OrderStatus;
@@ -29,6 +31,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -538,7 +541,15 @@ public class AdminOrderController {
      */
     private void sendOrderStatusUpdateEmail(Order order, OrderStatus oldStatus, OrderStatus newStatus) {
         String subject = "Sipariş Durumu Güncellendi - " + order.getOrderNumber();
-        String body = buildOrderStatusUpdateEmailBody(order, oldStatus, newStatus);
+        MailService.OrderStatusEmailPayload payload = new MailService.OrderStatusEmailPayload(
+                order.getCustomerName(),
+                order.getOrderNumber(),
+                getStatusDisplayName(oldStatus),
+                getStatusDisplayName(newStatus),
+                order.getTotalAmount(),
+                null
+        );
+        String body = mailService.buildOrderStatusEmail(payload);
         
         EmailMessage emailMessage = EmailMessage.builder()
                 .toEmail(order.getCustomerEmail())
@@ -602,91 +613,31 @@ public class AdminOrderController {
     }
     
     /**
-     * Sipariş durumu güncelleme mail içeriği
-     */
-    private String buildOrderStatusUpdateEmailBody(Order order, OrderStatus oldStatus, OrderStatus newStatus) {
-        String statusName = getStatusDisplayName(newStatus);
-        String oldStatusName = getStatusDisplayName(oldStatus);
-        
-        return String.format("""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <style>
-                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                    .header { background-color: #2c3e50; color: white; padding: 20px; text-align: center; }
-                    .content { background-color: #f9f9f9; padding: 20px; }
-                    .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <h1>HIEDRA HOME COLLECTION</h1>
-                        <p style="margin-top: 10px; font-size: 18px; font-weight: 600;">Sipariş Durumu Güncellendi</p>
-                    </div>
-                    <div class="content">
-                        <p>Sayın %s,</p>
-                        <p>Siparişinizin durumu güncellenmiştir:</p>
-                        <p><strong>Sipariş No:</strong> %s</p>
-                        <p><strong>Eski Durum:</strong> %s</p>
-                        <p><strong>Yeni Durum:</strong> %s</p>
-                        <p><strong>Tutar:</strong> %.2f ₺</p>
-                        <p>Detaylı bilgi için sipariş numaranızı kullanarak sorgulama yapabilirsiniz.</p>
-                    </div>
-                    <div class="footer">
-                        <p>&copy; 2025 HIEDRA HOME COLLECTION. Tüm hakları saklıdır.</p>
-                    </div>
-                </div>
-            </body>
-            </html>
-            """, order.getCustomerName(), order.getOrderNumber(), oldStatusName, statusName, 
-            order.getTotalAmount().doubleValue());
-    }
-    
-    /**
      * Sipariş onayı ve para iadesi mail içeriği
      */
     private String buildOrderApprovalEmailBody(Order order) {
         boolean isRefunded = order.getStatus() == OrderStatus.IADE_YAPILDI;
-        
-        return String.format("""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <style>
-                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                    .header { background-color: #27ae60; color: white; padding: 20px; text-align: center; }
-                    .content { background-color: #f9f9f9; padding: 20px; }
-                    .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <h1>HIEDRA HOME COLLECTION</h1>
-                        <p style="margin-top: 10px; font-size: 18px; font-weight: 600;">Siparişiniz Onaylandı</p>
-                    </div>
-                    <div class="content">
-                        <p>Sayın %s,</p>
-                        <p>İptal ettiğiniz siparişiniz onaylanmıştır.</p>
-                        <p><strong>Sipariş No:</strong> %s</p>
-                        <p><strong>Tutar:</strong> %.2f ₺</p>
-                        %s
-                        <p>Detaylı bilgi için sipariş numaranızı kullanarak sorgulama yapabilirsiniz.</p>
-                    </div>
-                    <div class="footer">
-                        <p>&copy; 2025 HIEDRA HOME COLLECTION. Tüm hakları saklıdır.</p>
-                    </div>
-                </div>
-            </body>
-            </html>
-            """, order.getCustomerName(), order.getOrderNumber(), order.getTotalAmount().doubleValue(),
-            isRefunded ? "<p style='color: #27ae60; font-weight: bold;'>Para iadeniz hesabınıza yansıtılmıştır. İşlem 3-5 iş günü içinde tamamlanacaktır.</p>" : "");
+
+        LinkedHashMap<String, String> details = new LinkedHashMap<>();
+        details.put("Sipariş No", order.getOrderNumber());
+        details.put("Toplam Tutar", formatCurrency(order.getTotalAmount()));
+
+        EmailTemplateModel.EmailTemplateModelBuilder builder = EmailTemplateModel.builder()
+                .title("Siparişiniz Onaylandı")
+                .preheader("İptal ettiğiniz siparişiniz onaylandı.")
+                .greeting("Sayın " + order.getCustomerName() + ",")
+                .paragraphs(List.of(
+                        "İptal talebiniz işleme alındı ve siparişiniz başarıyla onaylandı.",
+                        "Aşağıda siparişinize dair özet bilgileri bulabilirsiniz."
+                ))
+                .details(details)
+                .footerNote("Detaylı bilgi için hesabınızdaki siparişlerim bölümünü ziyaret edebilirsiniz.");
+
+        if (isRefunded) {
+            builder.highlight("Para iadeniz başlatıldı. Bankanıza bağlı olarak 3-5 iş günü içinde hesabınıza yansıyacaktır.");
+        }
+
+        return EmailTemplateBuilder.build(builder.build());
     }
     
     /**
@@ -694,83 +645,57 @@ public class AdminOrderController {
      */
     private String buildRefundApprovalEmailBody(Order order) {
         boolean isRefunded = order.getStatus() == OrderStatus.IADE_YAPILDI;
-        
-        return String.format("""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <style>
-                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                    .header { background-color: #27ae60; color: white; padding: 20px; text-align: center; }
-                    .content { background-color: #f9f9f9; padding: 20px; }
-                    .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <h1>HIEDRA HOME COLLECTION</h1>
-                        <p style="margin-top: 10px; font-size: 18px; font-weight: 600;">İade Talebiniz Onaylandı</p>
-                    </div>
-                    <div class="content">
-                        <p>Sayın %s,</p>
-                        <p>İade talebiniz değerlendirilmiş ve onaylanmıştır.</p>
-                        <p><strong>Sipariş No:</strong> %s</p>
-                        <p><strong>Tutar:</strong> %.2f ₺</p>
-                        %s
-                        <p>Detaylı bilgi için sipariş numaranızı kullanarak sorgulama yapabilirsiniz.</p>
-                    </div>
-                    <div class="footer">
-                        <p>&copy; 2025 HIEDRA HOME COLLECTION. Tüm hakları saklıdır.</p>
-                    </div>
-                </div>
-            </body>
-            </html>
-            """, order.getCustomerName(), order.getOrderNumber(), order.getTotalAmount().doubleValue(),
-            isRefunded ? "<p style='color: #27ae60; font-weight: bold;'>Para iadeniz hesabınıza yansıtılmıştır. İşlem 3-5 iş günü içinde tamamlanacaktır.</p>" : "");
+
+        LinkedHashMap<String, String> details = new LinkedHashMap<>();
+        details.put("Sipariş No", order.getOrderNumber());
+        details.put("İade Tutarı", formatCurrency(order.getTotalAmount()));
+
+        EmailTemplateModel.EmailTemplateModelBuilder builder = EmailTemplateModel.builder()
+                .title("İade Talebiniz Onaylandı")
+                .preheader("İade talebiniz başarıyla onaylandı.")
+                .greeting("Sayın " + order.getCustomerName() + ",")
+                .paragraphs(List.of(
+                        "Ürün iade talebiniz olumlu değerlendirildi.",
+                        "İade sürecine dair özet bilgileri aşağıda paylaştık."
+                ))
+                .details(details)
+                .footerNote("Süreçle ilgili sorularınız için info@hiedra.com.tr adresine yazabilirsiniz.");
+
+        if (isRefunded) {
+            builder.highlight("Para iadeniz bankanıza iletildi. Hesabınıza yansıması 3-5 iş günü sürebilir.");
+        }
+
+        return EmailTemplateBuilder.build(builder.build());
     }
     
     /**
      * İade reddi mail içeriği
      */
     private String buildRefundRejectionEmailBody(Order order, String reason) {
-        return String.format("""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <style>
-                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                    .header { background-color: #e74c3c; color: white; padding: 20px; text-align: center; }
-                    .content { background-color: #f9f9f9; padding: 20px; }
-                    .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <h1>HIEDRA HOME COLLECTION</h1>
-                        <p style="margin-top: 10px; font-size: 18px; font-weight: 600;">İade Talebi Değerlendirildi</p>
-                    </div>
-                    <div class="content">
-                        <p>Sayın %s,</p>
-                        <p>İade talebiniz değerlendirilmiştir.</p>
-                        <p><strong>Sipariş No:</strong> %s</p>
-                        <p><strong>Tutar:</strong> %.2f ₺</p>
-                        <p style="color: #e74c3c; font-weight: bold;">İade talebiniz reddedilmiştir.</p>
-                        <p><strong>Red Nedeni:</strong> %s</p>
-                        <p>Daha fazla bilgi için müşteri hizmetlerimizle iletişime geçebilirsiniz.</p>
-                    </div>
-                    <div class="footer">
-                        <p>&copy; 2025 HIEDRA HOME COLLECTION. Tüm hakları saklıdır.</p>
-                    </div>
-                </div>
-            </body>
-            </html>
-            """, order.getCustomerName(), order.getOrderNumber(), order.getTotalAmount().doubleValue(), reason);
+        LinkedHashMap<String, String> details = new LinkedHashMap<>();
+        details.put("Sipariş No", order.getOrderNumber());
+        details.put("Talep Edilen Tutar", formatCurrency(order.getTotalAmount()));
+        details.put("Red Nedeni", reason);
+
+        return EmailTemplateBuilder.build(EmailTemplateModel.builder()
+                .title("İade Talebiniz Değerlendirildi")
+                .preheader("İade talebiniz sonuçlandı.")
+                .greeting("Sayın " + order.getCustomerName() + ",")
+                .paragraphs(List.of(
+                        "İade talebiniz değerlendirilmiş ve maalesef reddedilmiştir.",
+                        "Detayları aşağıda bulabilirsiniz."
+                ))
+                .details(details)
+                .highlight("İade talebiniz bu aşamada reddedildi. Dilerseniz müşteri hizmetlerimizle tekrar iletişime geçebilirsiniz.")
+                .footerNote("Destek için info@hiedra.com.tr adresine yazabilirsiniz.")
+                .build());
+    }
+
+    private String formatCurrency(BigDecimal amount) {
+        if (amount == null) {
+            return "-";
+        }
+        return amount.setScale(2, RoundingMode.HALF_UP).toPlainString() + " ₺";
     }
     
     private String getStatusDisplayName(OrderStatus status) {
