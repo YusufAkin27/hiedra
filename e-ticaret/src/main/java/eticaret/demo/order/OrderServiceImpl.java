@@ -12,6 +12,7 @@ import eticaret.demo.common.response.DataResponseMessage;
 import eticaret.demo.common.response.ResponseMessage;
 
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -538,15 +539,22 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private OrderResponseDTO.OrderItemDTO convertOrderItemToDTO(OrderItem item) {
+        BigDecimal totalPrice = item.getTotalPrice() != null ? item.getTotalPrice() : BigDecimal.ZERO;
+        
+        // Width ve height metre cinsinden saklanıyor, frontend'e cm cinsinden gönder
+        Double widthInCm = item.getWidth() != null ? item.getWidth() * 100.0 : null;
+        Double heightInCm = item.getHeight() != null ? item.getHeight() * 100.0 : null;
+        
         return OrderResponseDTO.OrderItemDTO.builder()
                 .id(item.getId())
                 .productName(item.getProductName())
-                .width(item.getWidth())
-                .height(item.getHeight())
+                .width(widthInCm)
+                .height(heightInCm)
                 .pleatType(item.getPleatType())
                 .quantity(item.getQuantity())
                 .unitPrice(item.getUnitPrice())
-                .totalPrice(item.getTotalPrice())
+                .totalPrice(totalPrice)
+                .price(totalPrice) // Frontend uyumluluğu için totalPrice'ı price olarak da set et
                 .productId(item.getProductId())
                 .productImageUrl(item.getProductImageUrl())
                 .productSku(item.getProductSku())

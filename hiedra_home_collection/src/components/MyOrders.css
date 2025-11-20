@@ -14,7 +14,7 @@
 .my-orders-header h1 {
   font-family: 'Playfair Display', 'DM Serif Display', serif;
   font-size: 2.5rem;
-  color: var(--text-on-dark);
+  color: #1a1a1a;
   margin-bottom: 0.75rem;
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -24,7 +24,7 @@
 .my-orders-header p {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 1rem;
-  color: var(--text-light);
+  color: #6B7280;
   font-weight: 400;
   letter-spacing: 0.01em;
   line-height: 1.6;
@@ -57,7 +57,7 @@
 }
 
 .loading-state p {
-  color: var(--text-secondary);
+  color: #6B7280;
   font-size: 1.1rem;
 }
 
@@ -68,15 +68,15 @@
 }
 
 .error-state p {
-  color: var(--danger);
+  color: #DC2626;
   margin-bottom: 1.5rem;
   font-size: 1.1rem;
 }
 
 .retry-btn {
   padding: 0.75rem 2rem;
-  background: var(--bg-header);
-  color: white;
+  background: #C1A466;
+  color: #FFFFFF;
   border: none;
   border-radius: 8px;
   font-size: 1rem;
@@ -86,9 +86,10 @@
 }
 
 .retry-btn:hover {
-  background: rgba(44, 62, 80, 0.9);
+  background: #A68B4F;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(193, 164, 102, 0.3);
+  color: #FFFFFF;
 }
 
 /* Empty State */
@@ -98,19 +99,19 @@
 }
 
 .empty-state svg {
-  color: var(--text-secondary);
+  color: #9CA3AF;
   margin-bottom: 1.5rem;
   opacity: 0.5;
 }
 
 .empty-state h2 {
   font-size: 1.75rem;
-  color: var(--text-primary);
+  color: #1a1a1a;
   margin-bottom: 1rem;
 }
 
 .empty-state p {
-  color: var(--text-secondary);
+  color: #6B7280;
   margin-bottom: 2rem;
   font-size: 1.1rem;
 }
@@ -118,8 +119,8 @@
 .shop-btn {
   display: inline-block;
   padding: 1rem 2rem;
-  background: var(--bg-header);
-  color: white;
+  background: #C1A466;
+  color: #FFFFFF;
   text-decoration: none;
   border-radius: 8px;
   font-weight: 600;
@@ -127,9 +128,10 @@
 }
 
 .shop-btn:hover {
-  background: rgba(44, 62, 80, 0.9);
+  background: #A68B4F;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(193, 164, 102, 0.3);
+  color: #FFFFFF;
 }
 
 /* Orders List */
@@ -140,8 +142,8 @@
 }
 
 .order-card {
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
+  background: #FFFFFF;
+  border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 16px;
   padding: 2rem;
   transition: all 0.3s ease;
@@ -150,7 +152,7 @@
 .order-card:hover {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
   transform: translateY(-2px);
-  border-color: var(--border-hover);
+  border-color: rgba(193, 164, 102, 0.3);
 }
 
 .order-card-header {
@@ -159,7 +161,7 @@
   align-items: flex-start;
   margin-bottom: 1.5rem;
   padding-bottom: 1.5rem;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .order-info {
@@ -170,7 +172,7 @@
 
 .order-info h3 {
   font-size: 1.25rem;
-  color: var(--text-primary);
+  color: #1a1a1a;
   margin: 0;
   font-weight: 700;
 }
@@ -225,14 +227,18 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: var(--text-secondary);
+  color: #4B5563;
   font-size: 0.9rem;
+}
+
+.order-date svg {
+  color: #6B7280;
 }
 
 .order-items-preview {
   margin-bottom: 1.5rem;
   padding-bottom: 1.5rem;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .order-item-preview {
@@ -244,25 +250,64 @@
 }
 
 .order-item-preview:not(:last-child) {
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+.order-item-image-wrapper {
+  width: 60px;
+  height: 60px;
+  min-width: 60px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.order-item-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.order-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+  min-width: 0;
 }
 
 .item-name {
-  flex: 1;
-  color: var(--text-primary);
-  font-weight: 500;
+  color: #1a1a1a;
+  font-weight: 600;
+  font-size: 1rem;
 }
 
 .item-quantity {
-  color: var(--text-secondary);
-  font-size: 0.9rem;
+  color: #6B7280;
+  font-size: 0.875rem;
+  font-weight: 400;
 }
 
-.item-price {
-  color: var(--text-primary);
-  font-weight: 600;
-  min-width: 80px;
-  text-align: right;
+.no-items-text {
+  color: #6B7280;
+  font-size: 0.95rem;
+  text-align: center;
+  padding: 1rem;
+}
+
+.more-items {
+  padding: 0.75rem 0;
+  color: #6B7280;
+  font-size: 0.9rem;
+  font-style: italic;
+  text-align: center;
 }
 
 .more-items {
@@ -277,18 +322,21 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
 .order-actions {
   display: flex;
   gap: 0.75rem;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .refund-btn {
   padding: 0.75rem 1.5rem;
   background: #ff9800;
-  color: white;
+  color: #FFFFFF;
   border: none;
   border-radius: 8px;
   font-weight: 600;
@@ -301,6 +349,7 @@
   background: #f57c00;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+  color: #FFFFFF;
 }
 
 .refund-btn:disabled {
@@ -313,13 +362,18 @@
   align-items: center;
   gap: 0.5rem;
   font-size: 1.1rem;
-  color: var(--text-secondary);
+  color: #4B5563;
+}
+
+.order-total span:first-child {
+  font-weight: 500;
+  color: #1a1a1a;
 }
 
 .total-amount {
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--bg-header);
+  color: #C1A466;
 }
 
 .track-shipment-btn {
@@ -341,19 +395,32 @@
 
 .view-order-btn {
   padding: 0.75rem 1.5rem;
-  background: var(--bg-header);
-  color: white;
+  background: #C1A466;
+  color: #FFFFFF;
   text-decoration: none;
   border-radius: 8px;
   font-weight: 600;
   transition: all 0.3s ease;
   display: inline-block;
+  border: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+  white-space: nowrap;
 }
 
 .view-order-btn:hover {
-  background: rgba(44, 62, 80, 0.9);
+  background: #A68B4F;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(193, 164, 102, 0.3);
+  color: #FFFFFF;
+}
+
+.view-order-btn:visited {
+  color: #FFFFFF;
+}
+
+.view-order-btn:active {
+  transform: translateY(0);
 }
 
 /* Responsive */

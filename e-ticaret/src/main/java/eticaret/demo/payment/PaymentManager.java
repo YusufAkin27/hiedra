@@ -375,8 +375,13 @@ public class PaymentManager implements PaymentService {
                 for (OrderDetail detail : sessionData.getOrderDetails()) {
                     OrderItem item = new OrderItem();
                     item.setProductName(detail.getProductName());
-                    item.setWidth(detail.getWidth());
-                    item.setHeight(detail.getHeight());
+                    
+                    // Width ve height cm cinsinden geliyor, metreye çevir
+                    // Frontend'den cm olarak geliyor, backend'de metre olarak saklanıyor
+                    double widthInMeters = detail.getWidth() != null ? detail.getWidth() / 100.0 : 0.0;
+                    double heightInMeters = detail.getHeight() != null ? detail.getHeight() / 100.0 : 0.0;
+                    item.setWidth(widthInMeters);
+                    item.setHeight(heightInMeters);
                     item.setPleatType(detail.getPleatType() != null ? detail.getPleatType() : "1x1");
                     item.setQuantity(detail.getQuantity());
                     
@@ -385,10 +390,20 @@ public class PaymentManager implements PaymentService {
                     BigDecimal unitPrice = product != null ? product.getPrice() : detail.getPrice();
                     item.setUnitPrice(unitPrice);
                     
-                    // Toplam fiyatı hesapla
+                    // Ürün görselini ekle
+                    if (product != null && product.getCoverImageUrl() != null && !product.getCoverImageUrl().isEmpty()) {
+                        item.setProductImageUrl(product.getCoverImageUrl());
+                    }
+                    
+                    // Ürün SKU'sunu ekle
+                    if (product != null && product.getSku() != null && !product.getSku().isEmpty()) {
+                        item.setProductSku(product.getSku());
+                    }
+                    
+                    // Toplam fiyatı hesapla (metre cinsinden width ve height ile)
                     BigDecimal totalPrice = item.calculateTotalPrice();
-                    if (totalPrice.compareTo(BigDecimal.ZERO) == 0) {
-                        // Hesaplama başarısız olursa detail'den al
+                    if (totalPrice.compareTo(BigDecimal.ZERO) == 0 || totalPrice == null) {
+                        // Hesaplama başarısız olursa detail'den al (zaten hesaplanmış fiyat)
                         totalPrice = detail.getPrice();
                     }
                     item.setTotalPrice(totalPrice);

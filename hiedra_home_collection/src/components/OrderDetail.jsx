@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import SEO from './SEO'
+import LazyImage from './LazyImage'
 import './OrderDetail.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
@@ -276,15 +277,6 @@ const OrderDetail = () => {
               </Link>
               <h1>Sipariş Detayı</h1>
             </div>
-            {canRefund() && (
-              <button
-                onClick={() => setShowRefundModal(true)}
-                className="refund-request-btn"
-                disabled={isProcessing}
-              >
-                İade Talebi Oluştur
-              </button>
-            )}
           </header>
 
           {error && (
@@ -331,9 +323,16 @@ const OrderDetail = () => {
               <div className="order-items-list">
                 {order.orderItems && order.orderItems.length > 0 ? (
                   order.orderItems.map((item, index) => {
-                    const itemPrice = item.price ? (typeof item.price === 'string' ? parseFloat(item.price) : parseFloat(item.price.toString())) : 0
+                    const productImage = item.productImageUrl || '/images/perde1kapak.jpg'
                     return (
                       <div key={item.id || index} className="order-item-detail">
+                        <div className="order-item-image-wrapper-detail">
+                          <LazyImage 
+                            src={productImage} 
+                            alt={item.productName || 'Ürün'} 
+                            className="order-item-image-detail"
+                          />
+                        </div>
                         <div className="item-main-info">
                           <h4>{item.productName || 'Ürün'}</h4>
                           <div className="item-specs">
@@ -352,9 +351,6 @@ const OrderDetail = () => {
                             </span>
                           </div>
                         </div>
-                        <div className="item-price-info">
-                          <span className="item-price">{itemPrice.toFixed(2)} ₺</span>
-                        </div>
                       </div>
                     )
                   })
@@ -363,36 +359,14 @@ const OrderDetail = () => {
                 )}
               </div>
               <div className="order-total-section">
-                <div className="total-row">
-                  <span>Ara Toplam:</span>
-                  <span>
-                    {order.subtotal ? (
-                      typeof order.subtotal === 'string' 
-                        ? parseFloat(order.subtotal).toFixed(2) 
-                        : parseFloat(order.subtotal.toString()).toFixed(2)
-                    ) : (order.totalAmount ? (
-                      typeof order.totalAmount === 'string' 
-                        ? parseFloat(order.totalAmount).toFixed(2) 
-                        : parseFloat(order.totalAmount.toString()).toFixed(2)
-                    ) : '0.00')} ₺
-                  </span>
-                </div>
-                {order.discountAmount && parseFloat(order.discountAmount) > 0 && (
+                {order.discountAmount && parseFloat(order.discountAmount) > 0 && order.couponCode && (
                   <div className="total-row discount-row">
-                    <span>Kupon İndirimi{order.couponCode ? ` (${order.couponCode})` : ''}:</span>
+                    <span>Kupon İndirimi ({order.couponCode}):</span>
                     <span className="discount-amount">
                       -{typeof order.discountAmount === 'string' 
                         ? parseFloat(order.discountAmount).toFixed(2) 
                         : parseFloat(order.discountAmount.toString()).toFixed(2)} ₺
                     </span>
-                  </div>
-                )}
-                {order.couponCode && (
-                  <div className="coupon-info-section">
-                    <div className="coupon-applied-info">
-                      <span className="coupon-label">Uygulanan Kupon:</span>
-                      <span className="coupon-code">{order.couponCode}</span>
-                    </div>
                   </div>
                 )}
                 <div className="total-row final">
@@ -607,6 +581,19 @@ const OrderDetail = () => {
                 <div className="refund-request-info">
                   <p>İade talebiniz alınmıştır ve değerlendirme aşamasındadır. En kısa sürede size geri dönüş yapılacaktır.</p>
                 </div>
+              </div>
+            )}
+
+            {/* İade Talebi Butonu - Sayfanın En Altı */}
+            {canRefund() && (
+              <div className="refund-button-section">
+                <button
+                  onClick={() => setShowRefundModal(true)}
+                  className="refund-request-btn"
+                  disabled={isProcessing}
+                >
+                  İade Talebi
+                </button>
               </div>
             )}
           </div>

@@ -17,11 +17,11 @@ const FAQ = () => {
     },
     {
       question: 'Pile sıklığı nedir? Hangi seçeneği tercih etmeliyim?',
-      answer: 'Pile sıklığı, perdenin katlanma sıklığını ifade eder. Pilesiz seçeneği daha sade görünüm sunarken, 1x2 ve 1x3 seçenekleri daha fazla katman ve dolgunluk sağlar. Seçim, zevkinize ve dekorasyon tarzınıza göre değişir. Daha dolgun ve şık bir görünüm için 1x3, daha minimal bir görünüm için pilesiz tercih edebilirsiniz.'
+      answer: 'Pile sıklığı, perdenin katlanma sıklığını ifade eder. Seyrek seçeneği daha sade görünüm sunarken, 1x2 ve 1x3 seçenekleri daha fazla katman ve dolgunluk sağlar. Seçim, zevkinize ve dekorasyon tarzınıza göre değişir. Daha dolgun ve şık bir görünüm için 1x3, daha minimal bir görünüm için seyrek tercih edebilirsiniz.'
     },
     {
       question: 'Fiyatlandırma nasıl yapılıyor?',
-      answer: 'Fiyatlandırma, ürünün metre fiyatı, seçtiğiniz en (genişlik) ve pile sıklığı çarpanına göre hesaplanır. Pilesiz seçeneği x1, 1x2 seçeneği x2, 1x3 seçeneği x3 çarpanı ile hesaplanır. Ürün detay sayfasında seçimlerinizi yaptıktan sonra otomatik olarak güncel fiyatı görebilirsiniz.'
+      answer: 'Fiyatlandırma, ürünün metre fiyatı, seçtiğiniz en (genişlik) ve pile sıklığı çarpanına göre hesaplanır. Seyrek seçeneği x1, 1x2 seçeneği x2, 1x3 seçeneği x3 çarpanı ile hesaplanır. Ürün detay sayfasında seçimlerinizi yaptıktan sonra otomatik olarak güncel fiyatı görebilirsiniz.'
     },
     {
       question: 'Teslimat süresi ne kadar?',

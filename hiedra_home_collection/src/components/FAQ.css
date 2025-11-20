@@ -1,37 +1,68 @@
 .faq-container {
-  padding: 3rem 0;
+  padding: 0;
   min-height: calc(100vh - 200px);
+  background: #FFFFFF;
+  margin-top: calc(-1 * var(--header-offset-desktop));
+  width: 100%;
+}
+
+@media (max-width: 1024px) {
+  .faq-container {
+    margin-top: calc(-1 * var(--header-offset-tablet));
+  }
+}
+
+@media (max-width: 768px) {
+  .faq-container {
+    margin-top: calc(-1 * var(--header-offset-mobile));
+  }
 }
 
 .faq-content {
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 0 2rem;
 }
 
+/* Premium Section Header */
 .faq-header {
   text-align: center;
   margin-bottom: 4rem;
+  padding: 4rem 2rem 2rem;
+  background: linear-gradient(135deg, #F9FAFB 0%, #FFFFFF 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.faq-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, transparent, #C1A466, transparent);
 }
 
 .faq-header h1 {
-  font-family: 'Playfair Display', 'DM Serif Display', serif;
-  font-size: 3rem;
-  color: var(--text-on-dark);
+  font-family: 'Playfair Display', 'DM Serif Display', 'Cormorant Garamond', serif;
+  font-size: 3.5rem;
+  color: #1a1a1a;
   margin-bottom: 1rem;
   font-weight: 600;
   letter-spacing: -0.01em;
   line-height: 1.2;
-  transition: color 0.3s ease;
+  position: relative;
 }
 
 .faq-subtitle {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: 1.2rem;
-  color: var(--text-light);
+  font-size: 1.25rem;
+  color: #6B7280;
   font-weight: 400;
   line-height: 1.6;
-  transition: color 0.3s ease;
+  max-width: 700px;
+  margin: 0 auto;
 }
 
 .faq-list {
@@ -42,28 +73,35 @@
 }
 
 .faq-item {
-  background: var(--bg-card);
+  background: #FFFFFF;
   border-radius: 16px;
-  border: 1px solid var(--border-color);
+  border: 2px solid rgba(0, 0, 0, 0.08);
   overflow: hidden;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px var(--shadow);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.04),
+    0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
 .faq-item:hover {
-  box-shadow: 0 4px 16px var(--shadow-hover);
-  border-color: var(--gold-primary);
+  box-shadow: 
+    0 8px 24px rgba(0, 0, 0, 0.08),
+    0 4px 12px rgba(0, 0, 0, 0.04);
+  border-color: rgba(193, 164, 102, 0.3);
   transform: translateY(-2px);
 }
 
 .faq-item.open {
-  border-color: var(--gold-primary);
-  box-shadow: 0 4px 20px var(--shadow-gold);
+  border-color: #C1A466;
+  box-shadow: 
+    0 8px 32px rgba(193, 164, 102, 0.15),
+    0 4px 16px rgba(193, 164, 102, 0.1);
+  background: linear-gradient(135deg, #FFFFFF 0%, #FEFCF9 100%);
 }
 
 .faq-question {
   width: 100%;
-  padding: 1.5rem 2rem;
+  padding: 1.75rem 2rem;
   background: transparent;
   border: none;
   text-align: left;
@@ -72,67 +110,73 @@
   justify-content: space-between;
   align-items: center;
   gap: 1.5rem;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .faq-question:hover {
-  background: var(--bg-secondary);
+  background: rgba(193, 164, 102, 0.03);
 }
 
 .faq-question:focus {
   outline: none;
-  background: var(--bg-secondary);
+  background: rgba(193, 164, 102, 0.05);
 }
 
 .faq-question-text {
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 600;
-  color: var(--text-on-dark);
+  color: #1a1a1a;
   flex: 1;
   transition: color 0.3s ease;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  line-height: 1.5;
 }
 
 .faq-item.open .faq-question-text {
-  color: var(--gold-primary);
+  color: #C1A466;
 }
 
 .faq-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-light);
-  transition: all 0.3s ease;
+  color: #6B7280;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   flex-shrink: 0;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
+  background: rgba(193, 164, 102, 0.1);
+  border-radius: 50%;
+  padding: 4px;
 }
 
 .faq-item.open .faq-icon {
   transform: rotate(180deg);
-  color: var(--gold-primary);
+  color: #FFFFFF;
+  background: #C1A466;
 }
 
 .faq-question:hover .faq-icon {
-  color: var(--gold-primary);
+  color: #C1A466;
+  background: rgba(193, 164, 102, 0.15);
 }
 
 .faq-answer {
   max-height: 0;
   overflow: hidden;
-  transition: max-height 0.4s ease, padding 0.4s ease;
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), padding 0.4s ease;
   padding: 0 2rem;
 }
 
 .faq-item.open .faq-answer {
   max-height: 500px;
-  padding: 0 2rem 1.5rem 2rem;
+  padding: 0 2rem 2rem 2rem;
 }
 
 .faq-answer p {
-  font-size: 1rem;
-  color: var(--text-light);
+  font-size: 1.05rem;
+  color: #4B5563;
   line-height: 1.8;
   margin: 0;
   padding-top: 1rem;
@@ -142,60 +186,109 @@
 
 .faq-contact {
   text-align: center;
-  padding: 3rem 2rem;
-  background: var(--bg-card);
-  border-radius: 16px;
-  border: 1px solid var(--border-color);
-  box-shadow: 0 4px 20px var(--shadow);
-  transition: all 0.3s ease;
+  padding: 4rem 2rem;
+  background: linear-gradient(135deg, #F9FAFB 0%, #FFFFFF 100%);
+  border-radius: 20px;
+  border: 2px solid rgba(193, 164, 102, 0.15);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.06),
+    0 4px 16px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-top: 3rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.faq-contact::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #C1A466, transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .faq-contact:hover {
-  box-shadow: 0 6px 24px var(--shadow-hover);
-  border-color: var(--gold-primary);
+  box-shadow: 
+    0 12px 40px rgba(0, 0, 0, 0.1),
+    0 6px 20px rgba(193, 164, 102, 0.15);
+  border-color: rgba(193, 164, 102, 0.4);
+  transform: translateY(-4px);
+}
+
+.faq-contact:hover::before {
+  opacity: 1;
 }
 
 .faq-contact p {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: 1.2rem;
-  color: var(--text-on-dark);
-  margin-bottom: 1.5rem;
+  font-size: 1.25rem;
+  color: #1a1a1a;
+  margin-bottom: 2rem;
   transition: color 0.3s ease;
-  font-weight: 400;
+  font-weight: 500;
 }
 
 .contact-link {
-  display: inline-block;
-  padding: 1rem 2.5rem;
-  background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-hover) 100%);
-  color: var(--text-on-gold);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.25rem 3rem;
+  background: linear-gradient(135deg, #C1A466 0%, #A68B4F 100%);
+  color: #FFFFFF;
   text-decoration: none;
   border-radius: 12px;
   font-weight: 600;
   font-size: 1.1rem;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px var(--shadow-gold);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 4px 16px rgba(193, 164, 102, 0.3),
+    0 2px 8px rgba(193, 164, 102, 0.2);
   border: none;
   cursor: pointer;
   letter-spacing: 0.02em;
+  position: relative;
+  overflow: hidden;
+}
+
+.contact-link::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.contact-link:hover::before {
+  left: 100%;
 }
 
 .contact-link:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px var(--shadow-gold);
-  background: linear-gradient(135deg, var(--gold-primary) 0%, #9A7A3F 100%);
-  color: var(--text-on-gold);
+  transform: translateY(-3px);
+  box-shadow: 
+    0 8px 24px rgba(193, 164, 102, 0.4),
+    0 4px 12px rgba(193, 164, 102, 0.3);
+  background: linear-gradient(135deg, #A68B4F 0%, #C1A466 100%);
+  color: #FFFFFF;
 }
 
 .contact-link:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 8px var(--shadow-gold);
+  transform: translateY(-1px);
+  box-shadow: 
+    0 4px 12px rgba(193, 164, 102, 0.3),
+    0 2px 6px rgba(193, 164, 102, 0.2);
 }
 
 @media (max-width: 768px) {
   .faq-container {
-    padding: 2rem 0;
+    padding: 0;
   }
 
   .faq-content {
@@ -204,10 +297,11 @@
 
   .faq-header {
     margin-bottom: 3rem;
+    padding: 3rem 1.5rem 1.5rem;
   }
 
   .faq-header h1 {
-    font-size: 2rem;
+    font-size: 2.25rem;
   }
 
   .faq-subtitle {

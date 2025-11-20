@@ -10,9 +10,18 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
 
 const Checkout = () => {
   const navigate = useNavigate()
-  const { cartItems, getCartTotal, getCartSubtotal, clearCart, couponCode, discountAmount, cartId } = useCart()
+  const cartContext = useCart()
   const { user, accessToken, isAuthenticated } = useAuth()
   const toast = useToast()
+  
+  // Cart context'ten değerleri al, eğer undefined ise default değerler kullan
+  const cartItems = cartContext?.cartItems || []
+  const getCartTotal = cartContext?.getCartTotal || (() => 0)
+  const getCartSubtotal = cartContext?.getCartSubtotal || (() => 0)
+  const clearCart = cartContext?.clearCart || (() => {})
+  const couponCode = cartContext?.couponCode || null
+  const discountAmount = cartContext?.discountAmount || 0
+  const cartId = cartContext?.cartId || null
   const [currentStep, setCurrentStep] = useState(1)
   const [isProcessing, setIsProcessing] = useState(false)
   const [userAddresses, setUserAddresses] = useState([])

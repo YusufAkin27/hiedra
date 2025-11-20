@@ -96,6 +96,7 @@ public class OrderResponseDTO {
         private Integer quantity;
         private BigDecimal unitPrice;
         private BigDecimal totalPrice;
+        private BigDecimal price; // Frontend uyumluluğu için totalPrice'ın alias'ı
         private Long productId;
         private String productImageUrl;
         private String productSku;

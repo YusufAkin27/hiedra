@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import SEO from './SEO'
+import LazyImage from './LazyImage'
 import './MyOrders.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
@@ -12,9 +13,6 @@ const MyOrders = () => {
   const [orders, setOrders] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
-  const [refundingOrder, setRefundingOrder] = useState(null)
-  const [showRefundModal, setShowRefundModal] = useState(false)
-  const [refundReason, setRefundReason] = useState('İade talebi')
   const [success, setSuccess] = useState('')
   const [trackingDataMap, setTrackingDataMap] = useState({})
   const [loadingTracking, setLoadingTracking] = useState({})
@@ -120,13 +118,6 @@ const MyOrders = () => {
     return 'status-pending'
   }
 
-  // İade talep edilebilir mi? (Her durumda iade edilebilir, sadece zaten iade edilmiş veya iade talebi bekleyen siparişler hariç)
-  const canRefund = (order) => {
-    if (!order || !order.status) return false
-    const status = order.status.toUpperCase()
-    return status !== 'REFUNDED' && status !== 'REFUND_REQUESTED'
-  }
-
   // Kargo takip bilgisini getir
   const fetchTrackingInfo = async (order) => {
     if (!order.trackingNumber || !user?.email) return
@@ -172,55 +163,6 @@ const MyOrders = () => {
       'OUT_FOR_DELIVERY': 'Teslimat İçin Yola Çıktı'
     }
     return statusMap[status.toUpperCase()] || status
-  }
-
-  const handleRequestRefund = async () => {
-    if (!refundReason.trim()) {
-      setError('Lütfen iade sebebini belirtin')
-      return
-    }
-
-    if (!refundingOrder || !refundingOrder.orderNumber) {
-      setError('Sipariş bilgisi bulunamadı')
-      return
-    }
-
-    const orderNumber = refundingOrder.orderNumber
-    setError('')
-    setSuccess('')
-
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/orders/${orderNumber}/refund?email=${encodeURIComponent(user.email)}&reason=${encodeURIComponent(refundReason)}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(accessToken && { 'Authorization': `Bearer ${accessToken}` })
-          }
-        }
-      )
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.message || 'İade talebi oluşturulamadı')
-      }
-
-      if (data.isSuccess || data.success) {
-        setSuccess('İade talebiniz başarıyla oluşturuldu. En kısa sürede değerlendirilecektir.')
-        setShowRefundModal(false)
-        setRefundReason('İade talebi')
-        setRefundingOrder(null)
-        // Siparişleri yeniden yükle
-        await fetchMyOrders()
-      } else {
-        throw new Error(data.message || 'İade talebi oluşturulamadı')
-      }
-    } catch (err) {
-      console.error('İade talebi oluşturulurken hata:', err)
-      setError(err.message || 'İade talebi oluşturulurken bir hata oluştu')
-    }
   }
 
   if (!isAuthenticated) {
@@ -306,33 +248,38 @@ const MyOrders = () => {
               <div className="order-items-preview">
                 {order.orderItems && order.orderItems.length > 0 ? (
                   <>
-                    {order.orderItems.slice(0, 3).map((item, index) => {
-                      // Price'ı doğru parse et (BigDecimal string olarak gelebilir)
-                      const itemPrice = item.price ? (typeof item.price === 'string' ? parseFloat(item.price) : parseFloat(item.price.toString())) : 0
+                    {order.orderItems.map((item, index) => {
+                      // Görsel URL'ini kontrol et ve düzelt
+                      let productImage = item.productImageUrl || '/images/perde1kapak.jpg'
+                      // Eğer URL relative ise veya boşsa, varsayılan görseli kullan
+                      if (!productImage || productImage === '' || productImage === 'null' || productImage === 'undefined') {
+                        productImage = '/images/perde1kapak.jpg'
+                      }
+                      // Eğer URL http ile başlamıyorsa ve / ile başlamıyorsa, / ekle
+                      if (!productImage.startsWith('http') && !productImage.startsWith('/')) {
+                        productImage = '/' + productImage
+                      }
                       return (
                         <div key={item.id || index} className="order-item-preview">
-                          <span className="item-name">{item.productName || 'Ürün'}</span>
-                          {item.width && item.height && (
-                            <span className="item-dimensions">
-                              ({item.width} x {item.height} cm)
-                            </span>
-                          )}
-                          {item.pleatType && item.pleatType !== '1x1' && (
-                            <span className="item-pleat">Pile: {item.pleatType}</span>
-                          )}
-                          <span className="item-quantity">x{item.quantity || 1}</span>
-                          <span className="item-price">{itemPrice.toFixed(2)} ₺</span>
+                          <div className="order-item-image-wrapper">
+                            <LazyImage 
+                              src={productImage} 
+                              alt={item.productName || 'Ürün'} 
+                              className="order-item-image"
+                            />
+                          </div>
+                          <div className="order-item-info">
+                            <span className="item-name">{item.productName || 'Ürün'}</span>
+                            {item.quantity > 1 && (
+                              <span className="item-quantity">Adet: {item.quantity}</span>
+                            )}
+                          </div>
                         </div>
                       )
                     })}
-                    {order.orderItems.length > 3 && (
-                      <div className="more-items">
-                        +{order.orderItems.length - 3} ürün daha
-                      </div>
-                    )}
                   </>
                 ) : (
-                  <p>Sipariş detayı bulunamadı</p>
+                  <p className="no-items-text">Sipariş detayı bulunamadı</p>
                 )}
               </div>
 
@@ -441,60 +388,84 @@ const MyOrders = () => {
                           ? parseFloat(order.totalAmount) 
                           : parseFloat(order.totalAmount.toString())
                         
-                        if (totalAmount > 0) {
+                        if (!isNaN(totalAmount) && totalAmount > 0) {
                           return totalAmount.toFixed(2)
                         }
                       }
                       
-                      // Eğer totalAmount yoksa veya 0 ise, hesapla: subtotal + shippingCost - discountAmount + taxAmount
-                      let calculatedTotal = 0
+                      // Eğer totalAmount yoksa veya 0 ise, orderItems'dan hesapla
+                      if (order.orderItems && order.orderItems.length > 0) {
+                        let itemsTotal = 0
+                        order.orderItems.forEach(item => {
+                          const itemPrice = item.price 
+                            ? (typeof item.price === 'string' ? parseFloat(item.price) : parseFloat(item.price.toString()))
+                            : 0
+                          const quantity = item.quantity || 1
+                          itemsTotal += itemPrice * quantity
+                        })
+                        
+                        if (itemsTotal > 0) {
+                          // Shipping cost ekle (varsa)
+                          const shippingCost = (order.shippingCost && order.shippingCost !== null) 
+                            ? (typeof order.shippingCost === 'string' 
+                                ? parseFloat(order.shippingCost) 
+                                : parseFloat(order.shippingCost.toString()))
+                            : 0
+                          
+                          // Discount çıkar (varsa)
+                          const discountAmount = (order.discountAmount && order.discountAmount !== null) 
+                            ? (typeof order.discountAmount === 'string' 
+                                ? parseFloat(order.discountAmount) 
+                                : parseFloat(order.discountAmount.toString()))
+                            : 0
+                          
+                          // Tax ekle (varsa)
+                          const taxAmount = (order.taxAmount && order.taxAmount !== null) 
+                            ? (typeof order.taxAmount === 'string' 
+                                ? parseFloat(order.taxAmount) 
+                                : parseFloat(order.taxAmount.toString()))
+                            : 0
+                          
+                          const finalTotal = itemsTotal + shippingCost - discountAmount + taxAmount
+                          return finalTotal > 0 ? finalTotal.toFixed(2) : itemsTotal.toFixed(2)
+                        }
+                      }
                       
+                      // Son çare: subtotal + shippingCost - discountAmount + taxAmount
                       if (order.subtotal !== undefined && order.subtotal !== null) {
                         const subtotal = typeof order.subtotal === 'string' 
                           ? parseFloat(order.subtotal) 
                           : parseFloat(order.subtotal.toString())
                         
-                        const shippingCost = (order.shippingCost && order.shippingCost !== null) 
-                          ? (typeof order.shippingCost === 'string' 
-                              ? parseFloat(order.shippingCost) 
-                              : parseFloat(order.shippingCost.toString()))
-                          : 0
-                        
-                        const discountAmount = (order.discountAmount && order.discountAmount !== null) 
-                          ? (typeof order.discountAmount === 'string' 
-                              ? parseFloat(order.discountAmount) 
-                              : parseFloat(order.discountAmount.toString()))
-                          : 0
-                        
-                        const taxAmount = (order.taxAmount && order.taxAmount !== null) 
-                          ? (typeof order.taxAmount === 'string' 
-                              ? parseFloat(order.taxAmount) 
-                              : parseFloat(order.taxAmount.toString()))
-                          : 0
-                        
-                        // Gerçek toplam: subtotal + shippingCost - discountAmount + taxAmount
-                        calculatedTotal = subtotal + shippingCost - discountAmount + taxAmount
+                        if (!isNaN(subtotal) && subtotal > 0) {
+                          const shippingCost = (order.shippingCost && order.shippingCost !== null) 
+                            ? (typeof order.shippingCost === 'string' 
+                                ? parseFloat(order.shippingCost) 
+                                : parseFloat(order.shippingCost.toString()))
+                            : 0
+                          
+                          const discountAmount = (order.discountAmount && order.discountAmount !== null) 
+                            ? (typeof order.discountAmount === 'string' 
+                                ? parseFloat(order.discountAmount) 
+                                : parseFloat(order.discountAmount.toString()))
+                            : 0
+                          
+                          const taxAmount = (order.taxAmount && order.taxAmount !== null) 
+                            ? (typeof order.taxAmount === 'string' 
+                                ? parseFloat(order.taxAmount) 
+                                : parseFloat(order.taxAmount.toString()))
+                            : 0
+                          
+                          const calculatedTotal = subtotal + shippingCost - discountAmount + taxAmount
+                          return calculatedTotal > 0 ? calculatedTotal.toFixed(2) : subtotal.toFixed(2)
+                        }
                       }
                       
-                      return calculatedTotal > 0 ? calculatedTotal.toFixed(2) : '0.00'
+                      return '0.00'
                     })()} ₺
                   </span>
                 </div>
                 <div className="order-actions">
-                  {canRefund(order) && (
-                    <button
-                      onClick={() => {
-                        setRefundingOrder(order)
-                        setShowRefundModal(true)
-                        setError('')
-                        setSuccess('')
-                      }}
-                      className="refund-btn"
-                      disabled={refundingOrder && refundingOrder.orderNumber === order.orderNumber}
-                    >
-                      {refundingOrder && refundingOrder.orderNumber === order.orderNumber ? 'İşleniyor...' : 'İade Talebi'}
-                    </button>
-                  )}
                   <Link 
                     to={`/siparis/${order.orderNumber}`}
                     className="view-order-btn"
@@ -508,59 +479,6 @@ const MyOrders = () => {
         </div>
       )}
 
-      {/* İade Talebi Modal */}
-      {showRefundModal && refundingOrder && (
-        <div className="modal-overlay" onClick={() => {
-          setShowRefundModal(false)
-          setRefundReason('İade talebi')
-          setError('')
-          setRefundingOrder(null)
-        }}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h3>İade Talebi Oluştur</h3>
-            <p>Sipariş No: {refundingOrder.orderNumber}</p>
-            <p>İade talebi oluşturmak istediğinizden emin misiniz? İade talebiniz değerlendirildikten sonra size geri dönüş yapılacaktır.</p>
-            {error && (
-              <div className="error-message" style={{ marginTop: '1rem' }}>
-                {error}
-              </div>
-            )}
-            <div className="form-group">
-              <label htmlFor="refundReason">
-                İade Sebebi <span className="required">*</span>
-              </label>
-              <textarea
-                id="refundReason"
-                value={refundReason}
-                onChange={(e) => setRefundReason(e.target.value)}
-                rows="4"
-                placeholder="Lütfen iade sebebinizi detaylı olarak açıklayın..."
-                required
-              />
-            </div>
-            <div className="modal-actions">
-              <button 
-                onClick={() => {
-                  setShowRefundModal(false)
-                  setRefundReason('İade talebi')
-                  setError('')
-                  setRefundingOrder(null)
-                }} 
-                className="cancel-btn"
-              >
-                İptal
-              </button>
-              <button 
-                onClick={handleRequestRefund} 
-                disabled={!refundReason.trim()}
-                className="confirm-btn"
-              >
-                İade Talebi Oluştur
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

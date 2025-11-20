@@ -51,8 +51,8 @@ public class PaymentRequest {
 
     @NotBlank(message = "Telefon numarası boş olamaz.")
     @Pattern(
-            regexp = "^[0-9]{10,11}$",
-            message = "Telefon numarası 10 veya 11 haneli olmalıdır."
+            regexp = "^(\\+90[0-9]{10}|0[0-9]{10}|[0-9]{10})$",
+            message = "Telefon numarası geçerli formatta olmalıdır. Örnek: +905336360079, 05336360079 veya 5336360079"
     )
     private String phone;
 
