@@ -1391,9 +1391,7 @@
 .product-image-section-home {
   position: relative;
   width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  display: block;
   min-height: 500px;
 }
 
@@ -1428,12 +1426,8 @@
     0 4px 16px rgba(0, 0, 0, 0.04),
     0 2px 8px rgba(0, 0, 0, 0.02),
     inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
+  padding: 0;
   transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
   border: 1px solid rgba(0, 0, 0, 0.04);
 }
 
@@ -1441,7 +1435,7 @@
   .main-product-image-wrapper-home {
     height: 600px;
     min-height: 450px;
-    padding: 1.5rem;
+    padding: 0;
   }
 }
 
@@ -1449,7 +1443,7 @@
   .main-product-image-wrapper-home {
     height: 550px;
     min-height: 400px;
-    padding: 1.5rem;
+    padding: 0;
     border-radius: 16px;
   }
 }
@@ -1458,7 +1452,7 @@
   .main-product-image-wrapper-home {
     height: 500px;
     min-height: 350px;
-    padding: 1rem;
+    padding: 0;
     border-radius: 16px;
   }
 }
@@ -1534,7 +1528,7 @@
     0 4px 12px rgba(0, 0, 0, 0.04),
     inset 0 1px 0 rgba(255, 255, 255, 0.95),
     0 0 0 1px rgba(193, 164, 102, 0.15);
-  transform: translateY(-4px) scale(1.01);
+  transform: none;
   background: linear-gradient(135deg, #FFFFFF 0%, #F9FAFB 100%);
 }
 
@@ -1549,30 +1543,28 @@
 /* Ürün geçiş animasyonları - Hızlı ve Smooth */
 .main-product-image-wrapper-home.fade-out {
   opacity: 0;
-  transform: scale(0.95);
-  transition: opacity 0.15s ease-out, transform 0.15s ease-out;
+  transform: none;
+  transition: opacity 0.15s ease-out;
 }
 
 .main-product-image-wrapper-home.fade-in {
   opacity: 1;
-  transform: scale(1);
-  transition: opacity 0.3s ease-in, transform 0.3s ease-in;
+  transform: none;
+  transition: opacity 0.3s ease-in;
   animation: smoothFadeIn 0.3s ease-out;
 }
 
 @keyframes smoothFadeIn {
   from {
     opacity: 0;
-    transform: scale(0.97);
   }
   to {
     opacity: 1;
-    transform: scale(1);
   }
 }
 
 .main-product-image-wrapper-home.fade-in:hover {
-  transform: translateY(-4px) scale(1.01);
+  transform: none;
   box-shadow: 
     0 16px 48px rgba(0, 0, 0, 0.12),
     0 8px 24px rgba(0, 0, 0, 0.08);
@@ -1608,17 +1600,20 @@
   height: 100%;
   max-width: 100%;
   max-height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   background: transparent;
   object-position: center center;
-  margin: 0 auto;
-  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
-              filter 0.4s ease,
-              opacity 0.3s ease;
+  margin: 0;
+  padding: 0;
+  transition: opacity 0.3s ease;
   filter: brightness(1) contrast(1) saturate(1);
   opacity: 1;
-  border-radius: 12px;
-  position: relative;
+  border-radius: 20px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 1;
   /* Yüksek kaliteli görsel render için */
   image-rendering: -webkit-optimize-contrast;
@@ -1627,52 +1622,53 @@
   -ms-interpolation-mode: bicubic;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
-  transform: translateZ(0);
-  will-change: transform;
+  transform: none;
+  will-change: opacity;
+}
+
+@media (max-width: 1024px) {
+  .main-product-image-home {
+    object-fit: contain;
+  }
 }
 
 .category-section-home:hover .main-product-image-home {
-  transform: scale(1.05) translateY(-2px);
-  filter: brightness(1.03) contrast(1.03) saturate(1.08);
+  transform: none;
+  filter: none;
 }
 
 /* Hızlı görsel değişimi için */
 .main-product-image-wrapper-home.fade-out .main-product-image-home {
   opacity: 0;
-  transform: scale(0.95);
+  transform: none;
 }
 
 .main-product-image-wrapper-home.fade-in .main-product-image-home {
   opacity: 1;
-  transform: scale(1);
-  animation: imageFadeIn 0.3s ease-out;
+  transform: none;
+  animation: imageFadeInMobile 0.3s ease-out;
 }
 
-@keyframes imageFadeIn {
+@keyframes imageFadeInMobile {
   from {
     opacity: 0;
-    transform: scale(0.98);
   }
   to {
     opacity: 1;
-    transform: scale(1);
   }
 }
 
 @media (max-width: 768px) {
   .main-product-image-home {
-    object-fit: cover;
-    border-radius: 8px;
-  }
-  
-  .category-section-home:hover .main-product-image-home {
-    transform: scale(1.03);
+    object-fit: contain;
+    border-radius: 16px;
+    transform: none !important;
   }
 }
 
 @media (max-width: 480px) {
   .main-product-image-home {
-    border-radius: 6px;
+    border-radius: 16px;
   }
 }
 
@@ -1697,7 +1693,7 @@
 }
 
 .detail-image-preview-home:hover {
-  transform: scale(1.1) translateY(-4px);
+  transform: none;
   box-shadow: 
     0 12px 32px rgba(0, 0, 0, 0.35),
     0 6px 16px rgba(0, 0, 0, 0.2),
@@ -1727,7 +1723,7 @@
   }
   
   .detail-image-preview-home:hover {
-    transform: scale(1.08) translateY(-2px);
+    transform: none;
   }
 }
 
@@ -1771,7 +1767,7 @@
 }
 
 .detail-image-preview-home:hover .detail-image-preview-img-home {
-  transform: scale(1.1);
+  transform: none;
 }
 
 .product-stock-badge-large-home {
@@ -2369,7 +2365,7 @@
 .pricing-modal-content-home {
   position: relative;
   width: 100%;
-  max-width: 650px;
+  max-width: 800px;
   max-height: 92vh;
   background: #FFFFFF;
   border-radius: 24px;
@@ -2498,14 +2494,15 @@
 }
 
 .pricing-modal-form-home .measurement-inputs-home {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  align-items: flex-start;
 }
 
 @media (max-width: 768px) {
   .pricing-modal-form-home .measurement-inputs-home {
-    grid-template-columns: 1fr;
+    flex-direction: column;
     gap: 1rem;
   }
 }
@@ -2516,8 +2513,13 @@
   }
   
   .pricing-modal-content-home .measurement-inputs-home {
-    grid-template-columns: 1fr;
+    flex-direction: column;
     gap: 1rem;
+  }
+  
+  .pricing-modal-content-home .measurement-input-group-home {
+    flex: none;
+    width: 100%;
   }
   
   .pricing-modal-header-home {
@@ -2585,14 +2587,15 @@
 }
 
 .measurement-inputs-home {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
+  flex-direction: row;
   gap: 1rem;
+  align-items: flex-start;
 }
 
 @media (max-width: 768px) {
   .measurement-inputs-home {
-    grid-template-columns: 1fr;
+    flex-direction: column;
     gap: 0.75rem;
   }
 }
@@ -2602,6 +2605,8 @@
   flex-direction: column;
   gap: 0.75rem;
   position: relative;
+  flex: 1;
+  min-width: 0;
 }
 
 .measurement-input-group-home label {
@@ -2705,12 +2710,12 @@
 
 .dropdown-trigger-home {
   width: 100%;
-  padding: 1.25rem 3.5rem 1.25rem 1.5rem;
+  padding: 1.4rem 4rem 1.4rem 1.75rem;
   border: 2px solid rgba(0, 0, 0, 0.1);
   border-radius: 16px;
   background: linear-gradient(135deg, #FFFFFF 0%, #FAFAFA 100%);
   color: #1a1a1a;
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 600;
   cursor: pointer;
   display: flex;
@@ -2723,6 +2728,7 @@
     0 2px 8px rgba(0, 0, 0, 0.04),
     inset 0 1px 0 rgba(255, 255, 255, 0.8);
   position: relative;
+  min-height: 60px;
 }
 
 .dropdown-trigger-home::before {

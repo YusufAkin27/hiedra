@@ -1,40 +1,34 @@
 package eticaret.demo.admin;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.annotation.PostConstruct;
 import java.util.*;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class AdminIpService {
 
-    @Value("${security.admin.allowed-ips:127.0.0.1,::1}")
-    private String initialAllowedIps;
-
-    private final Set<String> allowedIps = new CopyOnWriteArraySet<>();
-
-    @PostConstruct
-    public void init() {
-        if (initialAllowedIps != null && !initialAllowedIps.isBlank()) {
-            Set<String> ips = Arrays.stream(initialAllowedIps.split(","))
-                    .map(String::trim)
-                    .filter(ip -> !ip.isEmpty())
-                    .collect(Collectors.toSet());
-            allowedIps.addAll(ips);
-            log.info("Admin IP'leri yüklendi: {}", allowedIps);
-        }
-    }
+    private final AdminAllowedIpRepository adminAllowedIpRepository;
 
     public Set<String> getAllowedIps() {
-        return new HashSet<>(allowedIps);
+        return adminAllowedIpRepository.findByIsActiveTrue()
+                .stream()
+                .map(AdminAllowedIp::getIpAddress)
+                .collect(Collectors.toSet());
     }
 
+    @Transactional
     public boolean addIp(String ip) {
+        return addIp(ip, null);
+    }
+
+    @Transactional
+    public boolean addIp(String ip, String description) {
         if (ip == null || ip.isBlank()) {
             throw new IllegalArgumentException("IP adresi boş olamaz");
         }
@@ -44,24 +38,72 @@ public class AdminIpService {
             throw new IllegalArgumentException("Geçersiz IP adresi: " + trimmedIp);
         }
 
-        boolean added = allowedIps.add(trimmedIp);
-        if (added) {
-            log.info("Admin IP eklendi: {}", trimmedIp);
+        // IP zaten var mı kontrol et
+        if (adminAllowedIpRepository.existsByIpAddress(trimmedIp)) {
+            // Eğer pasif ise aktif yap
+            Optional<AdminAllowedIp> existing = adminAllowedIpRepository.findByIpAddress(trimmedIp);
+            if (existing.isPresent() && !existing.get().getIsActive()) {
+                AdminAllowedIp ipEntity = existing.get();
+                ipEntity.setIsActive(true);
+                if (description != null && !description.isBlank()) {
+                    ipEntity.setDescription(description);
+                }
+                adminAllowedIpRepository.save(ipEntity);
+                log.info("Admin IP aktif hale getirildi: {}", trimmedIp);
+                return true;
+            }
+            return false;
         }
-        return added;
+
+        // Yeni IP ekle
+        AdminAllowedIp ipEntity = AdminAllowedIp.builder()
+                .ipAddress(trimmedIp)
+                .description(description)
+                .isActive(true)
+                .build();
+        
+        adminAllowedIpRepository.save(ipEntity);
+        log.info("Admin IP eklendi: {}", trimmedIp);
+        return true;
     }
 
+    @Transactional
     public boolean removeIp(String ip) {
         if (ip == null || ip.isBlank()) {
             throw new IllegalArgumentException("IP adresi boş olamaz");
         }
 
         String trimmedIp = ip.trim();
-        boolean removed = allowedIps.remove(trimmedIp);
-        if (removed) {
-            log.info("Admin IP kaldırıldı: {}", trimmedIp);
+        Optional<AdminAllowedIp> ipEntity = adminAllowedIpRepository.findByIpAddress(trimmedIp);
+        
+        if (ipEntity.isPresent() && ipEntity.get().getIsActive()) {
+            // IP'yi pasif yap (silme yerine)
+            AdminAllowedIp entity = ipEntity.get();
+            entity.setIsActive(false);
+            adminAllowedIpRepository.save(entity);
+            log.info("Admin IP kaldırıldı (pasif yapıldı): {}", trimmedIp);
+            return true;
         }
-        return removed;
+        
+        return false;
+    }
+
+    @Transactional
+    public boolean deleteIp(String ip) {
+        if (ip == null || ip.isBlank()) {
+            throw new IllegalArgumentException("IP adresi boş olamaz");
+        }
+
+        String trimmedIp = ip.trim();
+        Optional<AdminAllowedIp> ipEntity = adminAllowedIpRepository.findByIpAddress(trimmedIp);
+        
+        if (ipEntity.isPresent()) {
+            adminAllowedIpRepository.delete(ipEntity.get());
+            log.info("Admin IP kalıcı olarak silindi: {}", trimmedIp);
+            return true;
+        }
+        
+        return false;
     }
 
     public boolean isAllowed(String ip) {
@@ -77,12 +119,110 @@ public class AdminIpService {
             trimmedIp.equals("::1") ||
             trimmedIp.startsWith("127.") ||
             trimmedIp.equals("localhost")) {
+            // Localhost için özel kontrol
+            Set<String> allowedIps = getAllowedIps();
             return allowedIps.contains("127.0.0.1") || 
                    allowedIps.contains("0.0.0.0") ||
-                   allowedIps.contains("::1");
+                   allowedIps.contains("::1") ||
+                   allowedIps.contains("0:0:0:0:0:0:0:1") ||
+                   isIpInSubnet(trimmedIp, allowedIps);
         }
         
-        return allowedIps.contains(trimmedIp);
+        // Önce tam IP kontrolü
+        Optional<AdminAllowedIp> exactMatch = adminAllowedIpRepository.findByIpAddress(trimmedIp);
+        if (exactMatch.isPresent() && exactMatch.get().getIsActive()) {
+            return true;
+        }
+        
+        // Subnet kontrolü - tüm aktif IP'leri kontrol et
+        Set<String> allowedIps = getAllowedIps();
+        return isIpInSubnet(trimmedIp, allowedIps);
+    }
+    
+    /**
+     * IP'nin herhangi bir subnet içinde olup olmadığını kontrol eder
+     */
+    private boolean isIpInSubnet(String ip, Set<String> allowedIps) {
+        for (String allowedIp : allowedIps) {
+            if (isIpInSubnet(ip, allowedIp)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * IP'nin belirli bir subnet içinde olup olmadığını kontrol eder
+     */
+    private boolean isIpInSubnet(String ip, String subnet) {
+        // CIDR formatı kontrolü (örn: 192.168.1.0/24)
+        if (subnet.contains("/")) {
+            try {
+                String[] parts = subnet.split("/");
+                if (parts.length != 2) {
+                    return false;
+                }
+                
+                String networkIp = parts[0].trim();
+                int prefixLength = Integer.parseInt(parts[1].trim());
+                
+                if (prefixLength < 0 || prefixLength > 32) {
+                    return false;
+                }
+                
+                // IPv4 subnet kontrolü
+                if (isValidIpv4(ip) && isValidIpv4(networkIp)) {
+                    return isIpv4InSubnet(ip, networkIp, prefixLength);
+                }
+                
+                // IPv6 subnet kontrolü (basit)
+                if (isValidIpv6(ip) && isValidIpv6(networkIp)) {
+                    // IPv6 için basit prefix kontrolü
+                    return ip.startsWith(networkIp.substring(0, networkIp.lastIndexOf(":")));
+                }
+            } catch (Exception e) {
+                log.debug("Subnet kontrolü hatası: {} - {}", subnet, e.getMessage());
+                return false;
+            }
+        }
+        
+        return false;
+    }
+    
+    /**
+     * IPv4 IP'nin subnet içinde olup olmadığını kontrol eder
+     */
+    private boolean isIpv4InSubnet(String ip, String networkIp, int prefixLength) {
+        try {
+            long ipLong = ipToLong(ip);
+            long networkLong = ipToLong(networkIp);
+            long mask = (0xFFFFFFFFL << (32 - prefixLength)) & 0xFFFFFFFFL;
+            
+            return (ipLong & mask) == (networkLong & mask);
+        } catch (Exception e) {
+            log.debug("IPv4 subnet kontrolü hatası: {} - {}", ip, e.getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * IP adresini long değere çevirir
+     */
+    private long ipToLong(String ip) {
+        String[] parts = ip.split("\\.");
+        if (parts.length != 4) {
+            throw new IllegalArgumentException("Geçersiz IPv4 adresi: " + ip);
+        }
+        
+        long result = 0;
+        for (int i = 0; i < 4; i++) {
+            int part = Integer.parseInt(parts[i]);
+            if (part < 0 || part > 255) {
+                throw new IllegalArgumentException("Geçersiz IPv4 adresi: " + ip);
+            }
+            result = (result << 8) + part;
+        }
+        return result;
     }
 
     private boolean isValidIp(String ip) {
@@ -90,20 +230,42 @@ public class AdminIpService {
             return false;
         }
 
-        // IPv4 format kontrolü
-        if (ip.matches("^([0-9]{1,3}\\.){3}[0-9]{1,3}$")) {
-            String[] parts = ip.split("\\.");
-            for (String part : parts) {
-                int num = Integer.parseInt(part);
-                if (num < 0 || num > 255) {
-                    return false;
-                }
+        // CIDR formatı kontrolü (örn: 192.168.1.0/24)
+        if (ip.contains("/")) {
+            String[] parts = ip.split("/");
+            if (parts.length != 2) {
+                return false;
             }
+            
+            String networkIp = parts[0].trim();
+            String prefixStr = parts[1].trim();
+            
+            try {
+                int prefixLength = Integer.parseInt(prefixStr);
+                
+                // IPv4 CIDR kontrolü
+                if (isValidIpv4(networkIp)) {
+                    return prefixLength >= 0 && prefixLength <= 32;
+                }
+                
+                // IPv6 CIDR kontrolü (basit)
+                if (isValidIpv6(networkIp)) {
+                    return prefixLength >= 0 && prefixLength <= 128;
+                }
+            } catch (NumberFormatException e) {
+                return false;
+            }
+            
+            return false;
+        }
+
+        // IPv4 format kontrolü
+        if (isValidIpv4(ip)) {
             return true;
         }
 
-        // IPv6 format kontrolü (basit)
-        if (ip.contains(":") || ip.equals("::1") || ip.equals("0:0:0:0:0:0:0:1")) {
+        // IPv6 format kontrolü
+        if (isValidIpv6(ip)) {
             return true;
         }
 
@@ -112,6 +274,48 @@ public class AdminIpService {
             return true;
         }
 
+        return false;
+    }
+    
+    /**
+     * IPv4 adres formatını kontrol eder
+     */
+    private boolean isValidIpv4(String ip) {
+        if (ip == null || ip.isBlank()) {
+            return false;
+        }
+        
+        if (!ip.matches("^([0-9]{1,3}\\.){3}[0-9]{1,3}$")) {
+            return false;
+        }
+        
+        String[] parts = ip.split("\\.");
+        for (String part : parts) {
+            try {
+                int num = Integer.parseInt(part);
+                if (num < 0 || num > 255) {
+                    return false;
+                }
+            } catch (NumberFormatException e) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    /**
+     * IPv6 adres formatını kontrol eder (basit)
+     */
+    private boolean isValidIpv6(String ip) {
+        if (ip == null || ip.isBlank()) {
+            return false;
+        }
+        
+        // Basit IPv6 kontrolü
+        if (ip.contains(":") || ip.equals("::1") || ip.equals("0:0:0:0:0:0:0:1")) {
+            return true;
+        }
+        
         return false;
     }
 }

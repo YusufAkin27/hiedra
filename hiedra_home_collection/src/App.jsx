@@ -47,6 +47,7 @@ import { ThemeProvider } from './context/ThemeContext'
 import { AuthProvider } from './context/AuthContext'
 import { ToastProvider } from './components/Toast'
 import VisitorHeartbeat from './components/VisitorHeartbeat'
+import ScrollToTop from './components/ScrollToTop'
 import './App.css'
 
 // Loading fallback component
@@ -68,6 +69,7 @@ function App() {
       <AuthProvider>
       <CartProvider>
         <Router>
+          <ScrollToTop />
           <VisitorHeartbeat />
           <div className="app">
             <Header />

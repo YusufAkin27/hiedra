@@ -159,7 +159,7 @@ const ProductList = () => {
   const [isModalDropdownOpen, setIsModalDropdownOpen] = useState({}) // Modal içindeki dropdown durumu
   
   const pileOptions = [
-    { value: '1x1', label: 'Pilesiz (1x1)' },
+    { value: '1x1', label: 'Seyrek (1x1)' },
     { value: '1x2', label: '1x2' },
     { value: '1x3', label: '1x3' }
   ]
