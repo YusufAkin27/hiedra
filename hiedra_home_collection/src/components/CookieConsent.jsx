@@ -25,10 +25,23 @@ const CookieConsent = () => {
     marketing: false
   })
   const [isLoading, setIsLoading] = useState(true)
+  const [cookieContract, setCookieContract] = useState(null)
+  const [isContractLoading, setIsContractLoading] = useState(false)
+  const [showContractContent, setShowContractContent] = useState(false)
+  const [contractError, setContractError] = useState('')
+  const [isContractAccepted, setIsContractAccepted] = useState(false)
+  const [hasConfirmedContract, setHasConfirmedContract] = useState(false)
+  const [isContractAccepting, setIsContractAccepting] = useState(false)
+  const [acceptanceWarning, setAcceptanceWarning] = useState('')
 
   useEffect(() => {
     // Backend'den çerez tercihlerini yükle
     loadCookiePreferences()
+  }, [isAuthenticated, accessToken])
+
+  useEffect(() => {
+    // Çerez politikası sözleşmesini API'den getir
+    fetchCookieContract()
   }, [isAuthenticated, accessToken])
 
   const loadCookiePreferences = async () => {
@@ -86,6 +99,112 @@ const CookieConsent = () => {
     }
   }
 
+  const fetchCookieContract = async () => {
+    try {
+      setIsContractLoading(true)
+      setContractError('')
+      const sessionId = getOrCreateSessionId()
+
+      const response = await fetch(`${API_BASE_URL}/contracts/type/CEREZ`, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error('Çerez politikası yüklenemedi')
+      }
+
+      const data = await response.json()
+      if (data.isSuccess || data.success) {
+        const contractData = data.data
+        setCookieContract(contractData)
+        await checkContractAcceptanceStatus(contractData?.id, sessionId)
+      } else {
+        throw new Error(data.message || 'Çerez politikası bulunamadı')
+      }
+    } catch (error) {
+      console.error('Çerez politikası yüklenirken hata:', error)
+      setContractError(error.message || 'Çerez politikası yüklenemedi')
+    } finally {
+      setIsContractLoading(false)
+    }
+  }
+
+  const checkContractAcceptanceStatus = async (contractId, providedSessionId) => {
+    if (!contractId) return
+    try {
+      const sessionId = providedSessionId || getOrCreateSessionId()
+      const query = !isAuthenticated ? `?guestUserId=${encodeURIComponent(sessionId)}` : ''
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(accessToken && { 'Authorization': `Bearer ${accessToken}` })
+      }
+
+      const response = await fetch(`${API_BASE_URL}/contracts/${contractId}/status${query}`, {
+        headers
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.isSuccess || data.success) {
+          const accepted = Boolean(data.data?.accepted)
+          setIsContractAccepted(accepted)
+          if (accepted) {
+            setHasConfirmedContract(true)
+            setAcceptanceWarning('')
+          } else {
+            setHasConfirmedContract(false)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Çerez politikası onay durumu alınamadı:', error)
+    }
+  }
+
+  const acceptCookieContract = async () => {
+    if (isContractAccepted || !cookieContract) {
+      return true
+    }
+
+    if (!hasConfirmedContract) {
+      setAcceptanceWarning('Çerez politikasını okuduğunuzu onaylamalısınız.')
+      return false
+    }
+
+    try {
+      setIsContractAccepting(true)
+      setContractError('')
+      setAcceptanceWarning('')
+      const sessionId = getOrCreateSessionId()
+      const query = !isAuthenticated ? `?guestUserId=${encodeURIComponent(sessionId)}` : ''
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(accessToken && { 'Authorization': `Bearer ${accessToken}` })
+      }
+
+      const response = await fetch(`${API_BASE_URL}/contracts/type/CEREZ/accept${query}`, {
+        method: 'POST',
+        headers
+      })
+
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok || !(data.isSuccess || data.success)) {
+        throw new Error(data.message || 'Çerez politikası onaylanamadı')
+      }
+
+      setIsContractAccepted(true)
+      return true
+    } catch (error) {
+      console.error('Çerez politikası onaylanırken hata:', error)
+      setContractError(error.message || 'Çerez politikasını onaylama başarısız oldu')
+      return false
+    } finally {
+      setIsContractAccepting(false)
+    }
+  }
+
   const checkLocalStorage = () => {
     // Önce çerezlerden tercihleri kontrol et
     const cookiePrefs = getCookiePreferencesFromCookies()
@@ -122,32 +241,58 @@ const CookieConsent = () => {
     }
   }
 
-  const handleAcceptAll = () => {
+  const canConfirmContract = () => {
+    if (!cookieContract) {
+      return Boolean(contractError)
+    }
+    return isContractAccepted || hasConfirmedContract
+  }
+
+  const handleAcceptAll = async () => {
     const allAccepted = {
       necessary: true,
       analytics: true,
       marketing: true
     }
+
+    if (!canConfirmContract()) {
+      setAcceptanceWarning('Çerez politikasını okuduğunuzu onaylamalısınız.')
+      return
+    }
+
     setCookieSettings(allAccepted)
-    saveCookieSettings(allAccepted)
+    await saveCookieSettings(allAccepted)
+    const accepted = await acceptCookieContract()
+    if (!accepted) {
+      return
+    }
     setShowConsent(false)
     setShowSettings(false)
   }
 
-  const handleRejectAll = () => {
+  const handleRejectAll = async () => {
     const onlyNecessary = {
       necessary: true,
       analytics: false,
       marketing: false
     }
     setCookieSettings(onlyNecessary)
-    saveCookieSettings(onlyNecessary)
+    await saveCookieSettings(onlyNecessary)
     setShowConsent(false)
     setShowSettings(false)
   }
 
-  const handleSaveSettings = () => {
-    saveCookieSettings(cookieSettings)
+  const handleSaveSettings = async () => {
+    if (!canConfirmContract()) {
+      setAcceptanceWarning('Çerez politikasını okuduğunuzu onaylamalısınız.')
+      return
+    }
+
+    await saveCookieSettings(cookieSettings)
+    const accepted = await acceptCookieContract()
+    if (!accepted) {
+      return
+    }
     setShowConsent(false)
     setShowSettings(false)
   }
@@ -372,16 +517,90 @@ const CookieConsent = () => {
                   </p>
                 </div>
               )}
+
+              {(cookieContract || isContractLoading || contractError) && (
+                <div className="cookie-contract-card">
+                  <div className="cookie-contract-header">
+                    <div>
+                      <p className="cookie-contract-title">{cookieContract?.title || 'Çerez Politikası'}</p>
+                      {cookieContract && (
+                        <span className="cookie-contract-meta">
+                          Versiyon {cookieContract.version}
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      className="cookie-contract-toggle"
+                      onClick={() => {
+                        if (!cookieContract) {
+                          fetchCookieContract()
+                        } else {
+                          setShowContractContent((prev) => !prev)
+                        }
+                      }}
+                      disabled={isContractLoading}
+                    >
+                      {isContractLoading ? 'Yükleniyor...' : showContractContent ? 'Metni Gizle' : 'Detayları Göster'}
+                    </button>
+                  </div>
+
+                  {isContractLoading && (
+                    <p className="cookie-contract-loading">Çerez politikası yükleniyor...</p>
+                  )}
+
+                  {contractError && (
+                    <p className="cookie-contract-error">{contractError}</p>
+                  )}
+
+                  {showContractContent && cookieContract && (
+                    <div
+                      className="cookie-contract-content"
+                      dangerouslySetInnerHTML={{ __html: cookieContract.content }}
+                    />
+                  )}
+
+                  <label className="cookie-contract-confirm">
+                    <input
+                      type="checkbox"
+                      checked={isContractAccepted || hasConfirmedContract}
+                      disabled={isContractAccepted}
+                      onChange={(e) => {
+                        const checked = e.target.checked
+                        setHasConfirmedContract(checked)
+                        setAcceptanceWarning(checked ? '' : 'Çerez politikasını onaylamadan devam edemezsiniz.')
+                      }}
+                    />
+                    <span>Çerez Politikasını okudum ve onaylıyorum</span>
+                  </label>
+
+                  {acceptanceWarning && !isContractAccepted && (
+                    <p className="cookie-contract-warning">{acceptanceWarning}</p>
+                  )}
+
+                  {isContractAccepted && (
+                    <p className="cookie-contract-success">Bu sözleşmenin güncel sürümünü zaten onayladınız.</p>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="cookie-consent-actions">
               {showSettings ? (
                 <>
-                  <button className="cookie-btn cookie-btn-secondary" onClick={handleRejectAll}>
+                  <button 
+                    className="cookie-btn cookie-btn-secondary" 
+                    onClick={handleRejectAll}
+                    disabled={isContractAccepting}
+                  >
                     Tümünü Reddet
                   </button>
-                  <button className="cookie-btn cookie-btn-primary" onClick={handleSaveSettings}>
-                    Ayarları Kaydet
+                  <button 
+                    className="cookie-btn cookie-btn-primary" 
+                    onClick={handleSaveSettings}
+                    disabled={isContractAccepting || !canConfirmContract()}
+                  >
+                    {isContractAccepting ? 'Onaylanıyor...' : 'Ayarları Kaydet'}
                   </button>
                 </>
               ) : (
@@ -395,11 +614,19 @@ const CookieConsent = () => {
                   >
                     Ayarlar
                   </button>
-                  <button className="cookie-btn cookie-btn-secondary" onClick={handleRejectAll}>
+                  <button 
+                    className="cookie-btn cookie-btn-secondary" 
+                    onClick={handleRejectAll}
+                    disabled={isContractAccepting}
+                  >
                     Reddet
                   </button>
-                  <button className="cookie-btn cookie-btn-primary" onClick={handleAcceptAll}>
-                    Tümünü Kabul Et
+                  <button 
+                    className="cookie-btn cookie-btn-primary" 
+                    onClick={handleAcceptAll}
+                    disabled={isContractAccepting || !canConfirmContract()}
+                  >
+                    {isContractAccepting ? 'Onaylanıyor...' : 'Tümünü Kabul Et'}
                   </button>
                 </>
               )}
