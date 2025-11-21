@@ -1,5 +1,7 @@
 package eticaret.demo.admin;
 
+import eticaret.demo.security.ip.BlockedIpAddress;
+import eticaret.demo.security.ip.BlockedIpService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,6 +33,7 @@ import java.util.stream.Collectors;
 public class AdminSystemController {
 
     private final AdminIpService adminIpService;
+    private final BlockedIpService blockedIpService;
 
     @Value("${jwt.access.secret:}")
     private String jwtAccessSecret;
@@ -134,7 +137,7 @@ public class AdminSystemController {
     @PostMapping("/ips")
     public ResponseEntity<DataResponseMessage<IpListResponse>> addIp(@Valid @RequestBody AddIpRequest request) {
         try {
-            boolean added = adminIpService.addIp(request.getIp());
+            boolean added = adminIpService.addIp(request.getIp(), request.getDescription());
             if (!added) {
                 return ResponseEntity.ok(DataResponseMessage.error("Bu IP adresi zaten listede mevcut."));
             }
@@ -146,6 +149,46 @@ public class AdminSystemController {
             return ResponseEntity.badRequest()
                     .body(DataResponseMessage.error(e.getMessage()));
         }
+    }
+
+    @GetMapping("/blocked-ips")
+    public ResponseEntity<DataResponseMessage<BlockedIpListResponse>> getBlockedIps() {
+        BlockedIpListResponse response = new BlockedIpListResponse();
+        response.setBlockedIps(
+                blockedIpService.getBlockedIps().stream()
+                        .map(this::mapBlockedIp)
+                        .toList()
+        );
+        return ResponseEntity.ok(DataResponseMessage.success("Engellenen IP'ler", response));
+    }
+
+    @PostMapping("/blocked-ips")
+    public ResponseEntity<DataResponseMessage<BlockedIpListResponse>> addBlockedIp(@Valid @RequestBody AddBlockedIpRequest request) {
+        try {
+            blockedIpService.addBlockedIp(request.getIp(), request.getReason());
+            return getBlockedIps();
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest()
+                    .body(DataResponseMessage.error(e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/blocked-ips/{id}")
+    public ResponseEntity<DataResponseMessage<BlockedIpListResponse>> deleteBlockedIp(@PathVariable Long id) {
+        boolean deleted = blockedIpService.deleteBlockedIp(id);
+        if (!deleted) {
+            return ResponseEntity.ok(DataResponseMessage.error("IP kaydı bulunamadı."));
+        }
+        return getBlockedIps();
+    }
+
+    private BlockedIpDto mapBlockedIp(BlockedIpAddress entity) {
+        BlockedIpDto dto = new BlockedIpDto();
+        dto.setId(entity.getId());
+        dto.setIpAddress(entity.getIpAddress());
+        dto.setReason(entity.getReason());
+        dto.setCreatedAt(entity.getCreatedAt());
+        return dto;
     }
 
     @DeleteMapping("/ips/{ip}")
@@ -174,6 +217,27 @@ public class AdminSystemController {
     public static class AddIpRequest {
         @NotBlank(message = "IP adresi zorunludur.")
         private String ip;
+        private String description;
+    }
+
+    @Data
+    public static class BlockedIpListResponse {
+        private List<BlockedIpDto> blockedIps;
+    }
+
+    @Data
+    public static class BlockedIpDto {
+        private Long id;
+        private String ipAddress;
+        private String reason;
+        private Instant createdAt;
+    }
+
+    @Data
+    public static class AddBlockedIpRequest {
+        @NotBlank(message = "IP adresi zorunludur.")
+        private String ip;
+        private String reason;
     }
 
     @Data

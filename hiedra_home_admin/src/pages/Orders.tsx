@@ -4,10 +4,11 @@ import type { AuthResponse } from '../services/authService'
 import { getAdminHeaders } from '../services/authService'
 import { useToast } from '../components/Toast'
 import ConfirmModal from '../components/ConfirmModal'
+import type { AdminPage } from '../types/navigation'
 
 type OrdersPageProps = {
   session: AuthResponse
-  onNavigate?: (page: string, productId?: number, orderId?: number, userId?: number) => void
+  onNavigate?: (page: AdminPage, productId?: number, orderId?: number, userId?: number) => void
 }
 
 type InvoiceOrderItem = {
@@ -431,6 +432,11 @@ function OrdersPage({ session, onNavigate }: OrdersPageProps) {
   }
 
   const handlePrintInvoice = () => {
+    if (!selectedOrder) {
+      toast.warning('Önce bir sipariş seçin.')
+      return
+    }
+
     if (isInvoiceLoading) {
       toast.info('Fatura hazırlanıyor, lütfen bekleyin.')
       return

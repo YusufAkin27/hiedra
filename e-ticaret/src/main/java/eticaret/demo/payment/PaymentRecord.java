@@ -18,12 +18,11 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "payment_records", indexes = {
-    @Index(name = "idx_payment_id", columnList = "iyzico_payment_id"),
-    @Index(name = "idx_transaction_id", columnList = "payment_transaction_id"),
-    @Index(name = "idx_order_number", columnList = "order_number"),
-    // idx_user_id ve idx_guest_user_id indexleri veritabanında zaten mevcut, Hibernate'in tekrar oluşturmasını önlemek için kaldırıldı
-    @Index(name = "idx_status", columnList = "status"),
-    @Index(name = "idx_created_at", columnList = "created_at")
+    @Index(name = "idx_payment_payment_id", columnList = "iyzico_payment_id"),
+    @Index(name = "idx_payment_transaction_id", columnList = "payment_transaction_id"),
+    @Index(name = "idx_payment_order_number", columnList = "order_number"),
+    @Index(name = "idx_payment_status", columnList = "status"),
+    @Index(name = "idx_payment_created_at", columnList = "created_at")
 })
 @Data
 @Builder

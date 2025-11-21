@@ -24,13 +24,13 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "orders", indexes = {
-    @Index(name = "idx_order_number", columnList = "order_number"),
-    @Index(name = "idx_customer_email", columnList = "customer_email"),
-    @Index(name = "idx_user_id", columnList = "user_id"),
-    @Index(name = "idx_guest_user_id", columnList = "guest_user_id"),
-    @Index(name = "idx_status", columnList = "status"),
-    @Index(name = "idx_created_at", columnList = "created_at"),
-    @Index(name = "idx_tracking_number", columnList = "tracking_number")
+    @Index(name = "idx_order_order_number", columnList = "order_number"),
+    @Index(name = "idx_order_customer_email", columnList = "customer_email"),
+    @Index(name = "idx_order_user_id", columnList = "user_id"),
+    @Index(name = "idx_order_guest_user_id", columnList = "guest_user_id"),
+    @Index(name = "idx_order_status", columnList = "status"),
+    @Index(name = "idx_order_created_at", columnList = "created_at"),
+    @Index(name = "idx_order_tracking_number", columnList = "tracking_number")
 })
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Order {

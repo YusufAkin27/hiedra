@@ -5,6 +5,7 @@ import {
   FaBars, 
   FaTimes,
   FaHome,
+  FaStore,
   FaShoppingBag,
   FaBox,
   FaTags,
@@ -29,45 +30,16 @@ import {
   FaCookie,
   FaUserCircle,
   FaUserShield,
-  FaDollarSign
+  FaDollarSign,
+  FaShieldAlt
 } from 'react-icons/fa'
 import type { AuthUser } from '../services/authService'
-
-type Page =
-  | 'home'
-  | 'profile'
-  | 'system'
-  | 'users'
-  | 'userLogs'
-  | 'orders'
-  | 'orderDetail'
-  | 'products'
-  | 'productDetail'
-  | 'productEdit'
-  | 'productAdd'
-  | 'shipping'
-  | 'messages'
-  | 'bulkMail'
-  | 'carts'
-  | 'reviews'
-  | 'productViews'
-  | 'guests'
-  | 'visitors'
-  | 'addresses'
-  | 'auditLogs'
-  | 'coupons'
-  | 'cookiePreferences'
-  | 'settings'
-  | 'userAnalytics'
-  | 'contracts'
-  | 'categories'
-  | 'adminManagement'
-  | 'payments'
+import type { AdminPage } from '../types/navigation'
 
 type SidebarProps = {
   user: AuthUser
-  currentPage: Page
-  onNavigate: (page: Page) => void
+  currentPage: AdminPage
+  onNavigate: (page: AdminPage) => void
   isOpen: boolean
   onToggle: () => void
   notificationCounts?: {
@@ -92,7 +64,7 @@ function Sidebar({ user, currentPage, onNavigate, isOpen, onToggle, notification
     }))
   }
 
-  const isActive = (page: Page | Page[]) => {
+  const isActive = (page: AdminPage | AdminPage[]) => {
     if (Array.isArray(page)) {
       return page.includes(currentPage)
     }
@@ -144,6 +116,19 @@ function Sidebar({ user, currentPage, onNavigate, isOpen, onToggle, notification
           >
             <FaHome className="sidebar__nav-icon" />
             <span className="sidebar__nav-text">Ana Sayfa</span>
+          </button>
+
+          {/* Mağaza Önizleme */}
+          <button
+            type="button"
+            className={`sidebar__nav-item ${isActive('storePreview') ? 'sidebar__nav-item--active' : ''}`}
+            onClick={() => {
+              onNavigate('storePreview')
+              if (!isOpen) onToggle()
+            }}
+          >
+            <FaStore className="sidebar__nav-icon" />
+            <span className="sidebar__nav-text">Mağaza Önizlemesi</span>
           </button>
 
           {/* Siparişler - Doğrudan erişim */}
@@ -413,6 +398,14 @@ function Sidebar({ user, currentPage, onNavigate, isOpen, onToggle, notification
                 >
                   <FaUserShield className="sidebar__nav-icon sidebar__nav-icon--sub" />
                   Admin Yönetimi
+                </button>
+                <button
+                  type="button"
+                  className={`sidebar__nav-subitem ${isActive('ipAccess') ? 'sidebar__nav-subitem--active' : ''}`}
+                  onClick={() => onNavigate('ipAccess')}
+                >
+                  <FaShieldAlt className="sidebar__nav-icon sidebar__nav-icon--sub" />
+                  IP Erişim Kontrolü
                 </button>
               </div>
             )}

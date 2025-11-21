@@ -1,5 +1,6 @@
 package eticaret.demo.security;
 
+import eticaret.demo.security.ip.IpAccessFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,6 +28,7 @@ public class SecurityConfig {
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2AuthenticationSuccessHandler oauth2AuthenticationSuccessHandler;
     private final OAuth2AuthenticationFailureHandler oauth2AuthenticationFailureHandler;
+    private final IpAccessFilter ipAccessFilter;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -63,7 +65,8 @@ public class SecurityConfig {
                         .successHandler(oauth2AuthenticationSuccessHandler)
                         .failureHandler(oauth2AuthenticationFailureHandler)
                 )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(ipAccessFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }

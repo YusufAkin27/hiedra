@@ -10,6 +10,7 @@ public interface OrderService {
     ResponseMessage updateOrderAddress(String orderNumber, String customerEmail, OrderUpdateRequest request);
     ResponseMessage cancelOrder(String orderNumber, String customerEmail, String reason);
     ResponseMessage requestRefund(String orderNumber, String customerEmail, String reason);
+    ResponseMessage getOrderDetailForCustomer(String orderNumber, String customerEmail);
     
     // Admin işlemleri
     ResponseMessage getOrderByNumber(String orderNumber);

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { FaBars, FaSearch, FaTimes, FaUser, FaSignOutAlt, FaChevronDown } from 'react-icons/fa'
 import type { AuthUser } from '../services/authService'
+import type { AdminPage } from '../types/navigation'
 
 type SearchUser = {
   id: number
@@ -19,7 +20,7 @@ type HeaderProps = {
   onSidebarToggle: () => void
   accessToken: string
   onViewUser?: (userId: number) => void
-  onNavigate?: (page: 'profile' | 'home' | 'users' | 'products' | 'orders' | 'categories' | 'coupons' | 'reviews' | 'messages' | 'shipping' | 'visitors' | 'guests' | 'userLogs' | 'carts' | 'addresses' | 'userAnalytics' | 'productViews' | 'system' | 'auditLogs' | 'cookiePreferences' | 'contracts' | 'settings' | 'productAdd' | 'productDetail' | 'productEdit' | 'orderDetail' | 'userDetail') => void
+  onNavigate?: (page: AdminPage) => void
 }
 
 const DEFAULT_API_URL = 'http://localhost:8080/api'

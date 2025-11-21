@@ -1,21 +1,16 @@
-import React from 'react'
-import { useNavigate } from 'react-router-dom'
-import type { AuthResponse } from '../services/authService'
 import './NotFound.css'
+import type { AdminPage } from '../types/navigation'
 
 type NotFoundPageProps = {
-  session: AuthResponse | null
-  onNavigate?: (page: string) => void
+  onNavigate?: (page: AdminPage) => void
 }
 
-function NotFoundPage({ session, onNavigate }: NotFoundPageProps) {
-  const navigate = useNavigate()
-
+function NotFoundPage({ onNavigate }: NotFoundPageProps) {
   const handleGoHome = () => {
     if (onNavigate) {
       onNavigate('home')
     } else {
-      navigate('/')
+      window.location.href = '/'
     }
   }
 

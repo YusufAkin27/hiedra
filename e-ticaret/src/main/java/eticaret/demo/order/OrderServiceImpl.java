@@ -224,6 +224,26 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    public ResponseMessage getOrderDetailForCustomer(String orderNumber, String customerEmail) {
+        if (orderNumber == null || orderNumber.trim().isEmpty()) {
+            return new ResponseMessage("Sipariş numarası zorunludur.", false);
+        }
+        if (customerEmail == null || customerEmail.trim().isEmpty()) {
+            return new ResponseMessage("E-posta adresi zorunludur.", false);
+        }
+
+        return orderRepository.findByOrderNumberAndCustomerEmail(
+                        orderNumber.trim(),
+                        customerEmail.trim())
+                .map(order -> (ResponseMessage) new DataResponseMessage<>(
+                        "Sipariş bulundu.",
+                        true,
+                        convertToDTO(order)
+                ))
+                .orElseGet(() -> new ResponseMessage("Sipariş bulunamadı veya bu kullanıcıya ait değil.", false));
+    }
+
+    @Override
     public ResponseMessage getOrderByNumber(String orderNumber) {
         log.info("Admin sipariş sorguluyor: {}", orderNumber);
 

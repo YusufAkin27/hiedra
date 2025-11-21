@@ -186,6 +186,29 @@ public class MailService {
                 .build());
     }
 
+    public String buildOrderLookupCodeEmail(String userEmail, String code, String actionUrl) {
+        LinkedHashMap<String, String> details = new LinkedHashMap<>();
+        details.put("E-posta", userEmail);
+        details.put("Geçerlilik", "10 dakika");
+        details.put("Güvenlik", "Bu kod ile yalnızca sipariş bilgilerinizi görüntüleyebilirsiniz.");
+
+        return EmailTemplateBuilder.build(EmailTemplateModel.builder()
+                .title("Siparişlerinizi Görüntülemek İçin Doğrulama Kodunuz")
+                .preheader("Siparişlerinizi görüntülemek için kodunuzu girmeniz yeterli.")
+                .greeting("Merhaba,")
+                .paragraphs(List.of(
+                        "Siparişlerinizi güvenle görüntüleyebilmeniz için tek kullanımlık doğrulama kodunuzu paylaşıyoruz.",
+                        "Kodunuzu kimseyle paylaşmayın. Emin olmadığınız bir istek görürseniz lütfen bizimle iletişime geçin."
+                ))
+                .details(details)
+                .highlight("Doğrulama Kodunuz: " + code)
+                .actionText("Siparişlerimi Görüntüle")
+                .actionUrl(actionUrl != null ? actionUrl : appUrlConfig.getFrontendUrl() + "/siparis-sorgula")
+                .actionNote("Kodunuz kullanıldığında veya süresi dolduğunda otomatik olarak geçersiz hale gelir.")
+                .footerNote("Bu e-posta otomatik gönderilmiştir. Yardım için info@hiedra.com.tr adresinden bize ulaşabilirsiniz.")
+                .build());
+    }
+
     public String buildOrderCreatedEmail(OrderEmailPayload payload) {
         LinkedHashMap<String, String> details = new LinkedHashMap<>();
         details.put("Sipariş No", "#" + payload.getOrderNumber());

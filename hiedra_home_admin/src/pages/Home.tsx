@@ -18,6 +18,7 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { FaDollarSign, FaCreditCard, FaTruck, FaChartLine, FaInfoCircle } from 'react-icons/fa'
+import type { AdminPage } from '../types/navigation'
 
 type DashboardStats = {
   totalProducts: number
@@ -50,12 +51,11 @@ type DashboardStats = {
 
 const DEFAULT_API_URL = 'http://localhost:8080/api'
 const apiBaseUrl = import.meta.env.VITE_API_URL ?? DEFAULT_API_URL
-
 type HomePageProps = {
   session: AuthResponse
   onLogout: () => void
   onViewUser?: (userId: number) => void
-  onNavigate?: (page: 'home' | 'profile' | 'system' | 'users' | 'userDetail' | 'userLogs' | 'orders' | 'orderDetail' | 'products' | 'productDetail' | 'productEdit' | 'productAdd' | 'shipping' | 'messages' | 'carts' | 'reviews' | 'productViews' | 'guests' | 'visitors' | 'addresses' | 'auditLogs' | 'coupons' | 'cookiePreferences' | 'settings' | 'userAnalytics' | 'contracts' | 'contractAcceptances' | 'categories', productId?: number, orderId?: number, userId?: number) => void
+  onNavigate?: (page: AdminPage, productId?: number, orderId?: number, userId?: number) => void
 }
 
 
@@ -77,7 +77,6 @@ function HomePage({ session, onLogout: _onLogout, onViewUser: _onViewUser, onNav
   const [userName, setUserName] = useState<string | null>(null)
   const [revenueData, setRevenueData] = useState<RevenueData | null>(null)
   const [isLoadingRevenue, setIsLoadingRevenue] = useState(false)
-
   useEffect(() => {
     const updateViewport = () => {
       setIsMobile(window.innerWidth <= 768)

@@ -10,6 +10,7 @@ import eticaret.demo.audit.AuditLogService;
 import eticaret.demo.auth.AppUser;
 import eticaret.demo.guest.GuestUserService;
 import eticaret.demo.common.response.ResponseMessage;
+import eticaret.demo.order.lookup.OrderLookupVerificationService;
 
 import java.util.Map;
 
@@ -22,6 +23,105 @@ public class OrderController {
     private final OrderService orderService;
     private final AuditLogService auditLogService;
     private final GuestUserService guestUserService;
+    private final OrderLookupVerificationService orderLookupVerificationService;
+    /**
+     * Sipariş sorgulama için doğrulama kodu gönder
+     */
+    @PostMapping("/lookup/request-code")
+    public ResponseMessage requestLookupCode(@Valid @RequestBody OrderLookupCodeRequest request,
+                                             HttpServletRequest httpRequest) {
+        try {
+            orderLookupVerificationService.sendVerificationCode(request.getEmail());
+            auditLogService.logSuccess("ORDER_LOOKUP_REQUEST_CODE", "Order", null,
+                    "Sipariş lookup kodu gönderildi: " + request.getEmail(),
+                    Map.of("email", request.getEmail()), null, httpRequest);
+            return new ResponseMessage("Doğrulama kodu e-posta adresinize gönderildi.", true);
+        } catch (Exception e) {
+            auditLogService.logError("ORDER_LOOKUP_REQUEST_CODE", "Order", null,
+                    "Sipariş lookup kodu gönderilemedi: " + e.getMessage(), e.getMessage(), httpRequest);
+            return new ResponseMessage(e.getMessage(), false);
+        }
+    }
+
+    /**
+     * Doğrulama kodunu kontrol et ve lookup token döndür
+     */
+    @PostMapping("/lookup/verify-code")
+    public ResponseMessage verifyLookupCode(@Valid @RequestBody OrderLookupVerifyRequest request,
+                                            HttpServletRequest httpRequest) {
+        try {
+            var result = orderLookupVerificationService.verifyCode(request.getEmail(), request.getCode());
+            auditLogService.logSuccess("ORDER_LOOKUP_VERIFY_CODE", "Order", null,
+                    "Sipariş lookup doğrulaması başarılı: " + request.getEmail(),
+                    Map.of("email", request.getEmail()), null, httpRequest);
+            return new eticaret.demo.common.response.DataResponseMessage<>(
+                    "Doğrulama başarılı.",
+                    true,
+                    new OrderLookupVerifyResponse(result.lookupToken(), result.expiresAt())
+            );
+        } catch (Exception e) {
+            auditLogService.logError("ORDER_LOOKUP_VERIFY_CODE", "Order", null,
+                    "Sipariş lookup doğrulaması başarısız: " + e.getMessage(), e.getMessage(), httpRequest);
+            return new ResponseMessage(e.getMessage(), false);
+        }
+    }
+
+    /**
+     * Lookup token ile sipariş listesini getir
+     */
+    @GetMapping("/lookup")
+    public ResponseMessage getOrdersWithLookupToken(
+            @RequestParam(value = "token", required = false) String tokenParam,
+            @RequestHeader(value = "X-Order-Lookup-Token", required = false) String tokenHeader,
+            HttpServletRequest httpRequest) {
+        String token = tokenHeader != null && !tokenHeader.isBlank() ? tokenHeader : tokenParam;
+        try {
+            String email = orderLookupVerificationService.requireValidToken(token);
+            ResponseMessage response = orderService.getMyOrders(email);
+            if (response.isSuccess()) {
+                auditLogService.logSuccess("ORDER_LOOKUP_GET_ORDERS", "Order", null,
+                        "Lookup token ile siparişler getirildi: " + email,
+                        Map.of("email", email), response, httpRequest);
+            } else {
+                auditLogService.logError("ORDER_LOOKUP_GET_ORDERS", "Order", null,
+                        "Lookup sipariş getirilemedi: " + response.getMessage(), response.getMessage(), httpRequest);
+            }
+            return response;
+        } catch (Exception e) {
+            auditLogService.logError("ORDER_LOOKUP_GET_ORDERS", "Order", null,
+                    "Lookup sipariş getirilemedi: " + e.getMessage(), e.getMessage(), httpRequest);
+            return new ResponseMessage(e.getMessage(), false);
+        }
+    }
+
+    /**
+     * Lookup token ile tek sipariş detayı getir
+     */
+    @GetMapping("/lookup/{orderNumber}")
+    public ResponseMessage getOrderDetailWithLookupToken(
+            @PathVariable String orderNumber,
+            @RequestParam(value = "token", required = false) String tokenParam,
+            @RequestHeader(value = "X-Order-Lookup-Token", required = false) String tokenHeader,
+            HttpServletRequest httpRequest) {
+        String token = tokenHeader != null && !tokenHeader.isBlank() ? tokenHeader : tokenParam;
+        try {
+            String email = orderLookupVerificationService.requireValidToken(token);
+            ResponseMessage response = orderService.getOrderDetailForCustomer(orderNumber, email);
+            if (response.isSuccess()) {
+                auditLogService.logSuccess("ORDER_LOOKUP_GET_DETAIL", "Order", null,
+                        "Lookup token ile sipariş getirildi: " + orderNumber,
+                        Map.of("orderNumber", orderNumber, "email", email), response, httpRequest);
+            } else {
+                auditLogService.logError("ORDER_LOOKUP_GET_DETAIL", "Order", null,
+                        "Lookup sipariş detayı getirilemedi: " + response.getMessage(), response.getMessage(), httpRequest);
+            }
+            return response;
+        } catch (Exception e) {
+            auditLogService.logError("ORDER_LOOKUP_GET_DETAIL", "Order", null,
+                    "Lookup sipariş detayı getirilemedi: " + e.getMessage(), e.getMessage(), httpRequest);
+            return new ResponseMessage(e.getMessage(), false);
+        }
+    }
 
 
 
@@ -188,14 +288,21 @@ public class OrderController {
     @PutMapping("/{orderNumber}/address")
     public ResponseMessage updateAddress(
             @PathVariable String orderNumber,
-            @RequestParam String email,
+            @RequestParam(value = "email", required = false) String email,
+            @RequestHeader(value = "X-Order-Lookup-Token", required = false) String lookupToken,
             @Valid @RequestBody OrderUpdateRequest request,
             HttpServletRequest httpRequest) {
-        ResponseMessage response = orderService.updateOrderAddress(orderNumber, email, request);
+
+        String resolvedEmail = resolveCustomerEmail(email, lookupToken);
+        if (resolvedEmail == null) {
+            return new ResponseMessage("Email veya lookup token gereklidir.", false);
+        }
+
+        ResponseMessage response = orderService.updateOrderAddress(orderNumber, resolvedEmail, request);
         
         if (response.isSuccess()) {
             auditLogService.logSuccess("UPDATE_ORDER_ADDRESS", "Order", null,
-                    "Sipariş adresi güncellendi: " + orderNumber + " (Email: " + email + ")",
+                    "Sipariş adresi güncellendi: " + orderNumber + " (Email: " + resolvedEmail + ")",
                     request, response, httpRequest);
         } else {
             auditLogService.logError("UPDATE_ORDER_ADDRESS", "Order", null,
@@ -212,15 +319,21 @@ public class OrderController {
     @PostMapping("/{orderNumber}/cancel")
     public ResponseMessage cancelOrder(
             @PathVariable String orderNumber,
-            @RequestParam String email,
+            @RequestParam(value = "email", required = false) String email,
+            @RequestHeader(value = "X-Order-Lookup-Token", required = false) String lookupToken,
             @RequestParam(required = false, defaultValue = "Müşteri isteği") String reason,
             HttpServletRequest httpRequest) {
-        ResponseMessage response = orderService.cancelOrder(orderNumber, email, reason);
+        String resolvedEmail = resolveCustomerEmail(email, lookupToken);
+        if (resolvedEmail == null) {
+            return new ResponseMessage("Email veya lookup token gereklidir.", false);
+        }
+
+        ResponseMessage response = orderService.cancelOrder(orderNumber, resolvedEmail, reason);
         
         if (response.isSuccess()) {
             auditLogService.logSuccess("CANCEL_ORDER", "Order", null,
-                    "Sipariş iptal edildi: " + orderNumber + " (Email: " + email + ", Sebep: " + reason + ")",
-                    Map.of("orderNumber", orderNumber, "email", email, "reason", reason), response, httpRequest);
+                    "Sipariş iptal edildi: " + orderNumber + " (Email: " + resolvedEmail + ", Sebep: " + reason + ")",
+                    Map.of("orderNumber", orderNumber, "email", resolvedEmail, "reason", reason), response, httpRequest);
         } else {
             auditLogService.logError("CANCEL_ORDER", "Order", null,
                     "Sipariş iptal edilemedi: " + response.getMessage(), response.getMessage(), httpRequest);
@@ -236,15 +349,21 @@ public class OrderController {
     @PostMapping("/{orderNumber}/refund")
     public ResponseMessage requestRefund(
             @PathVariable String orderNumber,
-            @RequestParam String email,
+            @RequestParam(value = "email", required = false) String email,
+            @RequestHeader(value = "X-Order-Lookup-Token", required = false) String lookupToken,
             @RequestParam(required = false, defaultValue = "İade talebi") String reason,
             HttpServletRequest httpRequest) {
-        ResponseMessage response = orderService.requestRefund(orderNumber, email, reason);
+        String resolvedEmail = resolveCustomerEmail(email, lookupToken);
+        if (resolvedEmail == null) {
+            return new ResponseMessage("Email veya lookup token gereklidir.", false);
+        }
+
+        ResponseMessage response = orderService.requestRefund(orderNumber, resolvedEmail, reason);
         
         if (response.isSuccess()) {
             auditLogService.logSuccess("REQUEST_REFUND", "Order", null,
-                    "İade talebi oluşturuldu: " + orderNumber + " (Email: " + email + ", Sebep: " + reason + ")",
-                    Map.of("orderNumber", orderNumber, "email", email, "reason", reason), response, httpRequest);
+                    "İade talebi oluşturuldu: " + orderNumber + " (Email: " + resolvedEmail + ", Sebep: " + reason + ")",
+                    Map.of("orderNumber", orderNumber, "email", resolvedEmail, "reason", reason), response, httpRequest);
         } else {
             auditLogService.logError("REQUEST_REFUND", "Order", null,
                     "İade talebi oluşturulamadı: " + response.getMessage(), response.getMessage(), httpRequest);
@@ -256,4 +375,13 @@ public class OrderController {
     // ========== ADMİN İŞLEMLERİ ==========
 
 
+    private String resolveCustomerEmail(String email, String lookupToken) {
+        if (email != null && !email.isBlank()) {
+            return email;
+        }
+        if (lookupToken != null && !lookupToken.isBlank()) {
+            return orderLookupVerificationService.requireValidToken(lookupToken);
+        }
+        return null;
+    }
 }

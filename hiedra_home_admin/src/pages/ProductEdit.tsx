@@ -583,7 +583,6 @@ function ProductEditPage({ session, productId, onBack, toast }: ProductEditPageP
                 if (target.tagName !== 'BUTTON' && target.tagName !== 'TEXTAREA') {
                   e.preventDefault()
                   e.stopPropagation()
-                  e.stopImmediatePropagation()
                   return false
                 }
               }
@@ -595,7 +594,6 @@ function ProductEditPage({ session, productId, onBack, toast }: ProductEditPageP
                 if (target.tagName !== 'BUTTON' && target.tagName !== 'TEXTAREA') {
                   e.preventDefault()
                   e.stopPropagation()
-                  e.stopImmediatePropagation()
                   return false
                 }
               }

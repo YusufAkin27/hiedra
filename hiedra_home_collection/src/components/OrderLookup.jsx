@@ -1,3 +1,147 @@
+  const handleSendCode = async (e) => {
+    if (e && e.preventDefault) {
+      e.preventDefault()
+    }
+    if (!validateEmailForm()) {
+      return
+    }
+
+    setIsSendingCode(true)
+    setError('')
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/lookup/request-code`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email.trim(),
+        }),
+      })
+
+      const data = await response.json()
+      const success = data.success ?? data.isSuccess ?? response.ok
+
+      if (!success) {
+        throw new Error(data.message || 'Doğrulama kodu gönderilemedi.')
+      }
+
+      showToast('Doğrulama kodu e-posta adresinize gönderildi.', 'success')
+      setVerificationCode('')
+      setLookupToken('')
+      setOrders([])
+      setOrderData(null)
+      setSelectedOrderNumber(null)
+      setStep('verify')
+    } catch (err) {
+      setError(err.message || 'Doğrulama kodu gönderilemedi.')
+      showToast(err.message || 'Doğrulama kodu gönderilemedi.', 'error')
+    } finally {
+      setIsSendingCode(false)
+    }
+  }
+
+  const handleVerifyCode = async (e) => {
+    if (e && e.preventDefault) {
+      e.preventDefault()
+    }
+
+    if (!verificationCode.trim()) {
+      showToast('Lütfen e-posta adresinize gelen doğrulama kodunu giriniz.', 'error')
+      return
+    }
+
+    setIsVerifying(true)
+    setError('')
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/lookup/verify-code`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email.trim(),
+          code: verificationCode.trim(),
+        }),
+      })
+
+      const data = await response.json()
+      const success = data.success ?? data.isSuccess ?? response.ok
+
+      if (!success || !data.data?.lookupToken) {
+        throw new Error(data.message || 'Doğrulama başarısız.')
+      }
+
+      const token = data.data.lookupToken
+      setLookupToken(token)
+      showToast('Doğrulama başarılı. Siparişleriniz yükleniyor...', 'success')
+      await loadOrders(token)
+    } catch (err) {
+      setError(err.message || 'Doğrulama başarısız oldu.')
+      showToast(err.message || 'Doğrulama başarısız oldu.', 'error')
+    } finally {
+      setIsVerifying(false)
+    }
+  }
+
+  const loadOrders = async (tokenOverride) => {
+    const tokenToUse = tokenOverride || lookupToken
+    if (!tokenToUse) return
+
+    setIsLoading(true)
+    setError('')
+    setOrders([])
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/lookup?token=${encodeURIComponent(tokenToUse)}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      const data = await response.json()
+      const success = data.success ?? data.isSuccess ?? response.ok
+
+      if (!success) {
+        throw new Error(data.message || 'Siparişler alınamadı.')
+      }
+
+      setOrders(data.data || [])
+      setStep('list')
+      setOrderData(null)
+      setSelectedOrderNumber(null)
+      setShowAddressForm(false)
+      setShowCancelModal(false)
+      setShowRefundModal(false)
+    } catch (err) {
+      setError(err.message || 'Siparişler alınırken bir hata oluştu.')
+      showToast(err.message || 'Siparişler alınırken bir hata oluştu.', 'error')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleViewOrder = async (order) => {
+    const orderNumberParam = typeof order === 'string' ? order : order?.orderNumber
+    if (!orderNumberParam) return
+    await fetchOrderDetail(orderNumberParam)
+  }
+
+  const handleResendCode = async () => {
+    await handleSendCode()
+  }
+
+  const handleBackToList = () => {
+    setOrderData(null)
+    setShowAddressForm(false)
+    setShowCancelModal(false)
+    setShowRefundModal(false)
+    setTrackingData(null)
+    setStep('list')
+  }
 import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
@@ -12,12 +156,10 @@ const SHIPPING_API_BASE_URL = `${BACKEND_BASE_URL}/api/shipping`
 const OrderLookup = () => {
   const { isAuthenticated } = useAuth()
   const navigate = useNavigate()
-  const [orderNumber, setOrderNumber] = useState('')
   const [email, setEmail] = useState('')
   const [captcha, setCaptcha] = useState('')
   const [userCaptcha, setUserCaptcha] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [orderFound, setOrderFound] = useState(false)
   const [orderData, setOrderData] = useState(null)
   const [error, setError] = useState('')
   const [showAddressForm, setShowAddressForm] = useState(false)
@@ -29,7 +171,21 @@ const OrderLookup = () => {
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' })
   const [trackingData, setTrackingData] = useState(null)
   const [isTrackingLoading, setIsTrackingLoading] = useState(false)
+  const [orders, setOrders] = useState([])
+  const [verificationCode, setVerificationCode] = useState('')
+  const [lookupToken, setLookupToken] = useState('')
+  const [step, setStep] = useState('request')
+  const [isSendingCode, setIsSendingCode] = useState(false)
+  const [isVerifying, setIsVerifying] = useState(false)
+  const [selectedOrderNumber, setSelectedOrderNumber] = useState(null)
   const captchaRef = useRef(null)
+  const authHeaders = () => {
+    const headers = { 'Content-Type': 'application/json' }
+    if (lookupToken) {
+      headers['X-Order-Lookup-Token'] = lookupToken
+    }
+    return headers
+  }
 
   // Login olan kullanıcıları siparişlerim sayfasına yönlendir
   useEffect(() => {
@@ -80,12 +236,7 @@ const OrderLookup = () => {
     }
   }
 
-  // Form validasyonu
-  const validateForm = () => {
-    if (!orderNumber.trim()) {
-      showToast('Lütfen sipariş numaranızı giriniz.', 'error')
-      return false
-    }
+  function validateEmailForm() {
     if (!email.trim() || !email.includes('@')) {
       showToast('Lütfen geçerli bir e-posta adresi giriniz.', 'error')
       return false
@@ -102,68 +253,66 @@ const OrderLookup = () => {
     return true
   }
 
-  // Sipariş sorgula (API çağrısı)
-  const fetchOrder = async (orderNum, customerEmail) => {
+  const fetchOrderDetail = async (orderNumberParam, tokenOverride) => {
+    if (!orderNumberParam) return
+    const tokenToUse = tokenOverride || lookupToken
+    if (!tokenToUse) {
+      showToast('Lütfen önce doğrulama işlemini tamamlayın.', 'error')
+      return
+    }
+
     setIsLoading(true)
     setError('')
 
     try {
-      const response = await fetch(`${API_BASE_URL}/query`, {
-        method: 'POST',
+      const response = await fetch(`${API_BASE_URL}/lookup/${orderNumberParam}?token=${encodeURIComponent(tokenToUse)}`, {
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          orderNumber: orderNum.trim(),
-          customerEmail: customerEmail.trim()
-        })
       })
-
-      const contentType = response.headers.get('content-type') || ''
-      
-      if (!contentType.includes('application/json')) {
-        const text = await response.text()
-        throw new Error('Beklenmeyen yanıt formatı')
-      }
 
       const data = await response.json()
 
-      if (!response.ok) {
+      if (!response.ok || !(data.success ?? data.isSuccess)) {
         throw new Error(data.message || 'Sipariş bulunamadı')
       }
 
-      // Backend'den gelen order verisini set et
-      if (data.success && data.data) {
-        const order = data.data
-        setOrderData({
-          ...order,
-          // Address listesinden ilk adresi al (varsa)
-          shippingAddress: order.addresses && order.addresses.length > 0 
-            ? order.addresses[0] 
-            : {}
-        })
-        const address = order.addresses && order.addresses.length > 0 ? order.addresses[0] : {}
-        setAddressForm({
-          fullName: order.customerName || '',
-          phone: order.customerPhone || '',
-          addressLine: address.addressLine || '',
-          addressDetail: address.addressDetail || '',
-          city: address.city || '',
-          district: address.district || '',
-        })
-        
-        setOrderFound(true)
-        
-        // Eğer kargo takip numarası varsa, kargo bilgisini de çek
-        if (order.trackingNumber) {
-          fetchTrackingInfo(order.orderNumber, customerEmail.trim())
-        }
+      const order = data.data
+      if (!order) {
+        throw new Error('Sipariş bulunamadı')
+      }
+
+      setOrderData({
+        ...order,
+        shippingAddress: order.addresses && order.addresses.length > 0
+          ? order.addresses[0]
+          : {}
+      })
+
+      const address = order.addresses && order.addresses.length > 0 ? order.addresses[0] : {}
+      setAddressForm({
+        fullName: order.customerName || '',
+        phone: order.customerPhone || '',
+        addressLine: address.addressLine || '',
+        addressDetail: address.addressDetail || '',
+        city: address.city || '',
+        district: address.district || '',
+      })
+
+      setSelectedOrderNumber(order.orderNumber)
+      setShowAddressForm(false)
+      setShowCancelModal(false)
+      setShowRefundModal(false)
+      setStep('detail')
+
+      if (order.trackingNumber) {
+        fetchTrackingInfo(order.orderNumber, email.trim())
       } else {
-        throw new Error(data.message || 'Sipariş bulunamadı')
+        setTrackingData(null)
       }
     } catch (err) {
-      setError(err.message || 'Sipariş sorgulanırken bir hata oluştu')
-      setOrderFound(false)
+      setError(err.message || 'Sipariş detayları alınırken bir hata oluştu')
     } finally {
       setIsLoading(false)
     }
@@ -240,31 +389,21 @@ const OrderLookup = () => {
     }
   }
 
-  // Form submit handler
-  const handleLookup = async (e) => {
-    if (e && e.preventDefault) {
-      e.preventDefault()
-    }
-    
-    if (!validateForm()) {
-      return
-    }
-
-    await fetchOrder(orderNumber, email)
-  }
-
   // Yeni sorgulama yap
   const handleNewLookup = () => {
-    setOrderNumber('')
     setEmail('')
     setUserCaptcha('')
-    setOrderFound(false)
     setOrderData(null)
+    setOrders([])
     setError('')
     setShowAddressForm(false)
     setShowCancelModal(false)
     setShowRefundModal(false)
     setTrackingData(null)
+    setLookupToken('')
+    setVerificationCode('')
+    setSelectedOrderNumber(null)
+    setStep('request')
     refreshCaptcha()
   }
 
@@ -289,9 +428,7 @@ const OrderLookup = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/${orderData.orderNumber}/address?email=${encodeURIComponent(email)}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: authHeaders(),
         body: JSON.stringify({
           orderNumber: orderData.orderNumber,
           fullName: addressForm.fullName,
@@ -321,7 +458,7 @@ const OrderLookup = () => {
         showToast('Adres başarıyla güncellendi!', 'success')
         setShowAddressForm(false)
         // Siparişi tekrar sorgula
-        await fetchOrder(orderData.orderNumber, email)
+        await fetchOrderDetail(orderData.orderNumber)
       }
     } catch (err) {
       setError(err.message || 'Adres güncellenirken bir hata oluştu')
@@ -338,9 +475,7 @@ const OrderLookup = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/${orderData.orderNumber}/cancel?email=${encodeURIComponent(email)}&reason=${encodeURIComponent(cancelReason)}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        }
+        headers: authHeaders()
       })
 
       const contentType = response.headers.get('content-type') || ''
@@ -361,7 +496,7 @@ const OrderLookup = () => {
         showToast('Sipariş iptal talebiniz alındı!', 'success')
         setShowCancelModal(false)
         // Siparişi tekrar sorgula
-        await fetchOrder(orderData.orderNumber, email)
+        await fetchOrderDetail(orderData.orderNumber)
       }
     } catch (err) {
       setError(err.message || 'Sipariş iptal edilirken bir hata oluştu')
@@ -378,9 +513,7 @@ const OrderLookup = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/${orderData.orderNumber}/refund?email=${encodeURIComponent(email)}&reason=${encodeURIComponent(refundReason)}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        }
+        headers: authHeaders()
       })
 
       const contentType = response.headers.get('content-type') || ''
@@ -401,7 +534,7 @@ const OrderLookup = () => {
         showToast('İade talebiniz alındı!', 'success')
         setShowRefundModal(false)
         // Siparişi tekrar sorgula
-        await fetchOrder(orderData.orderNumber, email)
+        await fetchOrderDetail(orderData.orderNumber)
       }
     } catch (err) {
       setError(err.message || 'İade talebi oluşturulurken bir hata oluştu')
@@ -423,6 +556,19 @@ const OrderLookup = () => {
     const status = orderData.status.toUpperCase()
     return status === 'SHIPPED' || status === 'DELIVERED'
   }
+
+  const canUpdateAddress = () => {
+    if (!orderData || !orderData.status) return false
+    const status = orderData.status.toUpperCase()
+    return status === 'PAID' || status === 'PROCESSING'
+  }
+
+  useEffect(() => {
+    if (!canUpdateAddress() && showAddressForm) {
+      setShowAddressForm(false)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderData])
 
   // Status'u Türkçe'ye çevir
   const getStatusText = (status) => {
@@ -447,6 +593,18 @@ const OrderLookup = () => {
     url: typeof window !== 'undefined' ? window.location.href : 'https://hiedra.com/siparis-sorgula'
   }
 
+  const getProductImage = (item) => {
+    if (!item) return '/images/perde1kapak.jpg'
+    let image = item.productImageUrl || item.coverImageUrl || '/images/perde1kapak.jpg'
+    if (!image || image === '' || image === 'null' || image === 'undefined') {
+      image = '/images/perde1kapak.jpg'
+    }
+    if (!image.startsWith('http') && !image.startsWith('/')) {
+      image = '/' + image
+    }
+    return image
+  }
+
   return (
     <div className="order-lookup-container">
       <SEO
@@ -461,7 +619,7 @@ const OrderLookup = () => {
         <p>Perde satış siparişinizin durumunu takip etmek için bilgilerinizi giriniz</p>
       </header>
 
-      {!orderFound ? (
+      {step === 'request' && (
         <div className="lookup-form-container">
           {error && (
             <div className="error-message" style={{ 
@@ -475,23 +633,7 @@ const OrderLookup = () => {
               {error}
             </div>
           )}
-          <form className="lookup-form" onSubmit={handleLookup}>
-            <div className="form-group">
-              <label htmlFor="orderNumber">
-                Sipariş Numarası <span className="required">*</span>
-              </label>
-              <input
-                type="text"
-                id="orderNumber"
-                value={orderNumber}
-                onChange={(e) => setOrderNumber(e.target.value.toUpperCase())}
-                placeholder="Örn: ORD-2024-001234"
-                required
-                maxLength="20"
-              />
-              <p className="form-hint">Sipariş onay e-postanızdaki sipariş numaranızı giriniz</p>
-            </div>
-
+          <form className="lookup-form" onSubmit={handleSendCode}>
             <div className="form-group">
               <label htmlFor="email">
                 E-posta Adresi <span className="required">*</span>
@@ -545,21 +687,137 @@ const OrderLookup = () => {
               <p className="form-hint">Yukarıdaki kodu giriniz (büyük/küçük harf duyarsız)</p>
             </div>
 
-            <button type="submit" className="lookup-btn" disabled={isLoading}>
-              {isLoading ? (
+            <button type="submit" className="lookup-btn" disabled={isSendingCode}>
+              {isSendingCode ? (
                 <>
                   <svg className="spinner" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M21 12a9 9 0 1 1-6.219-8.56" />
                   </svg>
-                  Sorgulanıyor...
+                  Kod Gönderiliyor...
                 </>
               ) : (
-                'Siparişi Sorgula'
+                'Doğrulama Kodunu Gönder'
               )}
             </button>
           </form>
         </div>
-      ) : (
+      )}
+
+      {step === 'verify' && (
+        <div className="lookup-form-container">
+          {error && (
+            <div className="error-message" style={{ 
+              padding: '1rem', 
+              backgroundColor: '#fee', 
+              color: '#c33', 
+              borderRadius: '8px', 
+              marginBottom: '1rem',
+              border: '1px solid #fcc'
+            }}>
+              {error}
+            </div>
+          )}
+          <div className="verification-info">
+            <h3>Kodunuzu Girin</h3>
+            <p>{email} adresine gönderdiğimiz 6 haneli kodu girerek siparişlerinizi görüntüleyebilirsiniz.</p>
+          </div>
+          <form className="lookup-form" onSubmit={handleVerifyCode}>
+            <div className="form-group">
+              <label htmlFor="verificationCode">
+                Doğrulama Kodu <span className="required">*</span>
+              </label>
+              <input
+                type="text"
+                id="verificationCode"
+                value={verificationCode}
+                onChange={(e) => setVerificationCode(e.target.value.toUpperCase())}
+                placeholder="Örn: 123456"
+                required
+                maxLength="6"
+              />
+              <p className="form-hint">Kod gelmediyse birkaç dakika bekleyip tekrar gönderebilirsiniz.</p>
+            </div>
+            <button type="submit" className="lookup-btn" disabled={isVerifying}>
+              {isVerifying ? (
+                <>
+                  <svg className="spinner" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                  </svg>
+                  Doğrulanıyor...
+                </>
+              ) : (
+                'Kodumu Doğrula'
+              )}
+            </button>
+          </form>
+          <button className="link-button" type="button" onClick={handleResendCode} disabled={isSendingCode}>
+            Kod gelmedi mi? Tekrar gönder
+          </button>
+        </div>
+      )}
+
+      {step === 'list' && (
+        <div className="order-list-container">
+          {error && (
+            <div className="error-message" style={{ 
+              padding: '1rem', 
+              backgroundColor: '#fee', 
+              color: '#c33', 
+              borderRadius: '8px', 
+              marginBottom: '1rem',
+              border: '1px solid #fcc'
+            }}>
+              {error}
+            </div>
+          )}
+          <div className="order-list-header">
+            <div>
+              <h3>{email} adresine ait siparişler</h3>
+              <p>Detay görmek istediğiniz siparişi seçin.</p>
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button className="new-lookup-btn" onClick={() => loadOrders()}>
+                Siparişleri Yenile
+              </button>
+              <button className="new-lookup-btn" onClick={handleNewLookup}>
+                ← Yeni E-posta ile Sorgula
+              </button>
+            </div>
+          </div>
+          {orders.length === 0 ? (
+            <div className="empty-orders">
+              <p>Bu e-posta ile ilişkili sipariş bulunamadı.</p>
+            </div>
+          ) : (
+            <div className="order-list">
+              {orders.map((order) => (
+                <div key={order.orderNumber} className="order-card">
+                  <div className="order-card-header">
+                    <h4>Sipariş No: {order.orderNumber}</h4>
+                    <span className={`status-badge ${(order.status || '').toLowerCase().replace(/\s+/g, '-')}`}>
+                      {getStatusText(order.status)}
+                    </span>
+                  </div>
+                  <div className="order-card-body">
+                    <p><strong>Tarih:</strong> {order.createdAt ? new Date(order.createdAt).toLocaleDateString('tr-TR') : '-'}</p>
+                    <p><strong>Toplam:</strong> {order.totalAmount ? parseFloat(order.totalAmount).toFixed(2) : '0.00'} ₺</p>
+                    <p><strong>Ürün:</strong> {(order.orderItems && order.orderItems[0]?.productName) || 'N/A'}</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="new-lookup-btn"
+                    onClick={() => handleViewOrder(order.orderNumber)}
+                  >
+                    Detayı Gör
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {step === 'detail' && orderData && (
         <div className="order-details-container">
           {error && (
             <div className="error-message" style={{ 
@@ -573,11 +831,18 @@ const OrderLookup = () => {
               {error}
             </div>
           )}
-          
+
           <div className="order-header-actions">
-            <button onClick={handleNewLookup} className="new-lookup-btn">
-              ← Yeni Sorgulama
-            </button>
+            <div className="action-buttons" style={{ gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button onClick={handleNewLookup} className="new-lookup-btn">
+                ← Yeni E-posta ile Sorgula
+              </button>
+              {lookupToken && (
+                <button onClick={handleBackToList} className="new-lookup-btn">
+                  ← Sipariş Listesine Dön
+                </button>
+              )}
+            </div>
             <div className="action-buttons">
               {canCancel() && (
                 <button 
@@ -597,12 +862,14 @@ const OrderLookup = () => {
                   İade Talep Et
                 </button>
               )}
-              <button 
-                onClick={() => setShowAddressForm(!showAddressForm)} 
-                className="update-address-btn"
-              >
-                {showAddressForm ? 'Adres Formunu Kapat' : 'Adresi Güncelle'}
-              </button>
+              {canUpdateAddress() && (
+                <button 
+                  onClick={() => setShowAddressForm(!showAddressForm)} 
+                  className="update-address-btn"
+                >
+                  {showAddressForm ? 'Adres Formunu Kapat' : 'Adresi Güncelle'}
+                </button>
+              )}
             </div>
           </div>
 
@@ -630,7 +897,7 @@ const OrderLookup = () => {
             </div>
           </div>
 
-          {showAddressForm && (
+          {showAddressForm && canUpdateAddress() && (
             <div className="order-section address-form-section">
               <h3>Adres Güncelle</h3>
               <div className="address-form">
@@ -712,6 +979,13 @@ const OrderLookup = () => {
               {orderData.orderItems && orderData.orderItems.length > 0 ? (
                 orderData.orderItems.map((item, index) => (
                   <div key={index} className="order-item">
+                    <div className="item-image">
+                      <img
+                        src={getProductImage(item)}
+                        alt={item.productName || 'Sipariş ürünü'}
+                        loading="lazy"
+                      />
+                    </div>
                     <div className="item-info">
                       <h4>{item.productName || 'Ürün'}</h4>
                       <div className="item-customizations">
@@ -723,13 +997,21 @@ const OrderLookup = () => {
                       </div>
                       <span className="item-quantity">Adet: {item.quantity || 1}</span>
                     </div>
-                    <div className="item-price">{item.price ? parseFloat(item.price).toFixed(2) : '0.00'} ₺</div>
                   </div>
                 ))
               ) : (
                 <p>Sipariş detayı bulunamadı</p>
               )}
             </div>
+            {canRefund() && (
+              <button
+                type="button"
+                className="inline-refund-btn"
+                onClick={() => setShowRefundModal(true)}
+              >
+                Bu Ürün İçin İade Talebi Oluştur
+              </button>
+            )}
             <div className="order-total">
               <span>Toplam:</span>
               <span>{orderData.totalAmount ? parseFloat(orderData.totalAmount).toFixed(2) : '0.00'} ₺</span>

@@ -6,6 +6,7 @@ import { ToastContainer, useToast } from './components/Toast'
 import { loadSession, saveSession, clearSession, type AuthResponse, getClientIpInfo } from './services/authService'
 import SessionHeartbeat from './components/SessionHeartbeat'
 import { ThemeProvider } from './context/ThemeContext'
+import type { AdminPage, AdminNavigationState } from './types/navigation'
 
 // Lazy load tüm sayfalar - code splitting için
 const HomePage = lazy(() => import('./pages/Home'))
@@ -41,6 +42,8 @@ const ContractAcceptancesPage = lazy(() => import('./pages/ContractAcceptances')
 const CategoriesPage = lazy(() => import('./pages/Categories'))
 const AdminManagementPage = lazy(() => import('./pages/AdminManagement'))
 const PaymentsPage = lazy(() => import('./pages/Payments'))
+const IpAccessControlPage = lazy(() => import('./pages/IpAccessControl'))
+const StorePreviewPage = lazy(() => import('./pages/StorePreview'))
 
 // Loading fallback component
 const PageLoader = () => (
@@ -49,52 +52,9 @@ const PageLoader = () => (
   </div>
 )
 
-type Page =
-  | 'home'
-  | 'profile'
-  | 'system'
-  | 'users'
-  | 'userDetail'
-  | 'userLogs'
-  | 'orders'
-  | 'orderDetail'
-  | 'products'
-  | 'productDetail'
-  | 'productEdit'
-  | 'productAdd'
-  | 'shipping'
-  | 'messages'
-  | 'bulkMail'
-  | 'carts'
-  | 'reviews'
-  | 'productViews'
-  | 'guests'
-  | 'visitors'
-  | 'addresses'
-  | 'auditLogs'
-  | 'coupons'
-  | 'couponAdd'
-  | 'cookiePreferences'
-  | 'settings'
-  | 'userAnalytics'
-  | 'contracts'
-  | 'contractAcceptances'
-  | 'categories'
-  | 'adminManagement'
-  | 'payments'
-
 const NAVIGATION_STORAGE_KEY = 'admin_navigation_state'
 
-type NavigationState = {
-  currentPage: Page
-  selectedProductId: number | null
-  selectedOrderId: number | null
-  selectedUserId: number | null
-  selectedContractId: number | null
-  isSidebarOpen: boolean
-}
-
-function loadNavigationState(): NavigationState | null {
+function loadNavigationState(): AdminNavigationState | null {
   try {
     const saved = localStorage.getItem(NAVIGATION_STORAGE_KEY)
     if (saved) {
@@ -106,7 +66,7 @@ function loadNavigationState(): NavigationState | null {
   return null
 }
 
-function saveNavigationState(state: NavigationState) {
+function saveNavigationState(state: AdminNavigationState) {
   try {
     localStorage.setItem(NAVIGATION_STORAGE_KEY, JSON.stringify(state))
   } catch (error) {
@@ -122,7 +82,7 @@ function App() {
   
   // Navigation state'i localStorage'dan yükle
   const savedNavState = loadNavigationState()
-  const [currentPage, setCurrentPage] = useState<Page>(savedNavState?.currentPage || 'home')
+  const [currentPage, setCurrentPage] = useState<AdminPage>(savedNavState?.currentPage || 'home')
   const [selectedProductId, setSelectedProductId] = useState<number | null>(savedNavState?.selectedProductId || null)
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(savedNavState?.selectedOrderId || null)
   const [selectedUserId, setSelectedUserId] = useState<number | null>(savedNavState?.selectedUserId || null)
@@ -168,7 +128,7 @@ function App() {
 
     // Sadece ilk yüklemede ve detail sayfalarında ID yoksa yönlendir
     let shouldRedirect = false
-    let redirectPage: Page | null = null
+    let redirectPage: AdminPage | null = null
 
     if ((currentPage === 'productDetail' || currentPage === 'productEdit') && !selectedProductId) {
       shouldRedirect = true
@@ -317,17 +277,19 @@ function App() {
     saveSession(authResponse)
     setSession(authResponse)
     // Login sonrası ana sayfaya git
-    const navState: NavigationState = {
+    const navState: AdminNavigationState = {
       currentPage: 'home',
       selectedProductId: null,
       selectedOrderId: null,
       selectedUserId: null,
+      selectedContractId: null,
       isSidebarOpen: true,
     }
     setCurrentPage('home')
     setSelectedProductId(null)
     setSelectedOrderId(null)
     setSelectedUserId(null)
+    setSelectedContractId(null)
     setIsSidebarOpen(true)
     saveNavigationState(navState)
   }, [])
@@ -344,7 +306,7 @@ function App() {
     setIsSidebarOpen(true)
   }, [])
 
-  const handleNavigate = useCallback((page: Page, productId?: number, orderId?: number, userId?: number) => {
+  const handleNavigate = useCallback((page: AdminPage, productId?: number, orderId?: number, userId?: number) => {
     setCurrentPage(page)
     setSelectedProductId(productId ?? null)
     setSelectedOrderId(orderId ?? null)
@@ -550,8 +512,10 @@ function App() {
         {currentPage === 'categories' && <CategoriesPage session={session} toast={toast} />}
         {currentPage === 'adminManagement' && <AdminManagementPage session={session} />}
         {currentPage === 'payments' && <PaymentsPage session={session} />}
-        {!['home', 'profile', 'system', 'users', 'userDetail', 'userLogs', 'orders', 'orderDetail', 'products', 'productDetail', 'productEdit', 'productAdd', 'shipping', 'messages', 'bulkMail', 'carts', 'reviews', 'productViews', 'guests', 'visitors', 'addresses', 'auditLogs', 'coupons', 'couponAdd', 'cookiePreferences', 'settings', 'userAnalytics', 'contracts', 'contractAcceptances', 'categories', 'adminManagement', 'payments'].includes(currentPage) && (
-          <NotFoundPage session={session} onNavigate={handleNavigate} />
+        {currentPage === 'ipAccess' && <IpAccessControlPage session={session} />}
+        {currentPage === 'storePreview' && <StorePreviewPage />}
+        {!['home', 'profile', 'system', 'users', 'userDetail', 'userLogs', 'orders', 'orderDetail', 'products', 'productDetail', 'productEdit', 'productAdd', 'shipping', 'messages', 'bulkMail', 'carts', 'reviews', 'productViews', 'guests', 'visitors', 'addresses', 'auditLogs', 'coupons', 'couponAdd', 'cookiePreferences', 'settings', 'userAnalytics', 'contracts', 'contractAcceptances', 'categories', 'adminManagement', 'payments', 'ipAccess', 'storePreview'].includes(currentPage) && (
+          <NotFoundPage onNavigate={handleNavigate} />
         )}
       </Suspense>
           </div>

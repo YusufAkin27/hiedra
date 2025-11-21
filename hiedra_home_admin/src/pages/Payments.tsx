@@ -1,8 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
-import { FaDollarSign, FaCheckCircle, FaTimesCircle, FaClock, FaBan, FaUndo, FaChartBar, FaTable, FaEye } from 'react-icons/fa'
+import { FaCheckCircle, FaTimesCircle, FaClock, FaBan, FaUndo, FaChartBar, FaTable, FaEye } from 'react-icons/fa'
 import type { AuthResponse } from '../services/authService'
 import { getAdminHeaders } from '../services/authService'
-import { useToast } from '../components/Toast'
 
 type PaymentsPageProps = {
   session: AuthResponse
@@ -66,7 +65,6 @@ const DEFAULT_API_URL = 'http://localhost:8080/api'
 const apiBaseUrl = import.meta.env.VITE_API_URL ?? DEFAULT_API_URL
 
 function PaymentsPage({ session }: PaymentsPageProps) {
-  const toast = useToast()
   const [payments, setPayments] = useState<PaymentRecord[]>([])
   const [stats, setStats] = useState<PaymentStats | null>(null)
   const [pagination, setPagination] = useState({
@@ -82,7 +80,7 @@ function PaymentsPage({ session }: PaymentsPageProps) {
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<TabType>('all')
   const [currentPage, setCurrentPage] = useState(0)
-  const [pageSize, setPageSize] = useState(20)
+  const [pageSize] = useState(20)
   const [searchTerm, setSearchTerm] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     if (typeof window !== 'undefined' && window.innerWidth <= 768) {
