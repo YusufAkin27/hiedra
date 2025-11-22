@@ -78,8 +78,9 @@ class AuthControllerTest {
         verifyRequest.setCode("123456");
 
         when(request.getHeader("User-Agent")).thenReturn("test-agent");
+        when(request.getRemoteAddr()).thenReturn("127.0.0.1");
         eticaret.demo.auth.AuthResponse authResponse = new eticaret.demo.auth.AuthResponse();
-        when(authService.verifyLoginCode(anyString(), anyString(), anyString(), anyString()))
+        when(authService.verifyLoginCode(anyString(), anyString(), anyString(), anyString(), any(HttpServletRequest.class)))
             .thenReturn(authResponse);
 
         // Act
@@ -88,7 +89,7 @@ class AuthControllerTest {
 
         // Assert
         assertNotNull(response);
-        verify(authService, times(1)).verifyLoginCode(anyString(), anyString(), anyString(), anyString());
+        verify(authService, times(1)).verifyLoginCode(anyString(), anyString(), anyString(), anyString(), any(HttpServletRequest.class));
     }
 }
 

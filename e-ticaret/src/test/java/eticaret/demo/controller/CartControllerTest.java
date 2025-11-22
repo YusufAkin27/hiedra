@@ -45,7 +45,7 @@ class CartControllerTest {
     private HttpServletRequest request;
 
     @Mock
-    private HttpServletResponse response;
+    private HttpServletResponse httpResponse;
 
     @InjectMocks
     private CartController cartController;
@@ -74,7 +74,7 @@ class CartControllerTest {
 
         // Act
         ResponseEntity<DataResponseMessage<Cart>> responseEntity = 
-            cartController.getCart(null, request, response);
+            cartController.getCart(null, request, httpResponse);
 
         // Assert
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
@@ -93,7 +93,7 @@ class CartControllerTest {
 
         // Act
         ResponseEntity<DataResponseMessage<Cart>> responseEntity = 
-            cartController.getCart(guestUserId, request, response);
+            cartController.getCart(guestUserId, request, httpResponse);
 
         // Assert
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
@@ -124,7 +124,7 @@ class CartControllerTest {
 
         // Act
         ResponseEntity<DataResponseMessage<Cart>> responseEntity = 
-            cartController.addItem(addRequest, null, request, response);
+            cartController.addItem(addRequest, null, request, httpResponse);
 
         // Assert
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
@@ -142,7 +142,7 @@ class CartControllerTest {
 
         // Act
         ResponseEntity<DataResponseMessage<Cart>> response = 
-            cartController.removeItem(itemId, null, request);
+            cartController.removeItem(itemId, null, request, httpResponse);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -159,7 +159,7 @@ class CartControllerTest {
 
         // Act
         ResponseEntity<DataResponseMessage<Cart>> response = 
-            cartController.removeItem(itemId, null, request);
+            cartController.removeItem(itemId, null, request, httpResponse);
 
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -175,7 +175,7 @@ class CartControllerTest {
 
         // Act
         ResponseEntity<DataResponseMessage<Void>> response = 
-            cartController.clearCart(null, request);
+            cartController.clearCart(null, request, httpResponse);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());

@@ -45,7 +45,7 @@ class PaymentControllerTest {
         paymentRequest.setAmount(new java.math.BigDecimal("100.00"));
         paymentRequest.setEmail("test@example.com");
 
-        when(paymentService.paymentAsGuest(any(PaymentRequest.class)))
+        when(paymentService.paymentAsGuest(any(PaymentRequest.class), any(HttpServletRequest.class)))
             .thenReturn(new ResponseMessage("Ödeme başarılı", true));
 
         // Act
@@ -54,7 +54,7 @@ class PaymentControllerTest {
         // Assert
         assertNotNull(result);
         assertTrue(result.isSuccess());
-        verify(paymentService, times(1)).paymentAsGuest(any(PaymentRequest.class));
+        verify(paymentService, times(1)).paymentAsGuest(any(PaymentRequest.class), any(HttpServletRequest.class));
     }
 
     @Test
