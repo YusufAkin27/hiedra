@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <!-- Ana Sayfa - Perde Satış -->
+  <url>
+    <loc>https://hiedra.com/</loc>
+    <lastmod>2024-12-02</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  
+  <!-- Ürün Sayfaları -->
+  <!-- 1. Klasik Perde - ND8001 -->
+  <url>
+    <loc>https://hiedra.com/product/1</loc>
+    <lastmod>2024-12-02</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://hiedra.com/images/perde2kapak.jpg</image:loc>
+      <image:title>Klasik Perde - Koyu Gri - ND8001 - Perde Satış</image:title>
+      <image:caption>Zengin koyu gri renk ile zarif klasik perde. Her dekorasyona uyum sağlar. - Perde satış</image:caption>
+    </image:image>
+  </url>
+  
+  <!-- 2. Dikey Stor Perde - PRD-20008 -->
+  <url>
+    <loc>https://hiedra.com/product/2</loc>
+    <lastmod>2024-12-02</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://hiedra.com/images/perde3kapak.jpg</image:loc>
+      <image:title>Dikey Stor Perde - Beyaz - PRD-20008 - Perde Satış</image:title>
+      <image:caption>Pratik ve modern dikey stor perde. Gün ışığını yumuşak bir şekilde içeri alır. - Perde satış</image:caption>
+    </image:image>
+  </url>
+  
+  <!-- 3. Zebra Perde - SIRINA -->
+  <url>
+    <loc>https://hiedra.com/product/3</loc>
+    <lastmod>2024-12-02</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://hiedra.com/images/perde1kapak.jpg</image:loc>
+      <image:title>Zebra Perde - Bej - SIRINA - Perde Satış</image:title>
+      <image:caption>Modern ve şık zebra perde modeli. Güneş ışığını kontrol etmek için ideal. - Perde satış</image:caption>
+    </image:image>
+  </url>
+  
+  <!-- 4. Jaluzi Perde - BAMBU -->
+  <url>
+    <loc>https://hiedra.com/product/4</loc>
+    <lastmod>2024-12-02</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://hiedra.com/images/perde4kapak.jpg</image:loc>
+      <image:title>Jaluzi Perde - Ahşap - BAMBU - Perde Satış</image:title>
+      <image:caption>Doğal ahşap jaluzi perde. Hem dekoratif hem fonksiyonel. - Perde satış</image:caption>
+    </image:image>
+  </url>
+  
+  <!-- Statik Sayfalar -->
+  <url>
+    <loc>https://hiedra.com/hakkimizda</loc>
+    <lastmod>2024-12-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>https://hiedra.com/iletisim</loc>
+    <lastmod>2024-12-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>https://hiedra.com/sss</loc>
+    <lastmod>2024-12-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>https://hiedra.com/siparis-sorgula</loc>
+    <lastmod>2024-12-02</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+</urlset>

@@ -1,0 +1,32 @@
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-primary);
+  transition: background 0.3s ease;
+  position: relative;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background: transparent;
+  transition: background 0.3s ease;
+  padding-top: var(--header-offset-desktop);
+}
+
+@media (max-width: 1024px) {
+  .main-content {
+    padding-top: var(--header-offset-tablet);
+  }
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    width: 100%;
+    padding-top: var(--header-offset-mobile);
+  }
+}
+

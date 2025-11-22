@@ -1,0 +1,338 @@
+/* Google Fonts - Loaded via HTML for better performance */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  /* Premium Gold Theme - Option A: Black Background (Premium) */
+  /* Gold Primary Color */
+  --gold-primary: #B08D49;
+  --gold-hover: #C9A15A;
+  --gold-light: rgba(176, 141, 73, 0.1);
+  --gold-transparent: rgba(176, 141, 73, 0.2);
+  
+  /* Background Colors - Premium Black */
+  --bg-primary: #0E0E0E;
+  --bg-secondary: #181818;
+  --bg-card: #181818;
+  --bg-header: #0E0E0E;
+  
+  /* Text Colors */
+  --text-primary: #2A2A2A;
+  --text-secondary: #4A4A4A;
+  --text-light: #6E6E6E;
+  --text-on-gold: #FFFFFF;
+  --text-on-dark: #FFFFFF;
+  
+  /* Border Colors */
+  --border-color: #2A2A2A;
+  --border-hover: #3A3A3A;
+  
+  /* Shadow */
+  --shadow: rgba(0, 0, 0, 0.4);
+  --shadow-hover: rgba(0, 0, 0, 0.6);
+  --shadow-gold: rgba(176, 141, 73, 0.3);
+  
+  /* Overlay */
+  --overlay: rgba(0, 0, 0, 0.7);
+  
+  /* Status Colors */
+  --success: #3B7F3C;
+  --danger: #B94A48;
+  --warning: #C89933;
+  --info: #3b82f6;
+  
+  /* Button Colors */
+  --btn-primary-bg: #B08D49;
+  --btn-primary-text: #FFFFFF;
+  --btn-primary-hover: #C9A15A;
+  --btn-secondary-border: #B08D49;
+  --btn-secondary-text: #B08D49;
+  --btn-secondary-hover-bg: rgba(176, 141, 73, 0.2);
+  
+  /* Layout Dimensions */
+  --header-offset-desktop: 140px;
+  --header-offset-tablet: 120px;
+  --header-offset-mobile: 100px;
+
+  /* Legacy support */
+  --primary: var(--gold-primary);
+}
+
+[data-theme='light'] {
+  /* Option B: White & Cream Background (Boutique - Soft) */
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F5F5F5;
+  --bg-card: #FFFFFF;
+  --bg-header: #FFFFFF;
+  
+  --text-primary: #2A2A2A;
+  --text-secondary: #4A4A4A;
+  --text-light: #6E6E6E;
+  --text-on-gold: #FFFFFF;
+  --text-on-dark: #2A2A2A;
+  
+  --border-color: #DDD4C1;
+  --border-hover: #C9BFA8;
+  
+  --shadow: rgba(0, 0, 0, 0.1);
+  --shadow-hover: rgba(0, 0, 0, 0.15);
+  --shadow-gold: rgba(176, 141, 73, 0.2);
+  
+  --overlay: rgba(0, 0, 0, 0.5);
+}
+
+body {
+  font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  font-size: 1rem;
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+/* Typography Hierarchy */
+
+/* Headings - Playfair Display (Elegant, Classic) */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--text-on-dark);
+  margin: 0;
+}
+
+h1 {
+  font-size: 3rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+h2 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+h3 {
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+h4 {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+h5 {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+h6 {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+/* Subheadings */
+.subtitle {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.subtitle-small {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+/* Body Text */
+p {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--text-on-dark);
+  margin: 0;
+}
+
+/* Small Text */
+small, .text-small {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+/* Links */
+a {
+  font-family: 'Montserrat', sans-serif;
+  color: var(--text-on-dark);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: var(--gold-primary);
+}
+
+/* Buttons - Premium Gold Theme */
+button {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 500;
+}
+
+/* Primary Button (Sepete Ekle, Satın Al) */
+.btn-primary,
+button.btn-primary {
+  background-color: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  border: none;
+  padding: 0.875rem 2rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  box-shadow: 0 2px 8px var(--shadow-gold);
+}
+
+.btn-primary:hover,
+button.btn-primary:hover {
+  background-color: var(--btn-primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px var(--shadow-gold);
+}
+
+.btn-primary:active,
+button.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* Secondary Button */
+.btn-secondary,
+button.btn-secondary {
+  background-color: transparent;
+  color: var(--btn-secondary-text);
+  border: 2px solid var(--btn-secondary-border);
+  padding: 0.875rem 2rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btn-secondary:hover,
+button.btn-secondary:hover {
+  background-color: var(--btn-secondary-hover-bg);
+  border-color: var(--gold-hover);
+  color: var(--gold-hover);
+  transform: translateY(-2px);
+}
+
+.btn-secondary:active,
+button.btn-secondary:active {
+  transform: translateY(0);
+}
+
+/* Responsive Typography */
+@media (max-width: 768px) {
+  h1 {
+    font-size: 2.25rem;
+    line-height: 1.2;
+  }
+
+  h2 {
+    font-size: 2rem;
+    line-height: 1.25;
+  }
+
+  h3 {
+    font-size: 1.75rem;
+    line-height: 1.3;
+  }
+
+  h4 {
+    font-size: 1.375rem;
+    line-height: 1.35;
+  }
+
+  .subtitle {
+    font-size: 1.25rem;
+    line-height: 1.4;
+  }
+
+  body {
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
+  p {
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+}
+
+@media (max-width: 480px) {
+  h1 {
+    font-size: 1.875rem;
+    line-height: 1.2;
+  }
+
+  h2 {
+    font-size: 1.625rem;
+    line-height: 1.25;
+  }
+
+  h3 {
+    font-size: 1.5rem;
+    line-height: 1.3;
+  }
+
+  h4 {
+    font-size: 1.25rem;
+    line-height: 1.35;
+  }
+
+  .subtitle {
+    font-size: 1.125rem;
+    line-height: 1.4;
+  }
+
+  body {
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  p {
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
