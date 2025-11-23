@@ -14,7 +14,17 @@ const Coupons = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
   const [copiedCode, setCopiedCode] = useState(null)
-  const { accessToken } = useAuth()
+  
+  // useAuth hook'unu güvenli bir şekilde kullan
+  let authContext
+  try {
+    authContext = useAuth()
+  } catch (error) {
+    console.error('Auth context hatası:', error)
+    authContext = { accessToken: null }
+  }
+  
+  const { accessToken } = authContext || { accessToken: null }
 
   useEffect(() => {
     fetchCoupons()
@@ -35,16 +45,42 @@ const Coupons = () => {
       const response = await fetch(`${API_BASE_URL}/coupons`, {
         headers
       })
-      const data = await response.json()
-
-      if (response.ok && (data.isSuccess || data.success)) {
-        setCoupons(data.data || [])
+      
+      // Response'un başarılı olup olmadığını kontrol et
+      if (!response.ok) {
+        // Response text'ini al ve JSON parse etmeyi dene
+        const errorText = await response.text()
+        let errorData
+        try {
+          errorData = JSON.parse(errorText)
+        } catch {
+          errorData = { message: `HTTP ${response.status}: ${response.statusText}` }
+        }
+        setError(errorData.message || 'Kuponlar yüklenemedi')
+        setIsLoading(false)
+        return
+      }
+      
+      // Başarılı response için JSON parse et
+      const contentType = response.headers.get('content-type')
+      if (contentType && contentType.includes('application/json')) {
+        const data = await response.json()
+        
+        if (data.isSuccess || data.success) {
+          setCoupons(data.data || [])
+        } else {
+          setError(data.message || 'Kuponlar yüklenemedi')
+        }
       } else {
-        setError(data.message || 'Kuponlar yüklenemedi')
+        setError('Beklenmeyen yanıt formatı')
       }
     } catch (err) {
       console.error('Kuponlar yüklenirken hata:', err)
-      setError('Kuponlar yüklenirken bir hata oluştu')
+      if (err.message && err.message.includes('Failed to fetch')) {
+        setError('Sunucuya bağlanılamadı. Lütfen internet bağlantınızı kontrol edin.')
+      } else {
+        setError('Kuponlar yüklenirken bir hata oluştu: ' + (err.message || 'Bilinmeyen hata'))
+      }
     } finally {
       setIsLoading(false)
     }

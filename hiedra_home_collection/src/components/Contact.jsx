@@ -7,7 +7,16 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
 const CONTACT_API_URL = `${API_BASE_URL}/contact`
 
 const Contact = () => {
-  const { isAuthenticated, accessToken } = useAuth()
+  // useAuth hook'unu güvenli bir şekilde kullan
+  let authContext
+  try {
+    authContext = useAuth()
+  } catch (error) {
+    console.error('Auth context hatası:', error)
+    authContext = { isAuthenticated: false, accessToken: null }
+  }
+  
+  const { isAuthenticated, accessToken } = authContext || { isAuthenticated: false, accessToken: null }
   const [formData, setFormData] = useState({
     name: '',
     email: '',

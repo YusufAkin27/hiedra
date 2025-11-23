@@ -11,21 +11,28 @@ export const useTheme = () => {
 }
 
 export const ThemeProvider = ({ children }) => {
-  const [theme, setTheme] = useState(() => {
-    // LocalStorage'dan tema tercihini al veya varsayılan olarak 'light' kullan
-    const savedTheme = localStorage.getItem('theme')
-    const initialTheme = savedTheme || 'light'
-    // İlk render'da hemen uygula
-    if (typeof document !== 'undefined') {
-      document.documentElement.setAttribute('data-theme', initialTheme)
-    }
-    return initialTheme
-  })
+  // useState'i lazy initializer olmadan kullan
+  const [theme, setTheme] = useState('light')
 
+  // İlk render'da localStorage'dan tema tercihini al
   useEffect(() => {
-    // Tema değiştiğinde LocalStorage'a kaydet ve body'ye class ekle
-    localStorage.setItem('theme', theme)
-    document.documentElement.setAttribute('data-theme', theme)
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+      const savedTheme = localStorage.getItem('theme')
+      if (savedTheme) {
+        setTheme(savedTheme)
+        document.documentElement.setAttribute('data-theme', savedTheme)
+      } else {
+        document.documentElement.setAttribute('data-theme', 'light')
+      }
+    }
+  }, [])
+
+  // Tema değiştiğinde LocalStorage'a kaydet ve body'ye class ekle
+  useEffect(() => {
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+      localStorage.setItem('theme', theme)
+      document.documentElement.setAttribute('data-theme', theme)
+    }
   }, [theme])
 
   const toggleTheme = () => {
