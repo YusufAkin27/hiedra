@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { memo } from 'react'
 import './CategoryHeader.css'
 
 /**
@@ -20,5 +20,6 @@ const CategoryHeader = ({ title, subtitle, className = '' }) => {
   )
 }
 
-export default CategoryHeader
+// React.memo ile gereksiz re-render'ları önle
+export default memo(CategoryHeader)
 

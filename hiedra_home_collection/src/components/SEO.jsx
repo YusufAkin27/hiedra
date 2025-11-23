@@ -11,8 +11,8 @@ const SEO = ({
   noindex = false
 }) => {
   const siteName = 'Hiedra Perde'
-  const defaultTitle = 'Hiedra - Online Perde Satış | Modern ve Şık Perde Koleksiyonları'
-  const defaultDescription = 'Türkiye\'nin en kaliteli perde satış sitesi. Zebra perde, Klasik perde, Stor perde ve Jaluzi perde modelleri. Hızlı teslimat, uygun fiyat, kaliteli kumaş. Perde satış için doğru adres!'
+  const defaultTitle = 'Perde Satış - Tül Perde, Zebra Perde Fiyatları | Hiedra Perde'
+  const defaultDescription = 'Perde satış ve tül perde fiyatları için Hiedra Perde. Zebra perde, Klasik perde, Stor perde, Jaluzi perde ve tül perde modelleri. Uygun perde fiyatı, kaliteli perde kumaşı, hızlı perde teslimat. Perde satış için doğru adres!'
   const siteUrl = typeof window !== 'undefined' ? window.location.origin : 'https://hiedra.com'
   
   // "Perde Satış" keyword'ünü vurgulayalım
@@ -31,8 +31,8 @@ const SEO = ({
   const pageUrl = url ? `${siteUrl}${url}` : siteUrl
   const pageImage = image ? (image.startsWith('http') ? image : `${siteUrl}${image}`) : `${siteUrl}/logo.png`
   
-  // Genişletilmiş keywords (Yerel SEO için Bingöl ve Erzurum eklenmiş)
-  const defaultKeywords = 'perde satış, online perde satış, perde satın al, perdeler, zebra perde, klasik perde, stor perde, jaluzi perde, perde fiyatları, uygun perde, kaliteli perde, perde modelleri, perde çeşitleri, perde koleksiyonu, türkiye perde satış, bingöl perde, bingöl perde satışı, erzurum perde, erzurum perde satışı'
+  // Genişletilmiş keywords (SEO optimizasyonu için kapsamlı anahtar kelimeler)
+  const defaultKeywords = 'perde satış, online perde satış, perde satın al, perdeler, perde tül, tül perde, perde fiyatı, perde fiyatları, zebra perde, zebra perde satış, klasik perde, klasik perde satış, stor perde, stor perde satış, jaluzi perde, jaluzi perde satış, tül perde satış, tül perde fiyatı, perde tül fiyatı, uygun perde, uygun perde fiyatları, kaliteli perde, kaliteli perde satış, perde modelleri, perde çeşitleri, perde koleksiyonu, perde kumaşı, perde kumaşları, perde ölçüsü, özel ölçü perde, perde sipariş, perde teslimat, türkiye perde satış, bingöl perde, bingöl perde satışı, bingöl tül perde, erzurum perde, erzurum perde satışı, erzurum tül perde, perde dekorasyon, ev dekorasyonu, pencere perdesi, salon perdesi, yatak odası perdesi, mutfak perdesi, banyo perdesi, ofis perdesi, işyeri perdesi, toptan perde, perakende perde, perde montaj, perde kurulum, perde bakım, perde temizlik, perde yıkama, perde onarım, perde değişim, perde iade, perde değiştirme, perde yenileme, modern perde, şık perde, lüks perde, ekonomik perde, indirimli perde, kampanyalı perde, perde kampanya, perde indirim, perde fırsat, perde özel fiyat, perde toptan fiyat, perde perakende fiyat, metre perde fiyatı, m2 perde fiyatı, perde m2 fiyat, perde metre fiyat'
   const pageKeywords = keywords ? `${keywords}, ${defaultKeywords}` : defaultKeywords
 
   // LocalBusiness Schema (Yerel SEO için)
@@ -44,7 +44,7 @@ const SEO = ({
     alternateName: 'Hiedra Perde Satış',
     image: `${siteUrl}/logo.png`,
     logo: `${siteUrl}/logo.png`,
-    description: 'Bingöl ve Türkiye genelinde perde satış hizmeti sunan güvenilir firma. Zebra perde, Klasik perde, Stor perde ve Jaluzi perde modelleri.',
+    description: 'Bingöl ve Türkiye genelinde perde satış ve tül perde fiyatları sunan güvenilir firma. Zebra perde, Klasik perde, Stor perde, Jaluzi perde ve tül perde modelleri. Uygun perde fiyatı ile kaliteli perde satış.',
     telephone: '+905336360079',
     email: 'ysufakin23@gmail.com',
     priceRange: '₺₺',
@@ -145,10 +145,12 @@ const SEO = ({
   } : null
 
   // Tüm structured data'yı birleştir
+  // structuredData array veya tek obje olabilir
+  const structuredDataArray = Array.isArray(structuredData) ? structuredData : (structuredData ? [structuredData] : [])
   const allStructuredData = [
     localBusinessSchema, // Yerel SEO için LocalBusiness schema
     organizationSchema,
-    structuredData,
+    ...structuredDataArray,
     breadcrumbSchema
   ].filter(Boolean)
 

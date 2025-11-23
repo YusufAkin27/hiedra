@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, memo, useMemo, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import LazyImage from './LazyImage'
@@ -10,29 +10,32 @@ const ProductCard = ({ product }) => {
   const [selectedImage, setSelectedImage] = useState(0)
   const [showDetailModal, setShowDetailModal] = useState(false)
 
-  // Tüm görselleri birleştir
-  const allImages = product.detailImages 
-    ? [product.image, ...product.detailImages]
-    : [product.image]
+  // Tüm görselleri birleştir - useMemo ile optimize et
+  const allImages = useMemo(() => 
+    product.detailImages 
+      ? [product.image, ...product.detailImages]
+      : [product.image],
+    [product.image, product.detailImages]
+  )
 
-  const handleAddToCart = (e) => {
+  const handleAddToCart = useCallback((e) => {
     e.preventDefault()
     e.stopPropagation()
     // Detay sayfasına yönlendir - orada fiyatlandırma formu var
     navigate(`/product/${product.id}`)
-  }
+  }, [navigate, product.id])
 
-  const handleDetailClick = (e) => {
+  const handleDetailClick = useCallback((e) => {
     e.preventDefault()
     e.stopPropagation()
     setShowDetailModal(true)
-  }
+  }, [])
 
-  const handleImageClick = (e, index) => {
+  const handleImageClick = useCallback((e, index) => {
     e.preventDefault()
     e.stopPropagation()
     setSelectedImage(index)
-  }
+  }, [])
 
   return (
     <>
@@ -184,4 +187,5 @@ const ProductCard = ({ product }) => {
   )
 }
 
-export default ProductCard
+// React.memo ile gereksiz re-render'ları önle
+export default memo(ProductCard)

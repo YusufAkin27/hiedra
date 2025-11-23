@@ -1429,6 +1429,7 @@
   padding: 0;
   transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   border: 1px solid rgba(0, 0, 0, 0.04);
+  cursor: pointer;
 }
 
 @media (max-width: 1200px) {
@@ -1564,10 +1565,14 @@
 }
 
 .main-product-image-wrapper-home.fade-in:hover {
-  transform: none;
+  transform: scale(1.02);
   box-shadow: 
     0 16px 48px rgba(0, 0, 0, 0.12),
     0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.main-product-image-wrapper-home:active {
+  transform: scale(0.98);
 }
 
 /* Görsel kalitesi için image rendering optimizasyonu */
@@ -2042,7 +2047,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 0;
   padding: 0.5rem;
   background: #FFFFFF;
@@ -2051,12 +2056,11 @@
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   min-width: 80px;
-  min-height: 80px;
+  min-height: auto;
   width: 100%;
-  height: 100%;
+  height: auto;
   position: relative;
   overflow: visible;
-  aspect-ratio: 1;
   box-shadow: 
     0 2px 8px rgba(0, 0, 0, 0.06),
     0 1px 4px rgba(0, 0, 0, 0.04);
@@ -2065,7 +2069,7 @@
 @media (max-width: 1024px) {
   .color-option-home {
     min-width: 75px;
-    min-height: 75px;
+    min-height: auto;
     padding: 0.5rem;
     border-radius: 14px;
   }
@@ -2074,7 +2078,7 @@
 @media (max-width: 768px) {
   .color-option-home {
     min-width: 70px;
-    min-height: 70px;
+    min-height: auto;
     padding: 0.5rem;
     border-radius: 12px;
   }
@@ -2083,7 +2087,7 @@
 @media (max-width: 480px) {
   .color-option-home {
     min-width: 65px;
-    min-height: 65px;
+    min-height: auto;
     padding: 0.5rem;
     border-radius: 10px;
   }
@@ -2247,6 +2251,61 @@
     0 4px 16px rgba(193, 164, 102, 0.35),
     0 0 0 3px rgba(193, 164, 102, 0.25);
   transform: scale(1.03);
+}
+
+/* Ürün İsmi - Renklerin Altında */
+.color-product-name-home {
+  display: block;
+  width: 100%;
+  margin-top: 0.5rem;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #4B5563;
+  text-align: center;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  max-height: 2.6em;
+  transition: color 0.3s ease;
+}
+
+.color-option-home:hover .color-product-name-home {
+  color: #1a1a1a;
+}
+
+.color-option-home.active .color-product-name-home {
+  color: #C1A466;
+  font-weight: 600;
+}
+
+@media (max-width: 1024px) {
+  .color-product-name-home {
+    font-size: 0.7rem;
+    margin-top: 0.4rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .color-product-name-home {
+    font-size: 0.65rem;
+    margin-top: 0.35rem;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+}
+
+@media (max-width: 480px) {
+  .color-product-name-home {
+    font-size: 0.6rem;
+    margin-top: 0.3rem;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
 }
 
 /* Ürün Özellikleri */

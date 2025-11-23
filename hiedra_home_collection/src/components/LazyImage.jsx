@@ -60,37 +60,49 @@ const LazyImage = ({
   const imgRef = useRef(null)
 
   useEffect(() => {
-    // IntersectionObserver'ı optimize et - daha az rootMargin kullan
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsInView(true)
-            // Görüntü görünür hale geldikten sonra observer'ı kapat
-            if (imgRef.current) {
-              observer.unobserve(imgRef.current)
-            }
-          }
-        })
-      },
-      {
-        rootMargin: '100px', // 100px önceden yükle (performans için artırıldı)
-        threshold: 0.01
-      }
-    )
+    // LCP için hemen yükle
+    if (isLCP) {
+      setIsInView(true)
+      return
+    }
 
+    // IntersectionObserver'ı optimize et - performans için
+    let observer = null
     const currentRef = imgRef.current
-    if (currentRef) {
+    
+    if (currentRef && 'IntersectionObserver' in window) {
+      observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              setIsInView(true)
+              // Görüntü görünür hale geldikten sonra observer'ı kapat
+              if (currentRef && observer) {
+                observer.unobserve(currentRef)
+              }
+            }
+          })
+        },
+        {
+          rootMargin: '50px', // Optimize edilmiş rootMargin
+          threshold: 0.01
+        }
+      )
       observer.observe(currentRef)
+    } else {
+      // IntersectionObserver desteklenmiyorsa hemen yükle
+      setIsInView(true)
     }
 
     return () => {
-      if (currentRef) {
+      if (currentRef && observer) {
         observer.unobserve(currentRef)
       }
-      observer.disconnect()
+      if (observer) {
+        observer.disconnect()
+      }
     }
-  }, [])
+  }, [isLCP])
 
   const handleLoad = () => {
     setIsLoaded(true)

@@ -32,6 +32,8 @@ export default defineConfig({
     },
     // Chunk size uyarıları
     chunkSizeWarningLimit: 1000,
+    // Build optimizations
+    reportCompressedSize: false, // Build hızını artırır
     rollupOptions: {
       output: {
         // Daha iyi code splitting - unused JavaScript'i azaltmak için

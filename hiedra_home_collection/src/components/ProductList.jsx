@@ -9,8 +9,8 @@ import SEO from './SEO'
 import CategoryHeader from './CategoryHeader'
 import './ProductList.css'
 
-// Ürün Özellikleri Accordion Component
-const ProductSpecificationsAccordion = ({ selectedProduct }) => {
+// Ürün Özellikleri Accordion Component - React.memo ile optimize et
+const ProductSpecificationsAccordion = React.memo(({ selectedProduct }) => {
   const [isOpen, setIsOpen] = useState(false)
 
   const hasSpecs = selectedProduct.mountingType || selectedProduct.material || 
@@ -129,7 +129,7 @@ const ProductSpecificationsAccordion = ({ selectedProduct }) => {
       )}
     </div>
   )
-}
+})
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
 
@@ -1108,20 +1108,103 @@ const ProductList = () => {
     )
   }
 
+  // Structured Data for SEO - Product Collection
+  const productCollectionSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: 'Perde Satış - Tül Perde ve Modern Perde Modelleri',
+    description: 'Perde satış ve tül perde fiyatları için Hiedra Perde. Zebra perde, Klasik perde, Stor perde, Jaluzi perde ve tül perde modelleri. Uygun perde fiyatı ile kaliteli perde satış.',
+    url: typeof window !== 'undefined' ? window.location.href : 'https://hiedra.com',
+    mainEntity: {
+      '@type': 'ItemList',
+      itemListElement: products.slice(0, 10).map((product, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        item: {
+          '@type': 'Product',
+          name: product.name,
+          description: product.description || product.shortDescription || '',
+          image: product.image,
+          category: product.category,
+          brand: {
+            '@type': 'Brand',
+            name: 'Hiedra Perde'
+          },
+          offers: {
+            '@type': 'Offer',
+            price: product.price,
+            priceCurrency: 'TRY',
+            availability: product.inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+            url: typeof window !== 'undefined' ? `${window.location.origin}/product/${product.id}` : `https://hiedra.com/product/${product.id}`
+          }
+        }
+      }))
+    }
+  }
+
+  // FAQ Schema for SEO
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: 'Perde satış fiyatları nasıl belirlenir?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Perde satış fiyatları metre fiyatı, en ölçüsü ve pile sıklığına göre hesaplanır. Tül perde fiyatları ve diğer perde modelleri için sitemizdeki fiyatlandırma aracını kullanabilirsiniz.'
+        }
+      },
+      {
+        '@type': 'Question',
+        name: 'Tül perde fiyatı nedir?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Tül perde fiyatı ürün modeline, ölçüye ve pile sıklığına göre değişiklik gösterir. Detaylı tül perde fiyatları için ürün sayfalarını ziyaret edebilirsiniz.'
+        }
+      },
+      {
+        '@type': 'Question',
+        name: 'Perde satış için hangi ölçüler geçerlidir?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Perde satış için genişlik 50-1000 cm, yükseklik 30-270 cm arasında özel ölçü perde siparişi verebilirsiniz.'
+        }
+      },
+      {
+        '@type': 'Question',
+        name: 'Zebra perde fiyatı ne kadar?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Zebra perde fiyatı metre fiyatı, en ölçüsü ve pile sıklığına göre hesaplanır. Güncel zebra perde fiyatları için ürün sayfalarını inceleyebilirsiniz.'
+        }
+      },
+      {
+        '@type': 'Question',
+        name: 'Perde teslimat süresi ne kadar?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Perde teslimat süresi siparişinizin hazırlanması ve kargo süresine bağlıdır. Genellikle 3-7 iş günü içinde perde teslimatı yapılmaktadır.'
+        }
+      }
+    ]
+  }
+
   return (
     <div className="product-list-container">
       <SEO
-        title="Perde Satış - Online Perde Satın Al | Bingöl Perde Satışı | Hiedra Perde"
-        description="Bingöl ve Türkiye'nin en kaliteli perde satış sitesi. Zebra perde, Klasik perde, Stor perde ve Jaluzi perde modelleri. Bingöl perde satışı, Erzurum perde satışı. Hızlı teslimat, uygun fiyat garantisi."
-        keywords="bingöl perde, bingöl perde satışı, erzurum perde, erzurum perde satışı, perde satış, online perde satış, perde satın al, perdeler, zebra perde satış, klasik perde, stor perde, jaluzi perde, perde fiyatları, uygun perde, kaliteli perde satış"
+        title="Perde Satış - Tül Perde Fiyatları | Zebra Perde, Klasik Perde | Hiedra Perde"
+        description="Perde satış ve tül perde fiyatları için Hiedra Perde. Zebra perde, Klasik perde, Stor perde, Jaluzi perde ve tül perde modelleri. Uygun perde fiyatı, kaliteli perde kumaşı, hızlı perde teslimat. Bingöl perde satışı, Erzurum perde satışı. Online perde satış için doğru adres!"
+        keywords="perde satış, tül perde, perde tül, perde fiyatı, tül perde fiyatı, perde tül fiyatı, zebra perde, zebra perde satış, zebra perde fiyatı, klasik perde, klasik perde satış, klasik perde fiyatı, stor perde, stor perde satış, stor perde fiyatı, jaluzi perde, jaluzi perde satış, jaluzi perde fiyatı, tül perde satış, online perde satış, perde satın al, perdeler, perde fiyatları, uygun perde, uygun perde fiyatları, kaliteli perde, kaliteli perde satış, bingöl perde, bingöl perde satışı, bingöl tül perde, erzurum perde, erzurum perde satışı, erzurum tül perde, perde modelleri, perde çeşitleri, perde koleksiyonu, perde kumaşı, perde kumaşları, perde ölçüsü, özel ölçü perde, perde sipariş, perde teslimat, metre perde fiyatı, m2 perde fiyatı"
         url="/"
+        structuredData={[productCollectionSchema, faqSchema]}
       />
       
       {/* Modern Hero Section */}
       <section className="hero-section-modern">
         <div className="hero-content-modern">
-          <h1 className="hero-title-modern">Modern, Minimalist Perde Modelleri</h1>
-          <h2 className="hero-subtitle-modern">Toptan Fiyatına Perakende Satış</h2>
+          <h1 className="hero-title-modern">Perde Satış - Tül Perde ve Modern Perde Modelleri</h1>
+          <h2 className="hero-subtitle-modern">Uygun Perde Fiyatları ile Toptan Fiyatına Perakende Satış</h2>
           
           {/* Arama Çubuğu */}
           <form className="hero-search-form" onSubmit={handleSearch}>
@@ -1148,11 +1231,12 @@ const ProductList = () => {
           
           {/* Açıklama */}
           <div className="hero-description">
-            <h3 className="description-title">Özelleştirilebilir Perde Modelleri</h3>
+            <h3 className="description-title">Özelleştirilebilir Perde Modelleri - Perde Satış ve Tül Perde Fiyatları</h3>
             <p className="description-text">
-              En, boy, Pile ve bir çok ayrıntılı seçenek ile kendi perdenizi oluşturun. 
+              Perde satış ve tül perde fiyatları için Hiedra Perde. En, boy, Pile ve bir çok ayrıntılı seçenek ile kendi perdenizi oluşturun. 
+              Uygun perde fiyatı ile zebra perde, klasik perde, stor perde, jaluzi perde ve tül perde modelleri. 
               Türkiye'de ilk defa Villa, tiny house, bungalov ve benzeri yerler için 
-              Çatı eğimli perdeler ile size özel seçenekler.
+              Çatı eğimli perdeler ile size özel seçenekler. Kaliteli perde kumaşı, hızlı perde teslimat.
             </p>
           </div>
         </div>
@@ -1164,9 +1248,9 @@ const ProductList = () => {
           <div className="section-header-badge-premium">
             <span>Koleksiyonlarımız</span>
           </div>
-          <h1 className="section-header-title-premium">Özenle Seçilmiş Ürünler</h1>
+          <h1 className="section-header-title-premium">Perde Satış - Özenle Seçilmiş Perde Modelleri</h1>
           <p className="section-header-subtitle-premium">
-            Her biri özenle tasarlanmış, kaliteli malzemelerden üretilmiş perde koleksiyonlarımızı keşfedin
+            Perde satış ve tül perde fiyatları için özenle seçilmiş perde koleksiyonlarımızı keşfedin. Zebra perde, klasik perde, stor perde, jaluzi perde ve tül perde modelleri. Uygun perde fiyatı ile kaliteli perde satış.
           </p>
         </div>
       </header>
@@ -1185,7 +1269,12 @@ const ProductList = () => {
               <div className="category-product-showcase-home">
                 {/* Sol taraf - Büyük fotoğraf */}
                 <div className="product-image-section-home">
-                  <div className={`main-product-image-wrapper-home ${transitioningCategories[category.name] ? 'fade-out' : 'fade-in'}`}>
+                  <div 
+                    className={`main-product-image-wrapper-home ${transitioningCategories[category.name] ? 'fade-out' : 'fade-in'}`}
+                    onClick={() => handleProductClick(selectedProduct.id)}
+                    style={{ cursor: 'pointer' }}
+                    title={`${selectedProduct.name} - Ürün detayını görüntüle`}
+                  >
                     <LazyImage
                       src={selectedProduct.image || ''}
                       alt={selectedProduct.name}
@@ -1200,7 +1289,8 @@ const ProductList = () => {
                     {selectedProduct.detailImages && selectedProduct.detailImages.length > 0 && selectedProduct.detailImages[0] && (
                       <div 
                         className="detail-image-preview-home"
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation() // Ana fotoğrafın onClick'ini tetikleme
                           setSelectedDetailImage(selectedProduct.detailImages[0])
                           setIsDetailModalOpen(true)
                         }}
@@ -1302,6 +1392,7 @@ const ProductList = () => {
                                   </div>
                                 )}
                               </div>
+                              <span className="color-product-name-home">{product.name}</span>
                             </button>
                           )
                         })}
