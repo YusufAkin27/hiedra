@@ -3,14 +3,16 @@ package eticaret.demo.order;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import eticaret.demo.audit.AuditLogService;
 import eticaret.demo.auth.AppUser;
+import eticaret.demo.auth.AppUserRepository;
 import eticaret.demo.guest.GuestUserService;
 import eticaret.demo.common.response.ResponseMessage;
 import eticaret.demo.order.lookup.OrderLookupVerificationService;
+import org.springframework.security.core.Authentication;
 
 import java.util.Map;
 
@@ -18,12 +20,14 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/orders")
 @RequiredArgsConstructor
+@Slf4j
 public class OrderController {
 
     private final OrderService orderService;
     private final AuditLogService auditLogService;
     private final GuestUserService guestUserService;
     private final OrderLookupVerificationService orderLookupVerificationService;
+    private final AppUserRepository appUserRepository;
     /**
      * Sipariş sorgulama için doğrulama kodu gönder
      */
@@ -259,26 +263,45 @@ public class OrderController {
      * GET /api/orders/my-orders
      */
     @GetMapping("/my-orders")
-    @PreAuthorize("isAuthenticated()")
     public ResponseMessage getMyOrders(
-            @AuthenticationPrincipal AppUser currentUser,
+            Authentication authentication,
             HttpServletRequest httpRequest) {
-        if (currentUser == null || currentUser.getEmail() == null) {
-            return new ResponseMessage("Oturum bulunamadı veya kullanıcı bilgisi eksik.", false);
+        try {
+            // Authentication'dan AppUser'ı al
+            AppUser currentUser = null;
+            if (authentication != null && authentication.getPrincipal() != null) {
+                Object principal = authentication.getPrincipal();
+                if (principal instanceof AppUser) {
+                    currentUser = (AppUser) principal;
+                } else if (principal instanceof org.springframework.security.core.userdetails.UserDetails) {
+                    String email = ((org.springframework.security.core.userdetails.UserDetails) principal).getUsername();
+                    currentUser = appUserRepository.findByEmailIgnoreCase(email).orElse(null);
+                } else if (principal instanceof String) {
+                    String email = (String) principal;
+                    currentUser = appUserRepository.findByEmailIgnoreCase(email).orElse(null);
+                }
+            }
+            
+            if (currentUser == null || currentUser.getEmail() == null) {
+                return new ResponseMessage("Oturum bulunamadı veya kullanıcı bilgisi eksik.", false);
+            }
+            
+            ResponseMessage response = orderService.getMyOrders(currentUser.getEmail());
+            
+            if (response.isSuccess()) {
+                auditLogService.logSuccess("GET_MY_ORDERS", "Order", null,
+                        "Kullanıcı siparişleri getirildi: " + currentUser.getEmail(),
+                        Map.of("email", currentUser.getEmail()), response, httpRequest);
+            } else {
+                auditLogService.logError("GET_MY_ORDERS", "Order", null,
+                        "Kullanıcı siparişleri getirilemedi: " + response.getMessage(), response.getMessage(), httpRequest);
+            }
+            
+            return response;
+        } catch (Exception e) {
+            log.error("getMyOrders hatası: ", e);
+            return new ResponseMessage("Siparişler getirilirken bir hata oluştu: " + e.getMessage(), false);
         }
-        
-        ResponseMessage response = orderService.getMyOrders(currentUser.getEmail());
-        
-        if (response.isSuccess()) {
-            auditLogService.logSuccess("GET_MY_ORDERS", "Order", null,
-                    "Kullanıcı siparişleri getirildi: " + currentUser.getEmail(),
-                    Map.of("email", currentUser.getEmail()), response, httpRequest);
-        } else {
-            auditLogService.logError("GET_MY_ORDERS", "Order", null,
-                    "Kullanıcı siparişleri getirilemedi: " + response.getMessage(), response.getMessage(), httpRequest);
-        }
-        
-        return response;
     }
 
     /**

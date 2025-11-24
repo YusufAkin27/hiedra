@@ -26,6 +26,7 @@ eticaret\demo\auth\AuthController.class
 eticaret\demo\contact_us\ContactUs$ContactUsBuilder.class
 eticaret\demo\payment\PaymentStatus.class
 eticaret\demo\admin\AdminReviewController.class
+eticaret\demo\product\dto\ProductReviewPageResponse$ReviewSummary$ReviewSummaryBuilder.class
 eticaret\demo\order\OrderServiceImpl.class
 eticaret\demo\auth\AuthException.class
 eticaret\demo\product\ProductController$PriceCalculationResponse.class
@@ -69,6 +70,7 @@ eticaret\demo\mail\EmailTemplateModel.class
 eticaret\demo\admin\analytics\UserAnalyticsService$UserAnalyticsSummary.class
 eticaret\demo\cart\CartController$UpdateQuantityRequest.class
 eticaret\demo\security\CustomOAuth2User.class
+eticaret\demo\product\dto\ProductReviewResponse$ProductReviewResponseBuilder.class
 eticaret\demo\admin\AdminReportTestController.class
 eticaret\demo\marketing\EmailPreference.class
 eticaret\demo\cloudinary\MediaUploadService.class
@@ -95,6 +97,7 @@ eticaret\demo\payment\TopUpSessionCache.class
 eticaret\demo\exception\ErrorResponse.class
 eticaret\demo\order\OrderResponseDTO.class
 eticaret\demo\admin\AdminCartController.class
+eticaret\demo\product\ReviewController$1.class
 eticaret\demo\coupon\CouponRepository.class
 eticaret\demo\marketing\EmailPreferenceRepository.class
 eticaret\demo\product\ProductReviewRepository.class
@@ -122,12 +125,14 @@ eticaret\demo\mail\EmailMessage.class
 eticaret\demo\exception\ValidationException.class
 eticaret\demo\admin\AdminOrderController$RejectRefundRequest.class
 eticaret\demo\mail\MailService.class
+eticaret\demo\product\dto\ProductReviewResponse.class
 eticaret\demo\admin\AdminOrderController$UpdateOrderRequest.class
 eticaret\demo\audit\AuditLogScheduler.class
 eticaret\demo\common\config\AsyncConfig.class
 eticaret\demo\payment\PaymentRecordRepository.class
 eticaret\demo\order\Order$OrderBuilder.class
 eticaret\demo\admin\analytics\UserBehavior$BehaviorType.class
+eticaret\demo\product\dto\ProductReviewPageResponse.class
 eticaret\demo\order\lookup\OrderLookupSession.class
 eticaret\demo\common\exception\CouponException.class
 eticaret\demo\admin\AdminOrderController$UpdateOrderStatusRequest.class
@@ -145,6 +150,7 @@ eticaret\demo\exception\PaymentException.class
 eticaret\demo\common\exception\ErrorResponse$ErrorResponseBuilder.class
 eticaret\demo\auth\AuthService.class
 eticaret\demo\cart\Cart.class
+eticaret\demo\product\dto\ProductReviewPageResponse$ProductReviewPageResponseBuilder.class
 eticaret\demo\cookie\CookiePreference.class
 eticaret\demo\security\ip\BlockedIpService.class
 eticaret\demo\cloudinary\OptimizedImageResult.class
@@ -198,8 +204,10 @@ eticaret\demo\exception\ErrorResponse$ErrorResponseBuilder.class
 eticaret\demo\security\SecurityConfig$1.class
 eticaret\demo\payment\RefundRequest.class
 eticaret\demo\product\ProductReview.class
+eticaret\demo\product\dto\ProductReviewResponse$ReviewerInfo.class
 eticaret\demo\product\ReviewInitializer.class
 eticaret\demo\admin\AdminUserController$CartSummary.class
+eticaret\demo\product\dto\ProductReviewPageResponse$RatingBreakdown.class
 eticaret\demo\mail\MailService$OrderEmailItem.class
 eticaret\demo\security\EmailVerificationSecurityService$VerificationResult.class
 eticaret\demo\admin\AdminCouponController$CreateCouponRequest.class
@@ -240,6 +248,7 @@ eticaret\demo\geocoding\GeocodingResponse$GeocodingResponseBuilder.class
 eticaret\demo\admin\AdminIpService.class
 eticaret\demo\mail\MailController.class
 eticaret\demo\admin\AdminUserController$CouponUsageSummary.class
+eticaret\demo\product\dto\ProductReviewPageResponse$ReviewSummary.class
 eticaret\demo\admin\AdminMailController$BulkMailResponse.class
 eticaret\demo\coupon\CouponUsage.class
 eticaret\demo\payment\RefundRecordRepository.class
@@ -283,6 +292,7 @@ eticaret\demo\contract\ContractService.class
 eticaret\demo\address\AdresRepository.class
 eticaret\demo\admin\AdminAddressController$AddressSummary.class
 eticaret\demo\order\OrderService.class
+eticaret\demo\product\dto\ReviewSortOption.class
 eticaret\demo\admin\AdminManagementController$UpdateAdminStatusRequest.class
 eticaret\demo\admin\AdminUserController$AuditLogSummary.class
 eticaret\demo\shipping\ShipmentTrackingScheduler.class
@@ -323,6 +333,7 @@ eticaret\demo\contact_us\AdminResponseRequest.class
 eticaret\demo\admin\AdminManagementController.class
 eticaret\demo\common\config\AppUrlConfig.class
 eticaret\demo\security\ip\BlockedIpAddressRepository.class
+eticaret\demo\product\dto\ProductReviewPageResponse$RatingBreakdown$RatingBreakdownBuilder.class
 eticaret\demo\contract\ContractAcceptanceRepository.class
 eticaret\demo\admin\AdminUserController$UserLog.class
 eticaret\demo\security\ip\BlockedIpAddress$BlockedIpAddressBuilder.class
@@ -373,10 +384,12 @@ eticaret\demo\order\lookup\OrderLookupVerificationResult.class
 eticaret\demo\user\UserProfileController$UserStatistics.class
 eticaret\demo\payment\PaymentManager$PriceInfo.class
 eticaret\demo\common\exception\ProductException.class
+eticaret\demo\product\dto\ProductReviewResponse$ReviewerInfo$ReviewerInfoBuilder.class
 eticaret\demo\admin\AdminUserController$ReviewSummary.class
 eticaret\demo\admin\analytics\UserBehavior$UserBehaviorBuilder.class
 eticaret\demo\shipping\Shipment$Carrier.class
 eticaret\demo\common\config\WebClientConfig.class
+eticaret\demo\product\ReviewService.class
 eticaret\demo\admin\AdminUserController$ReviewSummary$ReviewSummaryBuilder.class
 eticaret\demo\payment\OrderDetail.class
 eticaret\demo\admin\AdminManagementController$AdminSummary.class

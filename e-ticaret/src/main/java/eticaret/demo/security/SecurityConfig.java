@@ -15,6 +15,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.http.HttpMethod;
 
 import java.util.List;
 
@@ -52,6 +53,18 @@ public class SecurityConfig {
                         .requestMatchers("/api/payment/3d-callback").permitAll() // 3D Secure callback - CORS için özel
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/user/**").authenticated() // Kullanıcı endpoint'leri authentication gerektirir
+                        .requestMatchers(HttpMethod.GET, "/api/orders/my-orders").authenticated() // Kullanıcının siparişlerini getirme authenticated
+                        // Reviews endpoint'leri - okuma herkese açık, yazma/düzenleme/silme authenticated
+                        // Önce spesifik pattern'ler, sonra genel pattern'ler
+                        .requestMatchers(HttpMethod.GET, "/api/reviews/product/*/page").permitAll() // Yorumları sayfalı görüntüleme herkese açık
+                        .requestMatchers(HttpMethod.GET, "/api/reviews/product/*/has-reviewed").authenticated() // Kullanıcının yorum yapıp yapmadığını kontrol etme authenticated
+                        .requestMatchers(HttpMethod.GET, "/api/reviews/product/*/user").authenticated() // Kullanıcının yorumunu kontrol etme authenticated
+                        .requestMatchers(HttpMethod.GET, "/api/reviews/my-reviews").authenticated() // Kullanıcının yorumlarını listeleme authenticated
+                        .requestMatchers(HttpMethod.GET, "/api/reviews/product/**").permitAll() // Yorumları görüntüleme herkese açık
+                        .requestMatchers(HttpMethod.GET, "/api/reviews/*").permitAll() // Yorum detayı herkese açık
+                        .requestMatchers(HttpMethod.POST, "/api/reviews").authenticated() // Yorum yazma authentication gerektirir
+                        .requestMatchers(HttpMethod.PUT, "/api/reviews/**").authenticated() // Yorum düzenleme authentication gerektirir
+                        .requestMatchers(HttpMethod.DELETE, "/api/reviews/**").authenticated() // Yorum silme authentication gerektirir
                         .anyRequest().permitAll()
                 )
                 .oauth2Login(oauth2 -> oauth2

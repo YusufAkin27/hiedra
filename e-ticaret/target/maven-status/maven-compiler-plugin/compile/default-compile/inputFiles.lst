@@ -190,6 +190,9 @@ C:\Users\ysufa\Desktop\hiedra\e-ticaret\src\main\java\eticaret\demo\payment\TopU
 C:\Users\ysufa\Desktop\hiedra\e-ticaret\src\main\java\eticaret\demo\product\Category.java
 C:\Users\ysufa\Desktop\hiedra\e-ticaret\src\main\java\eticaret\demo\product\CategoryController.java
 C:\Users\ysufa\Desktop\hiedra\e-ticaret\src\main\java\eticaret\demo\product\CategoryRepository.java
+C:\Users\ysufa\Desktop\hiedra\e-ticaret\src\main\java\eticaret\demo\product\dto\ProductReviewPageResponse.java
+C:\Users\ysufa\Desktop\hiedra\e-ticaret\src\main\java\eticaret\demo\product\dto\ProductReviewResponse.java
+C:\Users\ysufa\Desktop\hiedra\e-ticaret\src\main\java\eticaret\demo\product\dto\ReviewSortOption.java
 C:\Users\ysufa\Desktop\hiedra\e-ticaret\src\main\java\eticaret\demo\product\Product.java
 C:\Users\ysufa\Desktop\hiedra\e-ticaret\src\main\java\eticaret\demo\product\ProductController.java
 C:\Users\ysufa\Desktop\hiedra\e-ticaret\src\main\java\eticaret\demo\product\ProductRepository.java
@@ -199,6 +202,7 @@ C:\Users\ysufa\Desktop\hiedra\e-ticaret\src\main\java\eticaret\demo\product\Prod
 C:\Users\ysufa\Desktop\hiedra\e-ticaret\src\main\java\eticaret\demo\product\ProductViewRepository.java
 C:\Users\ysufa\Desktop\hiedra\e-ticaret\src\main\java\eticaret\demo\product\ReviewController.java
 C:\Users\ysufa\Desktop\hiedra\e-ticaret\src\main\java\eticaret\demo\product\ReviewInitializer.java
+C:\Users\ysufa\Desktop\hiedra\e-ticaret\src\main\java\eticaret\demo\product\ReviewService.java
 C:\Users\ysufa\Desktop\hiedra\e-ticaret\src\main\java\eticaret\demo\recommendation\RecommendationController.java
 C:\Users\ysufa\Desktop\hiedra\e-ticaret\src\main\java\eticaret\demo\recommendation\RecommendationService.java
 C:\Users\ysufa\Desktop\hiedra\e-ticaret\src\main\java\eticaret\demo\security\CustomOAuth2User.java

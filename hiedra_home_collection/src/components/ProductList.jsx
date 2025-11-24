@@ -457,6 +457,18 @@ const ProductList = () => {
     navigate(`/product/${productId}`)
   }
 
+  const handleReviewNavigation = useCallback((productId) => {
+    if (!productId) return
+    navigate(`/product/${productId}#reviews`)
+  }, [navigate])
+
+  const handleReviewKeyDown = useCallback((event, productId, callback) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      callback(productId)
+    }
+  }, [])
+
   // Kategori için ürün seç - hızlı ve smooth animasyon
   const handleColorSelect = (product, categoryName) => {
     // Hemen yeni ürünü seç (gecikme yok)
@@ -1027,8 +1039,15 @@ const ProductList = () => {
                     <div className="product-card-color">Renk: {product.color}</div>
                   )}
                   <p className="product-price">Başlangıç: {product.price.toFixed(2)} ₺</p>
-                  {product.averageRating > 0 && (
-                    <div className="product-card-rating">
+                  {(product.averageRating > 0 || product.reviewCount > 0) && (
+                    <div
+                      className="product-card-rating review-link"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => handleReviewNavigation(product.id)}
+                      onKeyDown={(e) => handleReviewKeyDown(e, product.id, handleReviewNavigation)}
+                      aria-label={`${product.name} yorumlarını görüntüle`}
+                    >
                       <div className="rating-stars-small">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <svg
@@ -1321,7 +1340,14 @@ const ProductList = () => {
                     )}
                     {/* Yıldız Puanı */}
                     {(selectedProduct.averageRating > 0 || selectedProduct.reviewCount > 0) && (
-                      <div className="product-rating-section-home">
+                      <div
+                        className="product-rating-section-home review-link"
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => handleReviewNavigation(selectedProduct.id)}
+                        onKeyDown={(e) => handleReviewKeyDown(e, selectedProduct.id, handleReviewNavigation)}
+                        aria-label="Ürün yorumlarını görüntüle"
+                      >
                         <div className="product-rating-stars-home">
                           {[1, 2, 3, 4, 5].map((star) => {
                             const filled = star <= Math.floor(selectedProduct.averageRating);

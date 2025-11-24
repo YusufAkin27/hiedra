@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { FaCheckCircle, FaCalendar, FaClipboard, FaChartBar, FaEye, FaTrash, FaPause, FaPlay, FaBox, FaTable, FaUser, FaFileAlt, FaStar, FaCalendarAlt, FaUndo, FaExclamationTriangle } from 'react-icons/fa'
+import { FaCheckCircle, FaCalendar, FaClipboard, FaChartBar, FaEye, FaTrash, FaPause, FaPlay, FaBox, FaTable, FaUser, FaFileAlt, FaStar, FaCalendarAlt, FaUndo, FaExclamationTriangle, FaPlus } from 'react-icons/fa'
 import type { AuthResponse } from '../services/authService'
 import type { useToast } from '../components/Toast'
 import ConfirmModal from '../components/ConfirmModal'
@@ -48,6 +48,16 @@ function ReviewsPage({ session, toast }: ReviewsPageProps) {
     return 'table'
   })
   const [selectedReview, setSelectedReview] = useState<Review | null>(null)
+  const [showFakeReviewModal, setShowFakeReviewModal] = useState(false)
+  const [fakeReviewForm, setFakeReviewForm] = useState({
+    productId: '',
+    rating: 5,
+    reviewerName: 'Müşteri',
+    comment: '',
+    imageUrls: '' // Virgülle ayrılmış URL'ler
+  })
+  const [isCreatingFakeReview, setIsCreatingFakeReview] = useState(false)
+  const [imagePreviews, setImagePreviews] = useState<string[]>([])
 
   useEffect(() => {
     fetchReviews()
@@ -185,6 +195,104 @@ function ReviewsPage({ session, toast }: ReviewsPageProps) {
     navigator.clipboard.writeText(text).then(() => {
       toast.success('Kopyalandı!')
     })
+  }
+
+  // Görsel URL'lerini parse et ve önizleme oluştur
+  useEffect(() => {
+    if (fakeReviewForm.imageUrls) {
+      const urls = fakeReviewForm.imageUrls
+        .split(/[,\n\r]/)
+        .map(url => url.trim())
+        .filter(url => {
+          return url && url.length > 0 && (url.startsWith('http://') || url.startsWith('https://'))
+        })
+      setImagePreviews(urls)
+    } else {
+      setImagePreviews([])
+    }
+  }, [fakeReviewForm.imageUrls])
+
+  // Sahte yorum ekle
+  const handleCreateFakeReview = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!fakeReviewForm.productId || !fakeReviewForm.rating) {
+      toast.error('Ürün ID ve puan zorunludur.')
+      return
+    }
+
+    setIsCreatingFakeReview(true)
+    try {
+      // Görsel URL'lerini parse et (virgül veya yeni satır ile ayrılmış)
+      const imageUrlsArray: string[] = []
+      if (fakeReviewForm.imageUrls) {
+        const urls = fakeReviewForm.imageUrls
+          .split(/[,\n\r]/)
+          .map(url => url.trim())
+          .filter(url => {
+            // Boş değil ve geçerli bir URL formatında olmalı
+            return url && url.length > 0 && (url.startsWith('http://') || url.startsWith('https://'))
+          })
+        imageUrlsArray.push(...urls)
+      }
+
+      // Form data oluştur
+      const formData = new FormData()
+      formData.append('productId', fakeReviewForm.productId)
+      formData.append('rating', fakeReviewForm.rating.toString())
+      if (fakeReviewForm.reviewerName && fakeReviewForm.reviewerName.trim()) {
+        formData.append('reviewerName', fakeReviewForm.reviewerName.trim())
+      }
+      if (fakeReviewForm.comment && fakeReviewForm.comment.trim()) {
+        formData.append('comment', fakeReviewForm.comment.trim())
+      }
+      // Görsel URL'lerini ayrı ayrı ekle
+      imageUrlsArray.forEach(url => {
+        formData.append('imageUrls', url)
+      })
+
+      const response = await fetch(`${apiBaseUrl}/admin/reviews/create-fake`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.accessToken}`,
+        },
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `Sunucu hatası: ${response.status}`)
+      }
+
+      const payload = (await response.json()) as {
+        isSuccess?: boolean
+        success?: boolean
+        message?: string
+        data?: Review
+      }
+
+      const success = payload.isSuccess ?? payload.success ?? response.ok
+
+      if (!success) {
+        throw new Error(payload.message ?? 'Sahte yorum eklenemedi.')
+      }
+
+      toast.success(payload.message ?? 'Sahte yorum başarıyla eklendi.')
+      setShowFakeReviewModal(false)
+      setFakeReviewForm({
+        productId: '',
+        rating: 5,
+        reviewerName: 'Müşteri',
+        comment: '',
+        imageUrls: ''
+      })
+      await fetchReviews()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Sahte yorum eklenirken bir hata oluştu.'
+      toast.error(message)
+    } finally {
+      setIsCreatingFakeReview(false)
+    }
   }
 
   // Time ago utility
@@ -361,6 +469,14 @@ function ReviewsPage({ session, toast }: ReviewsPageProps) {
                     setCurrentPage(1)
                   }}
                 />
+                <button
+                  type="button"
+                  className="btn btn-success"
+                  onClick={() => setShowFakeReviewModal(true)}
+                  title="Sahte Yorum Ekle"
+                >
+                  <FaPlus style={{ marginRight: '0.5rem' }} /> Sahte Yorum Ekle
+                </button>
                 <button
                   type="button"
                   className="btn btn-primary reviews-view-toggle reviews-view-toggle--desktop"
@@ -880,6 +996,298 @@ function ReviewsPage({ session, toast }: ReviewsPageProps) {
         onConfirm={handleDeleteReview}
         onCancel={() => setDeleteModal({ isOpen: false, reviewId: null, hardDelete: false })}
       />
+
+      {/* Sahte Yorum Ekleme Modal */}
+      {showFakeReviewModal && (
+        <div
+          className="review-modal-overlay"
+          onClick={() => !isCreatingFakeReview && setShowFakeReviewModal(false)}
+        >
+          <div
+            className="review-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="review-modal__header">
+              <h2 className="review-modal__title">Sahte Yorum Ekle</h2>
+              <button
+                type="button"
+                className="review-modal__close"
+                onClick={() => !isCreatingFakeReview && setShowFakeReviewModal(false)}
+                disabled={isCreatingFakeReview}
+              >
+                ✕
+              </button>
+            </div>
+            <form onSubmit={handleCreateFakeReview} className="review-modal__content" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div style={{ 
+                padding: '1rem', 
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 
+                borderRadius: '12px',
+                color: 'white',
+                marginBottom: '0.5rem'
+              }}>
+                <p style={{ margin: 0, fontSize: '0.875rem', opacity: 0.95 }}>
+                  💡 <strong>Bilgi:</strong> Bu yorum test amaçlı olarak eklenir ve gerçek bir kullanıcı tarafından yazılmamıştır.
+                </p>
+              </div>
+
+              <div className="review-modal__form-grid">
+                <div className="review-modal__form-group">
+                  <label className="review-modal__form-label">
+                    Ürün ID <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <input
+                    type="number"
+                    className="review-modal__form-input"
+                    value={fakeReviewForm.productId}
+                    onChange={(e) => setFakeReviewForm({ ...fakeReviewForm, productId: e.target.value })}
+                    required
+                    disabled={isCreatingFakeReview}
+                    placeholder="Örn: 1"
+                    min="1"
+                  />
+                  <small style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem', display: 'block' }}>
+                    Yorum eklenecek ürünün ID'si
+                  </small>
+                </div>
+
+                <div className="review-modal__form-group">
+                  <label className="review-modal__form-label">
+                    Puan <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <select
+                    className="review-modal__form-input"
+                    value={fakeReviewForm.rating}
+                    onChange={(e) => setFakeReviewForm({ ...fakeReviewForm, rating: parseInt(e.target.value) })}
+                    required
+                    disabled={isCreatingFakeReview}
+                    style={{ cursor: isCreatingFakeReview ? 'not-allowed' : 'pointer' }}
+                  >
+                    <option value={5}>5 ⭐⭐⭐⭐⭐ Mükemmel</option>
+                    <option value={4}>4 ⭐⭐⭐⭐ Çok İyi</option>
+                    <option value={3}>3 ⭐⭐⭐ İyi</option>
+                    <option value={2}>2 ⭐⭐ Orta</option>
+                    <option value={1}>1 ⭐ Kötü</option>
+                  </select>
+                  <small style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem', display: 'block' }}>
+                    1-5 arası puan seçin
+                  </small>
+                </div>
+              </div>
+
+              <div className="review-modal__form-group">
+                <label className="review-modal__form-label">
+                  Yorumcu Adı
+                </label>
+                <input
+                  type="text"
+                  className="review-modal__form-input"
+                  value={fakeReviewForm.reviewerName}
+                  onChange={(e) => setFakeReviewForm({ ...fakeReviewForm, reviewerName: e.target.value })}
+                  disabled={isCreatingFakeReview}
+                  placeholder="Örn: Ahmet Yılmaz"
+                  maxLength={100}
+                />
+                <small style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem', display: 'block' }}>
+                  Yorumda görünecek isim (varsayılan: "Müşteri")
+                </small>
+              </div>
+
+              <div className="review-modal__form-group">
+                <label className="review-modal__form-label">
+                  Yorum Metni
+                </label>
+                <textarea
+                  className="review-modal__form-input"
+                  value={fakeReviewForm.comment}
+                  onChange={(e) => setFakeReviewForm({ ...fakeReviewForm, comment: e.target.value })}
+                  disabled={isCreatingFakeReview}
+                  placeholder="Ürün hakkındaki yorum metnini buraya yazın..."
+                  rows={5}
+                  maxLength={2000}
+                  style={{ resize: 'vertical', fontFamily: 'inherit' }}
+                />
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  marginTop: '0.5rem' 
+                }}>
+                  <small style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                    Maksimum 2000 karakter
+                  </small>
+                  <span style={{ 
+                    fontSize: '0.875rem', 
+                    fontWeight: '600',
+                    color: fakeReviewForm.comment.length > 1900 ? '#ef4444' : '#6b7280'
+                  }}>
+                    {fakeReviewForm.comment.length}/2000
+                  </span>
+                </div>
+              </div>
+
+              <div className="review-modal__form-group">
+                <label className="review-modal__form-label">
+                  Görsel URL'leri
+                </label>
+                <textarea
+                  className="review-modal__form-input"
+                  value={fakeReviewForm.imageUrls}
+                  onChange={(e) => setFakeReviewForm({ ...fakeReviewForm, imageUrls: e.target.value })}
+                  disabled={isCreatingFakeReview}
+                  placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.jpg"
+                  rows={4}
+                  style={{ resize: 'vertical', fontFamily: 'monospace', fontSize: '0.875rem' }}
+                />
+                <div style={{ marginTop: '0.5rem' }}>
+                  <small style={{ fontSize: '0.75rem', color: '#6b7280', display: 'block', marginBottom: '0.25rem' }}>
+                    Her satıra bir URL yazın veya virgülle ayırın
+                  </small>
+                  {imagePreviews.length > 0 && (
+                    <div style={{ 
+                      fontSize: '0.75rem', 
+                      color: '#059669',
+                      fontWeight: '500',
+                      marginBottom: '0.75rem'
+                    }}>
+                      {imagePreviews.length} geçerli görsel URL'si tespit edildi
+                    </div>
+                  )}
+                </div>
+
+                {/* Görsel Önizlemeleri */}
+                {imagePreviews.length > 0 && (
+                  <div style={{
+                    marginTop: '1rem',
+                    padding: '1rem',
+                    background: '#f9fafb',
+                    borderRadius: '12px',
+                    border: '1px solid #e5e7eb'
+                  }}>
+                    <div style={{
+                      fontSize: '0.875rem',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '0.75rem'
+                    }}>
+                      📷 Görsel Önizlemeleri ({imagePreviews.length})
+                    </div>
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+                      gap: '0.75rem'
+                    }}>
+                      {imagePreviews.map((url, index) => (
+                        <div
+                          key={index}
+                          style={{
+                            position: 'relative',
+                            aspectRatio: '1',
+                            borderRadius: '8px',
+                            overflow: 'hidden',
+                            border: '2px solid #e5e7eb',
+                            background: '#ffffff',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                          }}
+                          onClick={() => window.open(url, '_blank')}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = '#667eea'
+                            e.currentTarget.style.transform = 'scale(1.05)'
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.2)'
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = '#e5e7eb'
+                            e.currentTarget.style.transform = 'scale(1)'
+                            e.currentTarget.style.boxShadow = 'none'
+                          }}
+                        >
+                          <img
+                            src={url}
+                            alt={`Önizleme ${index + 1}`}
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover'
+                            }}
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement
+                              target.style.display = 'none'
+                              const parent = target.parentElement
+                              if (parent) {
+                                parent.innerHTML = `
+                                  <div style="
+                                    width: 100%;
+                                    height: 100%;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    background: #f3f4f6;
+                                    color: #9ca3af;
+                                    font-size: 0.75rem;
+                                    text-align: center;
+                                    padding: 0.5rem;
+                                  ">
+                                    Görsel yüklenemedi
+                                  </div>
+                                `
+                              }
+                            }}
+                          />
+                          <div style={{
+                            position: 'absolute',
+                            top: '0.25rem',
+                            right: '0.25rem',
+                            background: 'rgba(0, 0, 0, 0.6)',
+                            color: 'white',
+                            borderRadius: '4px',
+                            padding: '0.125rem 0.375rem',
+                            fontSize: '0.7rem',
+                            fontWeight: '600'
+                          }}>
+                            {index + 1}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="review-modal__actions" style={{ marginTop: '1rem' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowFakeReviewModal(false)}
+                  disabled={isCreatingFakeReview}
+                  style={{ minWidth: '120px' }}
+                >
+                  İptal
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-success"
+                  disabled={isCreatingFakeReview || !fakeReviewForm.productId}
+                  style={{ minWidth: '150px', position: 'relative' }}
+                >
+                  {isCreatingFakeReview ? (
+                    <>
+                      <span style={{ opacity: 0 }}>Yorum Ekle</span>
+                      <span style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>
+                        ⏳ Ekleniyor...
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <FaPlus style={{ marginRight: '0.5rem' }} /> Yorum Ekle
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </main>
   )
 }

@@ -1,25 +1,36 @@
 package eticaret.demo.product;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 import eticaret.demo.auth.AppUser;
 import eticaret.demo.auth.AppUserRepository;
 import eticaret.demo.cloudinary.MediaUploadService;
+import eticaret.demo.common.response.DataResponseMessage;
 import eticaret.demo.order.Order;
 import eticaret.demo.order.OrderRepository;
 import eticaret.demo.order.OrderStatus;
-import eticaret.demo.common.response.DataResponseMessage;
+import eticaret.demo.product.dto.ProductReviewPageResponse;
+import eticaret.demo.product.dto.ProductReviewResponse;
+import eticaret.demo.product.dto.ReviewSortOption;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
-
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Kullanıcılar için yorum endpoint'leri
@@ -27,6 +38,7 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/reviews")
 @RequiredArgsConstructor
+@Slf4j
 public class ReviewController {
 
     private final ProductReviewRepository reviewRepository;
@@ -34,6 +46,37 @@ public class ReviewController {
     private final AppUserRepository userRepository;
     private final MediaUploadService mediaUploadService;
     private final OrderRepository orderRepository;
+    private final ReviewService reviewService;
+
+    /**
+     * Authentication'dan AppUser'ı al
+     */
+    private AppUser getAppUserFromAuthentication(Authentication authentication) {
+        if (authentication == null || authentication.getPrincipal() == null) {
+            return null;
+        }
+
+        Object principal = authentication.getPrincipal();
+        
+        // Principal AppUser ise direkt kullan
+        if (principal instanceof AppUser) {
+            AppUser user = (AppUser) principal;
+            // Kullanıcı bilgilerini doğrula ve güncel halini al
+            return userRepository.findById(user.getId()).orElse(user);
+        } 
+        // Principal UserDetails ise email'den kullanıcıyı bul
+        else if (principal instanceof UserDetails) {
+            String email = ((UserDetails) principal).getUsername();
+            return userRepository.findByEmailIgnoreCase(email).orElse(null);
+        } 
+        // Principal String ise (email olabilir)
+        else if (principal instanceof String) {
+            String email = (String) principal;
+            return userRepository.findByEmailIgnoreCase(email).orElse(null);
+        }
+        
+        return null;
+    }
 
     /**
      * Ürüne yorum ekle
@@ -49,17 +92,20 @@ public class ReviewController {
     ) {
         try {
             // Kullanıcı bilgisini al
-            if (authentication == null || !(authentication.getPrincipal() instanceof UserDetails)) {
+            AppUser user = getAppUserFromAuthentication(authentication);
+            if (user == null) {
+                log.warn("createReview: Authentication başarısız - kullanıcı bulunamadı");
                 return ResponseEntity.status(401).body(DataResponseMessage.error("Giriş yapmanız gerekiyor."));
             }
-
-            String email = ((UserDetails) authentication.getPrincipal()).getUsername();
-            Optional<AppUser> userOpt = userRepository.findByEmailIgnoreCase(email);
-            if (userOpt.isEmpty()) {
-                return ResponseEntity.status(404).body(DataResponseMessage.error("Kullanıcı bulunamadı."));
+            
+            // Kullanıcı aktif değilse hata döndür
+            if (!user.isActive()) {
+                log.warn("createReview: Kullanıcı aktif değil - userId: {}, email: {}", user.getId(), user.getEmail());
+                return ResponseEntity.status(403).body(DataResponseMessage.error("Hesabınız aktif değil."));
             }
-
-            AppUser user = userOpt.get();
+            
+            log.info("createReview: Kullanıcı bilgileri alındı - userId: {}, email: {}, productId: {}", 
+                    user.getId(), user.getEmail(), productId);
 
             // Ürün kontrolü
             Optional<Product> productOpt = productRepository.findById(productId);
@@ -79,17 +125,14 @@ public class ReviewController {
             }
 
             // Kullanıcının bu ürünü satın alıp almadığını kontrol et
+            // Sadece teslim edilmiş siparişlerdeki ürünlere yorum yapılabilir
             Product product = productOpt.get();
             List<Order> userOrders = orderRepository.findByCustomerEmailOrderByCreatedAtDesc(user.getEmail());
             
             boolean hasPurchased = false;
             for (Order order : userOrders) {
-                // Sadece teslim edilmiş veya tamamlanmış siparişlerdeki ürünlere yorum yapılabilir
-                if (order.getStatus() == OrderStatus.TESLIM_EDILDI ||
-                    order.getStatus() == OrderStatus.TAMAMLANDI ||
-                    order.getStatus() == OrderStatus.ODENDI ||
-                    order.getStatus() == OrderStatus.ISLEME_ALINDI ||
-                    order.getStatus() == OrderStatus.KARGOYA_VERILDI) {
+                // Sadece teslim edilmiş siparişlerdeki ürünlere yorum yapılabilir
+                if (order.getStatus() == OrderStatus.TESLIM_EDILDI) {
                     
                     // OrderItem'larda bu ürün var mı kontrol et
                     if (order.getOrderItems() != null) {
@@ -113,37 +156,15 @@ public class ReviewController {
             }
             
             if (!hasPurchased) {
-                return ResponseEntity.badRequest().body(DataResponseMessage.error("Bu ürüne yorum yapabilmek için önce ürünü satın almanız gerekiyor."));
+                return ResponseEntity.badRequest().body(DataResponseMessage.error("Bu ürüne yorum yapabilmek için ürünün teslim edilmiş olması gerekiyor."));
             }
 
-            // Fotoğrafları yükle
-            List<String> imageUrls = new ArrayList<>();
-            if (images != null && !images.isEmpty()) {
-                for (MultipartFile image : images) {
-                    if (!image.isEmpty()) {
-                        try {
-                            var result = mediaUploadService.uploadAndOptimizeProductImage(image);
-                            imageUrls.add(result.getOptimizedUrl());
-                        } catch (Exception e) {
-                            // Fotoğraf yükleme hatası yorum oluşturmayı engellemez
-                            // Loglama yapılabilir
-                        }
-                    }
-                }
-            }
-
-            // Yorum oluştur
-            ProductReview review = ProductReview.builder()
-                    .product(productOpt.get())
-                    .user(user)
-                    .rating(rating)
-                    .comment(comment)
-                    .imageUrls(imageUrls)
-                    .active(true)
-                    .build();
-
-            ProductReview saved = reviewRepository.save(review);
-            return ResponseEntity.ok(DataResponseMessage.success("Yorum başarıyla eklendi.", saved));
+            // Asenkron olarak yorum oluştur - hemen response döndür
+            reviewService.createReviewAsyncWithUser(productId, user, rating, comment, images);
+            
+            // Hemen başarı mesajı döndür (yorum arka planda oluşturulacak)
+            log.info("Yorum gönderildi - arka planda işleniyor - productId: {}, userId: {}", productId, user.getId());
+            return ResponseEntity.ok(DataResponseMessage.success("Yorumunuz gönderildi. Yorumunuz kısa süre içinde yayınlanacaktır.", null));
 
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -165,17 +186,10 @@ public class ReviewController {
     ) {
         try {
             // Kullanıcı bilgisini al
-            if (authentication == null || !(authentication.getPrincipal() instanceof UserDetails)) {
+            AppUser user = getAppUserFromAuthentication(authentication);
+            if (user == null || !user.isActive()) {
                 return ResponseEntity.status(401).body(DataResponseMessage.error("Giriş yapmanız gerekiyor."));
             }
-
-            String email = ((UserDetails) authentication.getPrincipal()).getUsername();
-            Optional<AppUser> userOpt = userRepository.findByEmailIgnoreCase(email);
-            if (userOpt.isEmpty()) {
-                return ResponseEntity.status(404).body(DataResponseMessage.error("Kullanıcı bulunamadı."));
-            }
-
-            AppUser user = userOpt.get();
 
             // Yorum kontrolü
             Optional<ProductReview> reviewOpt = reviewRepository.findById(id);
@@ -240,17 +254,10 @@ public class ReviewController {
     ) {
         try {
             // Kullanıcı bilgisini al
-            if (authentication == null || !(authentication.getPrincipal() instanceof UserDetails)) {
+            AppUser user = getAppUserFromAuthentication(authentication);
+            if (user == null || !user.isActive()) {
                 return ResponseEntity.status(401).body(DataResponseMessage.error("Giriş yapmanız gerekiyor."));
             }
-
-            String email = ((UserDetails) authentication.getPrincipal()).getUsername();
-            Optional<AppUser> userOpt = userRepository.findByEmailIgnoreCase(email);
-            if (userOpt.isEmpty()) {
-                return ResponseEntity.status(404).body(DataResponseMessage.error("Kullanıcı bulunamadı."));
-            }
-
-            AppUser user = userOpt.get();
 
             // Yorum kontrolü
             Optional<ProductReview> reviewOpt = reviewRepository.findById(id);
@@ -290,6 +297,49 @@ public class ReviewController {
     }
 
     /**
+     * Ürüne ait yorumları sayfalı ve sıralı şekilde getir
+     * GET /api/reviews/product/{productId}/page
+     */
+    @GetMapping("/product/{productId}/page")
+    public ResponseEntity<DataResponseMessage<ProductReviewPageResponse>> getProductReviewsPaged(
+            @PathVariable Long productId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "6") int size,
+            @RequestParam(defaultValue = "LATEST") ReviewSortOption sort,
+            @RequestParam(defaultValue = "false") boolean withImagesOnly
+    ) {
+        if (!productRepository.existsById(productId)) {
+            return ResponseEntity.status(404).body(DataResponseMessage.error("Ürün bulunamadı."));
+        }
+
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 1), 20);
+        Pageable pageable = PageRequest.of(safePage, safeSize, resolveSort(sort));
+
+        Page<ProductReview> reviewPage = withImagesOnly
+                ? reviewRepository.findByProductIdAndActiveTrueWithImages(productId, pageable)
+                : reviewRepository.findByProductIdAndActiveTrue(productId, pageable);
+
+        List<ProductReviewResponse> responses = reviewPage.getContent()
+                .stream()
+                .map(ProductReviewResponse::fromEntity)
+                .collect(Collectors.toList());
+
+        ProductReviewPageResponse payload = ProductReviewPageResponse.builder()
+                .items(responses)
+                .page(reviewPage.getNumber())
+                .size(reviewPage.getSize())
+                .totalElements(reviewPage.getTotalElements())
+                .totalPages(reviewPage.getTotalPages())
+                .hasNext(reviewPage.hasNext())
+                .hasPrevious(reviewPage.hasPrevious())
+                .summary(buildSummary(productId))
+                .build();
+
+        return ResponseEntity.ok(DataResponseMessage.success("Yorumlar başarıyla getirildi.", payload));
+    }
+
+    /**
      * Yorum detayını getir
      * GET /api/reviews/{id}
      */
@@ -304,25 +354,135 @@ public class ReviewController {
     }
 
     /**
+     * Kullanıcının belirli bir ürüne ait yorumunu getir
+     * GET /api/reviews/product/{productId}/user
+     */
+    @GetMapping("/product/{productId}/user")
+    public ResponseEntity<DataResponseMessage<ProductReview>> getUserReviewForProduct(
+            @PathVariable Long productId,
+            Authentication authentication
+    ) {
+        try {
+            AppUser user = getAppUserFromAuthentication(authentication);
+            if (user == null || !user.isActive()) {
+                return ResponseEntity.status(401).body(DataResponseMessage.error("Giriş yapmanız gerekiyor."));
+            }
+            Optional<ProductReview> reviewOpt = reviewRepository.findByProductIdAndUserId(productId, user.getId());
+            
+            if (reviewOpt.isPresent() && Boolean.TRUE.equals(reviewOpt.get().getActive())) {
+                return ResponseEntity.ok(DataResponseMessage.success("Yorum bulundu.", reviewOpt.get()));
+            } else {
+                return ResponseEntity.ok(DataResponseMessage.success("Yorum bulunamadı.", null));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(DataResponseMessage.error("Yorum kontrol edilirken hata oluştu: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Kullanıcının belirli bir ürüne yorum yapıp yapmadığını kontrol et (boolean döndürür)
+     * GET /api/reviews/product/{productId}/has-reviewed
+     */
+    @GetMapping("/product/{productId}/has-reviewed")
+    public ResponseEntity<DataResponseMessage<Boolean>> hasUserReviewedProduct(
+            @PathVariable Long productId,
+            Authentication authentication
+    ) {
+        try {
+            AppUser user = getAppUserFromAuthentication(authentication);
+            if (user == null || !user.isActive()) {
+                return ResponseEntity.status(401).body(DataResponseMessage.error("Giriş yapmanız gerekiyor."));
+            }
+            
+            Optional<ProductReview> reviewOpt = reviewRepository.findByProductIdAndUserIdAndActiveTrue(productId, user.getId());
+            boolean hasReviewed = reviewOpt.isPresent();
+            
+            return ResponseEntity.ok(DataResponseMessage.success("Kontrol tamamlandı.", hasReviewed));
+        } catch (Exception e) {
+            log.error("Yorum kontrolü hatası - productId: {}", productId, e);
+            return ResponseEntity.badRequest()
+                    .body(DataResponseMessage.error("Yorum kontrol edilirken hata oluştu: " + e.getMessage()));
+        }
+    }
+
+    /**
      * Kullanıcının kendi yorumlarını getir
      * GET /api/reviews/my-reviews
      */
     @GetMapping("/my-reviews")
     public ResponseEntity<DataResponseMessage<List<ProductReview>>> getMyReviews(
-            @AuthenticationPrincipal AppUser currentUser
+            Authentication authentication
     ) {
         try {
-            if (currentUser == null) {
+            AppUser user = getAppUserFromAuthentication(authentication);
+            if (user == null || !user.isActive()) {
                 return ResponseEntity.status(401).body(DataResponseMessage.error("Giriş yapmanız gerekiyor."));
             }
 
-            List<ProductReview> reviews = reviewRepository.findByUserId(currentUser.getId());
+            List<ProductReview> reviews = reviewRepository.findByUserId(user.getId());
             
             return ResponseEntity.ok(DataResponseMessage.success("Yorumlar başarıyla getirildi.", reviews));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                     .body(DataResponseMessage.error("Yorumlar getirilirken hata oluştu: " + e.getMessage()));
         }
+    }
+
+    private Sort resolveSort(ReviewSortOption sortOption) {
+        return switch (sortOption) {
+            case OLDEST -> Sort.by(Sort.Direction.ASC, "createdAt");
+            case HIGHEST_RATED -> Sort.by(Sort.Direction.DESC, "rating")
+                    .and(Sort.by(Sort.Direction.DESC, "createdAt"));
+            case LOWEST_RATED -> Sort.by(Sort.Direction.ASC, "rating")
+                    .and(Sort.by(Sort.Direction.DESC, "createdAt"));
+            case MOST_HELPFUL -> Sort.by(Sort.Direction.DESC, "helpfulCount")
+                    .and(Sort.by(Sort.Direction.DESC, "likeCount"))
+                    .and(Sort.by(Sort.Direction.DESC, "createdAt"));
+            default -> Sort.by(Sort.Direction.DESC, "createdAt");
+        };
+    }
+
+    private ProductReviewPageResponse.ReviewSummary buildSummary(Long productId) {
+        Long totalReviewCount = reviewRepository.countByProductIdAndActiveTrue(productId);
+        Double averageRating = reviewRepository.calculateAverageRatingByProductId(productId);
+        Long imageReviewCount = reviewRepository.countActiveWithImages(productId);
+        List<Object[]> buckets = reviewRepository.countByRatingBuckets(productId);
+
+        Map<Integer, Long> breakdownMap = new HashMap<>();
+        if (buckets != null) {
+            for (Object[] row : buckets) {
+                if (row != null && row.length == 2 && row[0] != null && row[1] != null) {
+                    Integer rating = ((Number) row[0]).intValue();
+                    Long count = ((Number) row[1]).longValue();
+                    breakdownMap.put(rating, count);
+                }
+            }
+        }
+
+        ProductReviewPageResponse.RatingBreakdown breakdown = ProductReviewPageResponse.RatingBreakdown.builder()
+                .fiveStars(breakdownMap.getOrDefault(5, 0L))
+                .fourStars(breakdownMap.getOrDefault(4, 0L))
+                .threeStars(breakdownMap.getOrDefault(3, 0L))
+                .twoStars(breakdownMap.getOrDefault(2, 0L))
+                .oneStar(breakdownMap.getOrDefault(1, 0L))
+                .build();
+
+        return ProductReviewPageResponse.ReviewSummary.builder()
+                .totalReviewCount(totalReviewCount != null ? totalReviewCount : 0L)
+                .averageRating(roundToSingleDecimal(averageRating))
+                .imageReviewCount(imageReviewCount != null ? imageReviewCount : 0L)
+                .breakdown(breakdown)
+                .build();
+    }
+
+    private double roundToSingleDecimal(Double value) {
+        if (value == null) {
+            return 0d;
+        }
+        return BigDecimal.valueOf(value)
+                .setScale(1, RoundingMode.HALF_UP)
+                .doubleValue();
     }
 }
 

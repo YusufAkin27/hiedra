@@ -85,26 +85,42 @@ public class OrderServiceImpl implements OrderService {
             
             // Addresses ve orderItems'ları initialize et (lazy loading proxy hatasını önlemek için)
             // orderItems zaten fetch edildi, sadece addresses'i initialize et
-            orders.forEach(order -> {
-                // Addresses'i initialize et (lazy loading)
-                if (order.getAddresses() != null) {
-                    order.getAddresses().size(); // Initialize addresses
-                    // Her address'i tamamen yükle
-                    order.getAddresses().forEach(address -> {
-                        address.getId();
-                        address.getFullName();
-                        address.getAddressLine();
-                    });
+            for (Order order : orders) {
+                try {
+                    // Addresses'i initialize et (lazy loading)
+                    if (order.getAddresses() != null) {
+                        try {
+                            order.getAddresses().size(); // Initialize addresses
+                            // Her address'i tamamen yükle
+                            order.getAddresses().forEach(address -> {
+                                if (address != null) {
+                                    address.getId();
+                                    address.getFullName();
+                                    address.getAddressLine();
+                                }
+                            });
+                        } catch (Exception e) {
+                            log.warn("Address initialize edilirken hata (orderId: {}): {}", order.getId(), e.getMessage());
+                        }
+                    }
+                    // OrderItems zaten fetch edildi, sadece emin olmak için kontrol et
+                    if (order.getOrderItems() != null) {
+                        try {
+                            order.getOrderItems().forEach(item -> {
+                                if (item != null) {
+                                    item.getId();
+                                    item.getProductName();
+                                    item.getTotalPrice();
+                                }
+                            });
+                        } catch (Exception e) {
+                            log.warn("OrderItem initialize edilirken hata (orderId: {}): {}", order.getId(), e.getMessage());
+                        }
+                    }
+                } catch (Exception e) {
+                    log.error("Order initialize edilirken hata (orderId: {}): {}", order.getId(), e.getMessage(), e);
                 }
-                // OrderItems zaten fetch edildi, sadece emin olmak için kontrol et
-                if (order.getOrderItems() != null) {
-                    order.getOrderItems().forEach(item -> {
-                        item.getId();
-                        item.getProductName();
-                        item.getTotalPrice();
-                    });
-                }
-            });
+            }
             
             List<OrderResponseDTO> orderDTOs = orders.stream()
                     .map(this::convertToDTO)
@@ -116,9 +132,10 @@ public class OrderServiceImpl implements OrderService {
                     orderDTOs
             );
         } catch (Exception e) {
-            log.error("Siparişler getirilirken hata: ", e);
+            log.error("Siparişler getirilirken hata (email: {}): ", customerEmail, e);
+            e.printStackTrace(); // Stack trace'i logla
             return new ResponseMessage(
-                    "Siparişler getirilirken bir hata oluştu: " + e.getMessage(),
+                    "Siparişler getirilirken bir hata oluştu: " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()),
                     false
             );
         }

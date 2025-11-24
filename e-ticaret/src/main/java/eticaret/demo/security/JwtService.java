@@ -49,8 +49,8 @@ public class JwtService {
                 "role", user.getRole().name(),
                 "emailVerified", user.isEmailVerified(),
                 "active", user.isActive(),
-                "jti", jti, // JWT ID - token tracking için
-                "iat", System.currentTimeMillis() / 1000 // Issued at (seconds)
+                "jti", jti // JWT ID - token tracking için
+                // iat claim'i .issuedAt() ile otomatik ekleniyor, manuel eklemeye gerek yok
         );
         return createToken(claims, user.getEmail());
     }

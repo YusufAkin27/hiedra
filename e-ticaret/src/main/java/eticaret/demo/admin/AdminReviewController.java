@@ -6,10 +6,13 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import eticaret.demo.product.ProductReview;
 import eticaret.demo.product.ProductReviewRepository;
+import eticaret.demo.product.ProductRepository;
+import eticaret.demo.auth.AppUserRepository;
 import eticaret.demo.common.response.DataResponseMessage;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.ArrayList;
 
 /**
  * Admin yorum yönetimi endpoint'leri
@@ -22,6 +25,8 @@ import java.util.Optional;
 public class AdminReviewController {
 
     private final ProductReviewRepository reviewRepository;
+    private final ProductRepository productRepository;
+    private final AppUserRepository userRepository;
 
     /**
      * Tüm yorumları listele (admin)
@@ -141,6 +146,98 @@ public class AdminReviewController {
                     .toList();
         }
         return ResponseEntity.ok(DataResponseMessage.success("Yorumlar başarıyla getirildi", reviews));
+    }
+
+    /**
+     * Admin için sahte yorum ekle
+     * POST /api/admin/reviews/create-fake
+     * Admin herhangi bir ürün için, herhangi bir kullanıcı adıyla yorum ekleyebilir
+     */
+    @PostMapping(value = "/create-fake", consumes = {"application/x-www-form-urlencoded", "multipart/form-data"})
+    public ResponseEntity<DataResponseMessage<ProductReview>> createFakeReview(
+            @RequestParam("productId") Long productId,
+            @RequestParam("rating") Integer rating,
+            @RequestParam(value = "reviewerName", required = false) String reviewerName,
+            @RequestParam(value = "comment", required = false) String comment,
+            @RequestParam(value = "imageUrls", required = false) List<String> imageUrls
+    ) {
+        try {
+            // Ürün kontrolü
+            Optional<eticaret.demo.product.Product> productOpt = productRepository.findById(productId);
+            if (productOpt.isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(DataResponseMessage.error("Ürün bulunamadı."));
+            }
+
+            // Rating kontrolü
+            if (rating == null || rating < 1 || rating > 5) {
+                return ResponseEntity.badRequest()
+                        .body(DataResponseMessage.error("Puan 1-5 arasında olmalıdır."));
+            }
+
+            // Varsayılan kullanıcı adı
+            String finalReviewerName = reviewerName != null && !reviewerName.trim().isEmpty()
+                    ? reviewerName.trim()
+                    : "Müşteri";
+
+            // Varsayılan kullanıcıyı bul veya oluştur (sahte yorumlar için)
+            // Eğer "fake-reviewer@hiedra.com" gibi bir kullanıcı yoksa, ilk admin kullanıcısını kullan
+            eticaret.demo.auth.AppUser fakeUser = userRepository.findByEmailIgnoreCase("fake-reviewer@hiedra.com")
+                    .orElseGet(() -> {
+                        // Eğer fake kullanıcı yoksa, ilk admin kullanıcısını al
+                        return userRepository.findFirstByRole(eticaret.demo.auth.UserRole.ADMIN)
+                                .orElse(null);
+                    });
+
+            if (fakeUser == null) {
+                return ResponseEntity.status(500)
+                        .body(DataResponseMessage.error("Yorum eklemek için kullanıcı bulunamadı. Lütfen sistem yöneticisine başvurun."));
+            }
+
+            // Görsel URL'lerini kontrol et ve temizle
+            List<String> finalImageUrls = new ArrayList<>();
+            if (imageUrls != null && !imageUrls.isEmpty()) {
+                for (String url : imageUrls) {
+                    if (url != null && !url.trim().isEmpty()) {
+                        String cleanedUrl = url.trim();
+                        // Basit URL validasyonu
+                        if (cleanedUrl.startsWith("http://") || cleanedUrl.startsWith("https://")) {
+                            finalImageUrls.add(cleanedUrl);
+                        }
+                    }
+                }
+            }
+
+            // Comment null kontrolü
+            String finalComment = (comment != null && !comment.trim().isEmpty()) ? comment.trim() : null;
+
+            // Sahte yorum için reviewer name'i adminNote alanında sakla
+            // ProductReviewResponse.fromEntity() metodunda bu alan kontrol edilecek
+            String adminNoteForReviewerName = finalReviewerName;
+
+            // Sahte yorum oluştur
+            ProductReview review = ProductReview.builder()
+                    .product(productOpt.get())
+                    .user(fakeUser)
+                    .rating(rating)
+                    .comment(finalComment)
+                    .imageUrls(finalImageUrls)
+                    .active(true)
+                    .approved(true)
+                    .adminNote(adminNoteForReviewerName) // Reviewer name'i buraya kaydediyoruz
+                    .build();
+
+            ProductReview saved = reviewRepository.save(review);
+
+            return ResponseEntity.ok(DataResponseMessage.success(
+                    "Sahte yorum başarıyla eklendi. (Yorumcu: " + finalReviewerName + ")",
+                    saved
+            ));
+        } catch (Exception e) {
+            e.printStackTrace(); // Log için
+            return ResponseEntity.status(500)
+                    .body(DataResponseMessage.error("Sahte yorum eklenirken hata oluştu: " + e.getMessage()));
+        }
     }
 }
 

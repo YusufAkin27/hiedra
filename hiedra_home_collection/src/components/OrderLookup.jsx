@@ -1,147 +1,3 @@
-  const handleSendCode = async (e) => {
-    if (e && e.preventDefault) {
-      e.preventDefault()
-    }
-    if (!validateEmailForm()) {
-      return
-    }
-
-    setIsSendingCode(true)
-    setError('')
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/lookup/request-code`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: email.trim(),
-        }),
-      })
-
-      const data = await response.json()
-      const success = data.success ?? data.isSuccess ?? response.ok
-
-      if (!success) {
-        throw new Error(data.message || 'Doğrulama kodu gönderilemedi.')
-      }
-
-      showToast('Doğrulama kodu e-posta adresinize gönderildi.', 'success')
-      setVerificationCode('')
-      setLookupToken('')
-      setOrders([])
-      setOrderData(null)
-      setSelectedOrderNumber(null)
-      setStep('verify')
-    } catch (err) {
-      setError(err.message || 'Doğrulama kodu gönderilemedi.')
-      showToast(err.message || 'Doğrulama kodu gönderilemedi.', 'error')
-    } finally {
-      setIsSendingCode(false)
-    }
-  }
-
-  const handleVerifyCode = async (e) => {
-    if (e && e.preventDefault) {
-      e.preventDefault()
-    }
-
-    if (!verificationCode.trim()) {
-      showToast('Lütfen e-posta adresinize gelen doğrulama kodunu giriniz.', 'error')
-      return
-    }
-
-    setIsVerifying(true)
-    setError('')
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/lookup/verify-code`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: email.trim(),
-          code: verificationCode.trim(),
-        }),
-      })
-
-      const data = await response.json()
-      const success = data.success ?? data.isSuccess ?? response.ok
-
-      if (!success || !data.data?.lookupToken) {
-        throw new Error(data.message || 'Doğrulama başarısız.')
-      }
-
-      const token = data.data.lookupToken
-      setLookupToken(token)
-      showToast('Doğrulama başarılı. Siparişleriniz yükleniyor...', 'success')
-      await loadOrders(token)
-    } catch (err) {
-      setError(err.message || 'Doğrulama başarısız oldu.')
-      showToast(err.message || 'Doğrulama başarısız oldu.', 'error')
-    } finally {
-      setIsVerifying(false)
-    }
-  }
-
-  const loadOrders = async (tokenOverride) => {
-    const tokenToUse = tokenOverride || lookupToken
-    if (!tokenToUse) return
-
-    setIsLoading(true)
-    setError('')
-    setOrders([])
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/lookup?token=${encodeURIComponent(tokenToUse)}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-
-      const data = await response.json()
-      const success = data.success ?? data.isSuccess ?? response.ok
-
-      if (!success) {
-        throw new Error(data.message || 'Siparişler alınamadı.')
-      }
-
-      setOrders(data.data || [])
-      setStep('list')
-      setOrderData(null)
-      setSelectedOrderNumber(null)
-      setShowAddressForm(false)
-      setShowCancelModal(false)
-      setShowRefundModal(false)
-    } catch (err) {
-      setError(err.message || 'Siparişler alınırken bir hata oluştu.')
-      showToast(err.message || 'Siparişler alınırken bir hata oluştu.', 'error')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleViewOrder = async (order) => {
-    const orderNumberParam = typeof order === 'string' ? order : order?.orderNumber
-    if (!orderNumberParam) return
-    await fetchOrderDetail(orderNumberParam)
-  }
-
-  const handleResendCode = async () => {
-    await handleSendCode()
-  }
-
-  const handleBackToList = () => {
-    setOrderData(null)
-    setShowAddressForm(false)
-    setShowCancelModal(false)
-    setShowRefundModal(false)
-    setTrackingData(null)
-    setStep('list')
-  }
 import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
@@ -236,7 +92,8 @@ const OrderLookup = () => {
     }
   }
 
-  function validateEmailForm() {
+  // Email form validasyonu
+  const validateEmailForm = () => {
     if (!email.trim() || !email.includes('@')) {
       showToast('Lütfen geçerli bir e-posta adresi giriniz.', 'error')
       return false
@@ -251,6 +108,157 @@ const OrderLookup = () => {
       return false
     }
     return true
+  }
+
+  // Doğrulama kodu gönder
+  const handleSendCode = async (e) => {
+    if (e && e.preventDefault) {
+      e.preventDefault()
+    }
+    if (!validateEmailForm()) {
+      return
+    }
+
+    setIsSendingCode(true)
+    setError('')
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/lookup/request-code`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email.trim(),
+        }),
+      })
+
+      const data = await response.json()
+      const success = data.success ?? data.isSuccess ?? response.ok
+
+      if (!success) {
+        throw new Error(data.message || 'Doğrulama kodu gönderilemedi.')
+      }
+
+      showToast('Doğrulama kodu e-posta adresinize gönderildi.', 'success')
+      setVerificationCode('')
+      setLookupToken('')
+      setOrders([])
+      setOrderData(null)
+      setSelectedOrderNumber(null)
+      setStep('verify')
+    } catch (err) {
+      setError(err.message || 'Doğrulama kodu gönderilemedi.')
+      showToast(err.message || 'Doğrulama kodu gönderilemedi.', 'error')
+    } finally {
+      setIsSendingCode(false)
+    }
+  }
+
+  // Doğrulama kodunu doğrula
+  const handleVerifyCode = async (e) => {
+    if (e && e.preventDefault) {
+      e.preventDefault()
+    }
+
+    if (!verificationCode.trim()) {
+      showToast('Lütfen e-posta adresinize gelen doğrulama kodunu giriniz.', 'error')
+      return
+    }
+
+    setIsVerifying(true)
+    setError('')
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/lookup/verify-code`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email.trim(),
+          code: verificationCode.trim(),
+        }),
+      })
+
+      const data = await response.json()
+      const success = data.success ?? data.isSuccess ?? response.ok
+
+      if (!success || !data.data?.lookupToken) {
+        throw new Error(data.message || 'Doğrulama başarısız.')
+      }
+
+      const token = data.data.lookupToken
+      setLookupToken(token)
+      showToast('Doğrulama başarılı. Siparişleriniz yükleniyor...', 'success')
+      await loadOrders(token)
+    } catch (err) {
+      setError(err.message || 'Doğrulama başarısız oldu.')
+      showToast(err.message || 'Doğrulama başarısız oldu.', 'error')
+    } finally {
+      setIsVerifying(false)
+    }
+  }
+
+  // Siparişleri yükle
+  const loadOrders = async (tokenOverride) => {
+    const tokenToUse = tokenOverride || lookupToken
+    if (!tokenToUse) return
+
+    setIsLoading(true)
+    setError('')
+    setOrders([])
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/lookup?token=${encodeURIComponent(tokenToUse)}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      const data = await response.json()
+      const success = data.success ?? data.isSuccess ?? response.ok
+
+      if (!success) {
+        throw new Error(data.message || 'Siparişler alınamadı.')
+      }
+
+      setOrders(data.data || [])
+      setStep('list')
+      setOrderData(null)
+      setSelectedOrderNumber(null)
+      setShowAddressForm(false)
+      setShowCancelModal(false)
+      setShowRefundModal(false)
+    } catch (err) {
+      setError(err.message || 'Siparişler alınırken bir hata oluştu.')
+      showToast(err.message || 'Siparişler alınırken bir hata oluştu.', 'error')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Sipariş detayını görüntüle
+  const handleViewOrder = async (order) => {
+    const orderNumberParam = typeof order === 'string' ? order : order?.orderNumber
+    if (!orderNumberParam) return
+    await fetchOrderDetail(orderNumberParam)
+  }
+
+  // Kodu tekrar gönder
+  const handleResendCode = async () => {
+    await handleSendCode()
+  }
+
+  // Listeye dön
+  const handleBackToList = () => {
+    setOrderData(null)
+    setShowAddressForm(false)
+    setShowCancelModal(false)
+    setShowRefundModal(false)
+    setTrackingData(null)
+    setStep('list')
   }
 
   const fetchOrderDetail = async (orderNumberParam, tokenOverride) => {

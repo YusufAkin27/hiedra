@@ -13947,6 +13947,66 @@ button {
   min-width: 120px;
 }
 
+/* Form Elements */
+.review-modal__form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.review-modal__form-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.review-modal__form-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  background: #ffffff;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.review-modal__form-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.review-modal__form-input:disabled {
+  background: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.review-modal__form-input::placeholder {
+  color: #9ca3af;
+}
+
+.review-modal__form-input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.review-modal__form-input[type="number"]::-webkit-inner-spin-button,
+.review-modal__form-input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.review-modal__form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
 /* Mobil Uyumluluk */
 @media (max-width: 768px) {
   .reviews-stats__grid {
@@ -14077,6 +14137,19 @@ button {
 
   .review-modal__actions .btn {
     width: 100%;
+  }
+
+  .review-modal__form-group {
+    gap: 0.4rem;
+  }
+
+  .review-modal__form-input {
+    padding: 0.65rem 0.875rem;
+    font-size: 0.9rem;
+  }
+
+  .review-modal__form-grid {
+    grid-template-columns: 1fr;
   }
 }
 

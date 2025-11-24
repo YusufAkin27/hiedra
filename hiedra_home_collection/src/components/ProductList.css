@@ -1957,6 +1957,20 @@
   color: var(--text-secondary);
 }
 
+.review-link {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.review-link:focus {
+  outline: 2px solid var(--bg-header);
+  outline-offset: 4px;
+}
+
+.review-link:hover {
+  transform: translateY(-1px);
+}
+
 .product-price-large-home {
   display: flex;
   align-items: baseline;

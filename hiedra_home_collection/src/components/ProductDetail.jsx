@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import LazyImage from './LazyImage'
@@ -13,6 +13,9 @@ const ProductDetail = () => {
   const navigate = useNavigate()
   const { refreshCart } = useCart()
   const { accessToken } = useAuth()
+  const location = useLocation()
+  const reviewSectionRef = useRef(null)
+  const loadMoreReviewsRef = useRef(null)
   const [quantity, setQuantity] = useState(1)
   const [product, setProduct] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -31,6 +34,20 @@ const ProductDetail = () => {
   const [allProducts, setAllProducts] = useState([]) // Tüm ürünler (ilgili ürünler için)
   const [formErrors, setFormErrors] = useState({ en: '', boy: '' }) // Form hata mesajları
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false) // Detay fotoğraf modal durumu
+  const [activeModalImage, setActiveModalImage] = useState(null)
+  const [reviews, setReviews] = useState([])
+  const [reviewSummary, setReviewSummary] = useState(null)
+  const [reviewPageMeta, setReviewPageMeta] = useState({
+    page: 0,
+    size: 6,
+    hasNext: true,
+    totalElements: 0,
+    totalPages: 0
+  })
+  const [isFetchingReviews, setIsFetchingReviews] = useState(false)
+  const [reviewSortOption, setReviewSortOption] = useState('LATEST')
+  const [withImageReviewsOnly, setWithImageReviewsOnly] = useState(false)
+  const [reviewError, setReviewError] = useState('')
 
   const pileOptions = [
     { value: '1x1', label: 'Pilesiz (1x1)' },
@@ -171,6 +188,97 @@ const ProductDetail = () => {
       document.body.style.overflow = ''
     }
   }, [isDetailModalOpen])
+
+  useEffect(() => {
+    if (!product) return
+    if (location.hash === '#reviews' && reviewSectionRef.current) {
+      reviewSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }, [location.hash, product])
+
+  const handleScrollToReviews = useCallback(() => {
+    if (reviewSectionRef.current) {
+      reviewSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }, [])
+
+  const formatReviewDate = useCallback((value) => {
+    if (!value) return ''
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return ''
+    return date.toLocaleDateString('tr-TR')
+  }, [])
+
+  const fetchReviews = useCallback(async ({ page = 0, reset = false } = {}) => {
+    if (!product?.id) return
+    setIsFetchingReviews(true)
+    if (reset) {
+      setReviewError('')
+    }
+
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        size: '6',
+        sort: reviewSortOption,
+        withImagesOnly: withImageReviewsOnly ? 'true' : 'false'
+      })
+
+      const response = await fetch(`${API_BASE_URL}/reviews/product/${product.id}/page?${params.toString()}`)
+      if (!response.ok) {
+        throw new Error('Yorumlar getirilemedi.')
+      }
+
+      const payload = await response.json()
+      if (!(payload?.isSuccess || payload?.success)) {
+        throw new Error(payload?.message || 'Yorumlar getirilemedi.')
+      }
+
+      const pageData = payload?.data || {}
+      setReviews(prev => reset ? (pageData.items || []) : [...prev, ...(pageData.items || [])])
+      setReviewSummary(pageData.summary || null)
+      setReviewPageMeta({
+        page: pageData.page ?? page,
+        size: pageData.size ?? 6,
+        hasNext: pageData.hasNext ?? false,
+        totalElements: pageData.totalElements ?? 0,
+        totalPages: pageData.totalPages ?? 0
+      })
+    } catch (error) {
+      console.error('Yorumlar yüklenirken hata:', error)
+      setReviewError(error.message || 'Yorumlar yüklenirken bir hata oluştu.')
+    } finally {
+      setIsFetchingReviews(false)
+    }
+  }, [product?.id, reviewSortOption, withImageReviewsOnly])
+
+  useEffect(() => {
+    if (!product?.id) return
+    setReviews([])
+    setReviewSummary(null)
+    setReviewPageMeta(prev => ({
+      ...prev,
+      page: 0,
+      hasNext: true,
+      totalElements: 0,
+      totalPages: 0
+    }))
+    fetchReviews({ page: 0, reset: true })
+  }, [product?.id, reviewSortOption, withImageReviewsOnly, fetchReviews])
+
+  useEffect(() => {
+    const observerTarget = loadMoreReviewsRef.current
+    if (!observerTarget || !reviewPageMeta.hasNext) return
+
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0]?.isIntersecting && !isFetchingReviews) {
+        fetchReviews({ page: reviewPageMeta.page + 1, reset: false })
+      }
+    }, { rootMargin: '200px' })
+
+    observer.observe(observerTarget)
+    return () => observer.disconnect()
+  }, [reviewPageMeta.hasNext, reviewPageMeta.page, isFetchingReviews, fetchReviews])
 
   // Tüm ürünleri çek (ilgili ürünler için)
   useEffect(() => {
@@ -334,6 +442,25 @@ const ProductDetail = () => {
     }
   }, [en, boy, pileSikligi, product?.id, product?.price, calculatePrice])
 
+  const totalReviewCount = reviewSummary?.totalReviewCount ?? product?.reviewCount ?? 0
+  const derivedAverageRating = reviewSummary?.averageRating ?? product?.averageRating ?? 0
+  const imageReviewCount = reviewSummary?.imageReviewCount ?? 0
+  const ratingBars = useMemo(() => {
+    const breakdown = reviewSummary?.breakdown || {}
+    const segments = [
+      { label: '5', count: breakdown.fiveStars || 0 },
+      { label: '4', count: breakdown.fourStars || 0 },
+      { label: '3', count: breakdown.threeStars || 0 },
+      { label: '2', count: breakdown.twoStars || 0 },
+      { label: '1', count: breakdown.oneStar || 0 }
+    ]
+    const total = segments.reduce((sum, item) => sum + item.count, 0) || totalReviewCount
+    return segments.map(item => ({
+      ...item,
+      percentage: total ? Math.round((item.count / total) * 100) : 0
+    }))
+  }, [reviewSummary, totalReviewCount])
+
   // Structured Data for Product - useMemo ile sarmala
   const structuredData = useMemo(() => {
     if (!product || !product.id || !product.name || !product.price) return null
@@ -377,8 +504,8 @@ const ProductDetail = () => {
       },
       aggregateRating: {
         '@type': 'AggregateRating',
-        ratingValue: (product.averageRating || 4.8).toString(),
-        reviewCount: (product.reviewCount || 0).toString(),
+        ratingValue: (product.averageRating || derivedAverageRating || 4.8).toString(),
+        reviewCount: (product.reviewCount || totalReviewCount || 0).toString(),
         bestRating: '5',
         worstRating: '1'
       },
@@ -555,7 +682,10 @@ const ProductDetail = () => {
                 {product.detailImages && product.detailImages.length > 0 && product.detailImages[0] && (
                   <div 
                     className="detail-image-preview-home"
-                    onClick={() => setIsDetailModalOpen(true)}
+                    onClick={() => {
+                      setActiveModalImage(product.detailImages[0])
+                      setIsDetailModalOpen(true)
+                    }}
                     title="Detay fotoğrafını görüntüle"
                   >
                     <div className="detail-image-preview-overlay-home">
@@ -735,12 +865,12 @@ const ProductDetail = () => {
               )}
               
               {/* Yıldız Puanı ve Yorum Sayısı */}
-              {((product.averageRating && product.averageRating > 0) || (product.reviewCount && product.reviewCount > 0)) && (
+              {totalReviewCount > 0 && (
                 <div className="product-rating-section">
                   <div className="rating-stars">
                     {[1, 2, 3, 4, 5].map((star) => {
-                      const rating = product.averageRating || 0;
-                      const filled = star <= Math.floor(rating);
+                      const rating = derivedAverageRating || 0
+                      const filled = star <= Math.floor(rating)
                       return (
                         <svg
                           key={star}
@@ -753,15 +883,18 @@ const ProductDetail = () => {
                         >
                           <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                         </svg>
-                      );
+                      )
                     })}
-                    {product.averageRating > 0 && (
-                      <span className="rating-value">{product.averageRating.toFixed(1)}</span>
+                    {derivedAverageRating > 0 && (
+                      <span className="rating-value">{derivedAverageRating.toFixed(1)}</span>
                     )}
                   </div>
-                  {product.reviewCount > 0 && (
-                    <span className="review-count">({product.reviewCount} {product.reviewCount === 1 ? 'yorum' : 'yorum'})</span>
-                  )}
+                  <span className="review-count">
+                    ({totalReviewCount} {totalReviewCount === 1 ? 'yorum' : 'yorum'})
+                  </span>
+                  <button type="button" className="reviews-anchor-btn" onClick={handleScrollToReviews}>
+                    Yorumları Gör
+                  </button>
                 </div>
               )}
               
@@ -1066,16 +1199,171 @@ const ProductDetail = () => {
         )
       })()}
 
+      {product && (
+        <section
+          id="reviews-section"
+          ref={reviewSectionRef}
+          className="product-reviews-section"
+        >
+          <div className="reviews-header">
+            <h2 className="reviews-title">Ürün Yorumları</h2>
+            <p className="reviews-subtitle">Gerçek müşteri deneyimleri ve puanlamalar</p>
+          </div>
+            <div className="reviews-summary-card">
+              <div className="reviews-score">
+                <span className="reviews-score-value">{(derivedAverageRating || 0).toFixed(1)}</span>
+                <span className="reviews-score-max">/ 5</span>
+                <span className="reviews-score-text">puan</span>
+                <div className="reviews-score-stars">
+                  {[1, 2, 3, 4, 5].map(star => (
+                    <svg
+                      key={`summary-star-${star}`}
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill={star <= Math.round(derivedAverageRating) ? "#FFD700" : "none"}
+                      stroke={star <= Math.round(derivedAverageRating) ? "#FFD700" : "#ddd"}
+                      strokeWidth="2"
+                    >
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    </svg>
+                  ))}
+                </div>
+              </div>
+            <div className="reviews-meta">
+              <span className="reviews-count-text">
+                {totalReviewCount > 0 ? `${totalReviewCount} değerlendirme` : 'Henüz yorum bulunmuyor'}
+              </span>
+              {imageReviewCount > 0 && (
+                <span className="reviews-image-count">{imageReviewCount} fotoğraflı yorum</span>
+              )}
+              <button type="button" className="reviews-anchor-btn secondary" onClick={handleScrollToReviews}>
+                Başa Dön
+              </button>
+            </div>
+          </div>
+            <div className="reviews-summary-extras">
+            <div className="reviews-filters">
+              <label className="reviews-sort-label" htmlFor="review-sort-select">Sırala</label>
+              <select
+                id="review-sort-select"
+                className="reviews-sort-select"
+                value={reviewSortOption}
+                onChange={(e) => setReviewSortOption(e.target.value)}
+              >
+                <option value="LATEST">En Yeni</option>
+                <option value="OLDEST">En Eski</option>
+                <option value="HIGHEST_RATED">En Yüksek Puan</option>
+                <option value="LOWEST_RATED">En Düşük Puan</option>
+                <option value="MOST_HELPFUL">En Faydalı</option>
+              </select>
+              <label className="reviews-checkbox">
+                <input
+                  type="checkbox"
+                  checked={withImageReviewsOnly}
+                  onChange={(e) => setWithImageReviewsOnly(e.target.checked)}
+                />
+                <span>Sadece görselli ({imageReviewCount})</span>
+              </label>
+            </div>
+          </div>
+          {reviewError && (
+            <div className="reviews-error">{reviewError}</div>
+          )}
+          {isFetchingReviews && reviews.length === 0 ? (
+            <div className="reviews-loading">Yorumlar yükleniyor...</div>
+          ) : reviews.length > 0 ? (
+            <div className="reviews-list">
+              {reviews.map((review, index) => {
+                const ratingValue = Number(review.rating) || 0
+                const reviewDate = formatReviewDate(review.createdAt || review.updatedAt)
+                const reviewer = review.reviewer || {}
+                const reviewKey = review.id ?? `${index}-${reviewer.email || 'review'}`
+                return (
+                  <article key={reviewKey} className="review-card">
+                    <div className="review-card-header">
+                      <div className="review-author-meta">
+                        <span className="review-author">{reviewer.name || 'Müşteri'}</span>
+                        {reviewDate && <time className="review-date">{reviewDate}</time>}
+                      </div>
+                      {ratingValue > 0 && (
+                        <div className="review-card-rating">
+                          {[1, 2, 3, 4, 5].map(star => (
+                            <svg
+                              key={`${review.id}-${star}`}
+                              width="18"
+                              height="18"
+                              viewBox="0 0 24 24"
+                              fill={star <= Math.round(ratingValue) ? "#FFD700" : "none"}
+                              stroke={star <= Math.round(ratingValue) ? "#FFD700" : "#ddd"}
+                              strokeWidth="2"
+                            >
+                              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                            </svg>
+                          ))}
+                          <span>{ratingValue.toFixed(1)}</span>
+                        </div>
+                      )}
+                    </div>
+                    {review.comment && (
+                      <p className="review-comment">
+                        {review.comment}
+                      </p>
+                    )}
+                    {review.imageUrls && review.imageUrls.length > 0 && (
+                      <div className="review-image-grid">
+                        {review.imageUrls.map((url, idx) => (
+                          <button
+                            type="button"
+                            key={`${review.id}-img-${idx}`}
+                            className="review-image-thumb"
+                            onClick={() => {
+                              setActiveModalImage(url)
+                              setIsDetailModalOpen(true)
+                            }}
+                          >
+                            <LazyImage src={url} alt={`Yorum görseli ${idx + 1}`} />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </article>
+                )
+              })}
+              <div className="reviews-load-more" ref={loadMoreReviewsRef}>
+                {isFetchingReviews && reviews.length > 0 && (
+                  <span>Daha fazla yorum yükleniyor...</span>
+                )}
+                {!reviewPageMeta.hasNext && reviews.length > 0 && (
+                  <span>Tüm yorumlar yüklendi.</span>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="no-reviews-card">
+              <p>{withImageReviewsOnly ? 'Fotoğraflı yorum bulunamadı.' : 'Bu ürün için henüz yorum paylaşılmadı.'}</p>
+              <span>Satın alma sonrasında deneyiminizi paylaşarak diğer müşterilere destek olabilirsiniz.</span>
+            </div>
+          )}
+        </section>
+      )}
+
         {/* Detay Fotoğraf Modal */}
-        {isDetailModalOpen && product.detailImages && product.detailImages.length > 0 && product.detailImages[0] && (
+        {isDetailModalOpen && (
           <div 
             className="detail-image-modal"
-            onClick={() => setIsDetailModalOpen(false)}
+            onClick={() => {
+              setIsDetailModalOpen(false)
+              setActiveModalImage(null)
+            }}
           >
             <div className="detail-image-modal-content" onClick={(e) => e.stopPropagation()}>
               <button 
                 className="detail-image-modal-close"
-                onClick={() => setIsDetailModalOpen(false)}
+                onClick={() => {
+                  setIsDetailModalOpen(false)
+                  setActiveModalImage(null)
+                }}
                 aria-label="Kapat"
               >
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1084,8 +1372,8 @@ const ProductDetail = () => {
                 </svg>
               </button>
               <LazyImage
-                src={product.detailImages[0]}
-                alt={`${product.name} detay görüntüleme`}
+                src={activeModalImage || product?.detailImages?.[0] || product?.image}
+                alt="Detay görsel"
                 className="detail-image-modal-img"
               />
             </div>

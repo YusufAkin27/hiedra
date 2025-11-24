@@ -41,10 +41,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         final String jwt;
         final String username;
 
-        // Admin ve user endpoint'leri için detaylı log
+        // Admin, user ve reviews endpoint'leri için detaylı log
         boolean isAdminEndpoint = request.getRequestURI().startsWith("/api/admin/");
         boolean isUserEndpoint = request.getRequestURI().startsWith("/api/user/");
-        boolean shouldLog = isAdminEndpoint || isUserEndpoint;
+        boolean isReviewsEndpoint = request.getRequestURI().startsWith("/api/reviews");
+        boolean shouldLog = isAdminEndpoint || isUserEndpoint || isReviewsEndpoint;
         
         if (shouldLog) {
             log.info("Endpoint isteği: {} {}", request.getMethod(), request.getRequestURI());
