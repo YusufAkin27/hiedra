@@ -22,7 +22,7 @@ const Checkout = () => {
   const couponCode = cartContext?.couponCode || null
   const discountAmount = cartContext?.discountAmount || 0
   const cartId = cartContext?.cartId || null
-  const [currentStep, setCurrentStep] = useState(1)
+  const [currentStep, setCurrentStep] = useState(1) // 1: Adres Bilgileri, 2: Ödeme Bilgileri
   const [isProcessing, setIsProcessing] = useState(false)
   const [userAddresses, setUserAddresses] = useState([])
   const [selectedAddressId, setSelectedAddressId] = useState(null)
@@ -41,21 +41,23 @@ const Checkout = () => {
   const [addressInfo, setAddressInfo] = useState({
     address: '',
     city: '',
-    district: '',
-    addressDetail: ''
+    district: ''
   })
 
+  // Fatura adresi
+  const [useSameAddressForInvoice, setUseSameAddressForInvoice] = useState(true)
+  const [invoiceAddressInfo, setInvoiceAddressInfo] = useState({
+    address: '',
+    city: '',
+    district: ''
+  })
 
-  // Kart bilgileri
+  // Kart bilgileri - Basitleştirilmiş
   const [cardInfo, setCardInfo] = useState({
     cardNumber: '',
-    cardName: '',
-    expiryMonth: '',
-    expiryYear: '',
+    expiry: '', // MM/YY formatında
     cvv: ''
   })
-
-  const totalSteps = 4 // İletişim, Adres, Ödeme, Özet
 
   // Kullanıcı giriş yapmışsa profil bilgilerini backend'den çek
   useEffect(() => {
@@ -128,14 +130,9 @@ const Checkout = () => {
   // Login kullanıcı için adresleri yükle ve otomatik doldur
   useEffect(() => {
     if (isAuthenticated && accessToken) {
-      if (currentStep === 2) {
-        loadUserAddresses()
-      } else if (currentStep === 1) {
-        // İlk adımda da adresleri yükle ki varsayılan adres hazır olsun
-        loadUserAddresses()
-      }
+      loadUserAddresses()
     }
-  }, [isAuthenticated, accessToken, currentStep])
+  }, [isAuthenticated, accessToken])
 
   const loadUserAddresses = async () => {
     try {
@@ -179,8 +176,7 @@ const Checkout = () => {
       setAddressInfo({
         address: address.addressLine,
         city: address.city,
-        district: address.district,
-        addressDetail: address.addressDetail || ''
+        district: address.district
       })
     }
   }
@@ -215,36 +211,52 @@ const Checkout = () => {
   }
 
   // Adres bilgileri validasyonu
-  const validateAddressInfo = () => {
-    if (!addressInfo.address.trim()) {
-      toast.warning('Lütfen adres bilgilerinizi giriniz.')
+  const validateAddressStep = () => {
+    if (!validateContactInfo()) {
       return false
     }
-    if (!addressInfo.city.trim()) {
-      toast.warning('Lütfen şehir bilgisini giriniz.')
-      return false
+    // Kayıtlı adres seçilmediyse, manuel adres bilgileri kontrol edilmeli
+    if (!useSavedAddress || !selectedAddressId) {
+      if (!addressInfo.address.trim()) {
+        toast.warning('Lütfen adres bilgilerinizi giriniz.')
+        return false
+      }
+      if (!addressInfo.city.trim()) {
+        toast.warning('Lütfen şehir bilgisini giriniz.')
+        return false
+      }
+      if (!addressInfo.district.trim()) {
+        toast.warning('Lütfen ilçe bilgisini giriniz.')
+        return false
+      }
     }
-    if (!addressInfo.district.trim()) {
-      toast.warning('Lütfen ilçe bilgisini giriniz.')
-      return false
+    // Fatura adresi validasyonu
+    if (!useSameAddressForInvoice) {
+      if (!invoiceAddressInfo.address.trim()) {
+        toast.warning('Lütfen fatura adres bilgilerinizi giriniz.')
+        return false
+      }
+      if (!invoiceAddressInfo.city.trim()) {
+        toast.warning('Lütfen fatura şehir bilgisini giriniz.')
+        return false
+      }
+      if (!invoiceAddressInfo.district.trim()) {
+        toast.warning('Lütfen fatura ilçe bilgisini giriniz.')
+        return false
+      }
     }
- 
     return true
   }
 
-  // Kart bilgileri validasyonu
-  const validateCardInfo = () => {
+  // Ödeme bilgileri validasyonu
+  const validatePaymentStep = () => {
     const cardNumber = cardInfo.cardNumber.replace(/\s/g, '')
     if (!cardNumber || cardNumber.length !== 16 || !/^\d+$/.test(cardNumber)) {
       toast.warning('Lütfen geçerli bir kart numarası giriniz (16 haneli).')
       return false
     }
-    if (!cardInfo.cardName.trim()) {
-      toast.warning('Lütfen kart üzerindeki ismi giriniz.')
-      return false
-    }
-    if (!cardInfo.expiryMonth || !cardInfo.expiryYear) {
-      toast.warning('Lütfen kart son kullanma tarihini seçiniz.')
+    if (!cardInfo.expiry || !/^\d{2}\/\d{2}$/.test(cardInfo.expiry)) {
+      toast.warning('Lütfen geçerli bir son kullanma tarihi giriniz (MM/YY).')
       return false
     }
     if (!cardInfo.cvv || cardInfo.cvv.length !== 3 || !/^\d+$/.test(cardInfo.cvv)) {
@@ -255,42 +267,31 @@ const Checkout = () => {
   }
 
   // Sonraki adıma geç
-  const handleNext = () => {
+  const handleNextStep = () => {
     if (currentStep === 1) {
-      // İlk adım: İletişim Bilgileri
-      if (validateContactInfo()) {
+      if (validateAddressStep()) {
         setCurrentStep(2)
-      }
-    } else if (currentStep === 2) {
-      // İkinci adım: Adres
-      if (validateAddressInfo()) {
-        setCurrentStep(3)
-      }
-    } else if (currentStep === 3) {
-      // Üçüncü adım: Ödeme
-      if (validateCardInfo()) {
-        setCurrentStep(4)
+        // Ödeme bölümüne scroll
+        setTimeout(() => {
+          const paymentSection = document.querySelector('.payment-section')
+          if (paymentSection) {
+            paymentSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          }
+        }, 100)
       }
     }
   }
 
-  // Bilgileri düzenleme için ilgili adıma git
-  const handleEditContact = () => {
-    setCurrentStep(1)
-  }
-
-  const handleEditAddress = () => {
-    setCurrentStep(2)
-  }
-
-  const handleEditPayment = () => {
-    setCurrentStep(3)
-  }
-
   // Önceki adıma dön
-  const handleBack = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1)
+  const handlePrevStep = () => {
+    if (currentStep === 2) {
+      setCurrentStep(1)
+      setTimeout(() => {
+        const addressSection = document.querySelector('.address-step')
+        if (addressSection) {
+          addressSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+      }, 100)
     }
   }
 
@@ -305,8 +306,8 @@ const Checkout = () => {
       // Kart numarasından boşlukları kaldır
       const cleanCardNumber = cardInfo.cardNumber.replace(/\s/g, '')
       
-      // Son kullanma tarihini MM/YY formatına çevir
-      const cardExpiry = `${cardInfo.expiryMonth}/${cardInfo.expiryYear}`
+      // Son kullanma tarihi zaten MM/YY formatında
+      const cardExpiry = cardInfo.expiry // MM/YY formatında
       
       // Sipariş detaylarını hazırla
       // NOT: Price gönderiliyor ama backend'de tekrar hesaplanıp doğrulanacak (güvenlik için)
@@ -341,14 +342,26 @@ const Checkout = () => {
         cardNumber: cleanCardNumber,
         cardExpiry: cardExpiry,
         cardCvc: cardInfo.cvv,
+        // Kart adı soyadı kaldırıldı - backend'den alınacak
         firstName: contactInfo.firstName,
         lastName: contactInfo.lastName,
         email: contactInfo.email,
         phone: contactInfo.phone.replace(/\D/g, ''), // Sadece rakamlar
-        address: addressInfo.address,
-        city: addressInfo.city,
-        district: addressInfo.district,
-        addressDetail: addressInfo.addressDetail || null,
+        // Adres bilgileri: Kayıtlı adres seçilmediyse manuel girilen adres gönderilir
+        address: (isAuthenticated && useSavedAddress && selectedAddressId) 
+          ? null  // Kayıtlı adres seçildiyse, addressId gönderilir, address null
+          : addressInfo.address,  // Kayıtlı adres seçilmediyse, manuel girilen adres gönderilir
+        city: (isAuthenticated && useSavedAddress && selectedAddressId) 
+          ? null 
+          : addressInfo.city,
+        district: (isAuthenticated && useSavedAddress && selectedAddressId) 
+          ? null 
+          : addressInfo.district,
+        addressDetail: null,
+        // Fatura adresi
+        invoiceAddress: useSameAddressForInvoice ? null : invoiceAddressInfo.address,
+        invoiceCity: useSameAddressForInvoice ? null : invoiceAddressInfo.city,
+        invoiceDistrict: useSameAddressForInvoice ? null : invoiceAddressInfo.district,
         orderDetails: orderDetails, // Backend bu detaylardan fiyatları hesaplayacak
         frontendCallbackUrl: window.location.origin + '/payment/3d-callback', // Frontend callback URL'i
         // Login kullanıcı için adres bilgileri
@@ -516,6 +529,11 @@ const Checkout = () => {
       return
     }
     
+    // Ödeme bilgileri validasyonu
+    if (!validatePaymentStep()) {
+      return
+    }
+    
     setIsProcessing(true)
     
     // Ödeme işlemini başlat
@@ -570,10 +588,6 @@ const Checkout = () => {
     if (/^4/.test(number)) return 'visa'
     // Mastercard: 51-55 veya 2221-2720 ile başlar
     if (/^5[1-5]/.test(number) || /^2[2-7]/.test(number)) return 'mastercard'
-    // American Express: 34 veya 37 ile başlar
-    if (/^3[47]/.test(number)) return 'amex'
-    // Discover: 6011, 65, veya 644-649 ile başlar
-    if (/^6(?:011|5|4[4-9])/.test(number)) return 'discover'
     // Troy: 9792 ile başlar
     if (/^9792/.test(number)) return 'troy'
     
@@ -585,6 +599,14 @@ const Checkout = () => {
     const numbers = value.replace(/\s/g, '')
     const formatted = numbers.match(/.{1,4}/g)?.join(' ') || numbers
     return formatted.slice(0, 19) // 16 haneli kart + 3 boşluk
+  }
+
+  // Son kullanma tarihi formatla (MM/YY)
+  const formatExpiry = (value) => {
+    const numbers = value.replace(/\D/g, '')
+    if (numbers.length === 0) return ''
+    if (numbers.length <= 2) return numbers
+    return `${numbers.slice(0, 2)}/${numbers.slice(2, 4)}`
   }
 
   const detectedCardType = getCardType(cardInfo.cardNumber)
@@ -623,168 +645,122 @@ const Checkout = () => {
       />
       <header className="checkout-header">
         <h1>Ödeme</h1>
-        <div className="checkout-steps">
-          {[1, 2, 3, 4].map((step) => (
-            <div key={step} className={`step ${currentStep >= step ? 'active' : ''} ${currentStep === step ? 'current' : ''}`}>
-              <div className="step-number">{step}</div>
-              <div className="step-label">
-                {step === 1 && 'İletişim'}
-                {step === 2 && 'Adres'}
-                {step === 3 && 'Ödeme'}
-                {step === 4 && 'Özet'}
-              </div>
-            </div>
-          ))}
+        <div className="checkout-steps-indicator">
+          <div className={`step-indicator ${currentStep >= 1 ? 'active' : ''} ${currentStep === 1 ? 'current' : ''}`}>
+            <div className="step-number">1</div>
+            <div className="step-title">Adres Bilgileri</div>
+          </div>
+          <div className="step-connector"></div>
+          <div className={`step-indicator ${currentStep >= 2 ? 'active' : ''} ${currentStep === 2 ? 'current' : ''}`}>
+            <div className="step-number">2</div>
+            <div className="step-title">Ödeme Bilgileri</div>
+          </div>
         </div>
       </header>
 
       <div className="checkout-content">
         <div className="checkout-form-section">
-          {/* Adım 1: İletişim Bilgileri */}
-          {currentStep === 1 && (
-            <section className="checkout-step">
-              <h2>İletişim Bilgileri</h2>
-              
-              {/* Giriş yapmış kullanıcı için bilgilendirme */}
-              {isAuthenticated && user && (
-                <div style={{ 
-                  padding: '1rem', 
-                  marginBottom: '1.5rem', 
-                  backgroundColor: '#e7f3ff', 
-                  borderRadius: '4px',
-                  border: '1px solid #b3d9ff',
-                  fontSize: '0.9rem',
-                  color: '#004085'
-                }}>
-                  <p style={{ margin: 0 }}>
-                    <strong>Bilgi:</strong> İletişim bilgileriniz profilinizden otomatik olarak doldurulmuştur. 
-                    İsterseniz değiştirebilirsiniz.
-                  </p>
-                </div>
-              )}
-              
-              {/* Giriş yapmamış kullanıcı için bilgilendirme */}
-              {!isAuthenticated && (
-                <div style={{ 
-                  padding: '1rem', 
-                  marginBottom: '1.5rem', 
-                  backgroundColor: '#f8f9fa', 
-                  borderRadius: '4px',
-                  border: '1px solid #dee2e6'
-                }}>
-                  <p style={{ margin: 0, color: '#495057' }}>
-                    Lütfen iletişim bilgilerinizi giriniz. Tüm alanları doldurmanız gerekmektedir.
-                  </p>
-                </div>
-              )}
-              
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="firstName">
-                    Ad <span className="required">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="firstName"
-                    name="firstName"
-                    value={contactInfo.firstName}
-                    onChange={(e) => setContactInfo({ ...contactInfo, firstName: e.target.value })}
-                    placeholder="Adınız"
-                    autoComplete="given-name"
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="lastName">
-                    Soyad <span className="required">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="lastName"
-                    name="lastName"
-                    value={contactInfo.lastName}
-                    onChange={(e) => setContactInfo({ ...contactInfo, lastName: e.target.value })}
-                    placeholder="Soyadınız"
-                    autoComplete="family-name"
-                    required
-                  />
-                </div>
-              </div>
-              <div className="form-group">
-                <label htmlFor="email">
-                  E-posta <span className="required">*</span>
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={contactInfo.email}
-                  onChange={(e) => setContactInfo({ ...contactInfo, email: e.target.value })}
-                  placeholder="ornek@email.com"
-                  autoComplete="email"
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="phone">
-                  Telefon <span className="required">*</span>
-                </label>
-                <input
-                  type="tel"
-                  id="phone"
-                  name="phone"
-                  value={contactInfo.phone}
-                  onChange={(e) => {
-                    const value = e.target.value.replace(/\D/g, '')
-                    if (value.length <= 11) {
-                      setContactInfo({ ...contactInfo, phone: value })
-                    }
-                  }}
-                  placeholder="05XX XXX XX XX"
-                  autoComplete="tel"
-                  required
-                />
-              </div>
-            </section>
-          )}
+          <form onSubmit={handleCompleteOrder} className="checkout-form">
+            {/* Temp 1: Adres Bilgileri */}
+            {currentStep === 1 && (
+              <div className="address-step">
+                {/* İletişim Bilgileri */}
+                <section className="form-section contact-section">
+                  <div className="section-header">
+                    <h2>İletişim Bilgileri</h2>
+                    <p className="section-description">Siparişiniz için gerekli iletişim bilgilerinizi giriniz</p>
+                  </div>
+                  
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label htmlFor="firstName">
+                        <span className="label-text">Ad</span>
+                        <span className="required">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="firstName"
+                        name="firstName"
+                        value={contactInfo.firstName}
+                        onChange={(e) => setContactInfo({ ...contactInfo, firstName: e.target.value })}
+                        placeholder="Adınız"
+                        autoComplete="given-name"
+                        className="form-input"
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="lastName">
+                        <span className="label-text">Soyad</span>
+                        <span className="required">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="lastName"
+                        name="lastName"
+                        value={contactInfo.lastName}
+                        onChange={(e) => setContactInfo({ ...contactInfo, lastName: e.target.value })}
+                        placeholder="Soyadınız"
+                        autoComplete="family-name"
+                        className="form-input"
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="form-group">
+                    <label htmlFor="email">
+                      <span className="label-text">E-posta</span>
+                      <span className="required">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      value={contactInfo.email}
+                      onChange={(e) => setContactInfo({ ...contactInfo, email: e.target.value })}
+                      placeholder="ornek@email.com"
+                      autoComplete="email"
+                      className="form-input"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label htmlFor="phone">
+                      <span className="label-text">Telefon</span>
+                      <span className="required">*</span>
+                    </label>
+                    <input
+                      type="tel"
+                      id="phone"
+                      name="phone"
+                      value={contactInfo.phone}
+                      onChange={(e) => {
+                        let value = e.target.value.replace(/\D/g, '')
+                        if (value.startsWith('90') && value.length > 10) {
+                          value = value.substring(2)
+                        }
+                        if (value.startsWith('0')) {
+                          value = value.substring(1)
+                        }
+                        if (value.length <= 10) {
+                          setContactInfo({ ...contactInfo, phone: value })
+                        }
+                      }}
+                      placeholder="5336360079"
+                      autoComplete="tel"
+                      maxLength={10}
+                      className="form-input"
+                      required
+                    />
+                    <span className="input-hint">10 haneli telefon numaranızı giriniz (örn: 5336360079)</span>
+                  </div>
+                </section>
 
-          {/* Adım 2: Adres Bilgileri */}
-          {currentStep === 2 && (
-            <section className="checkout-step">
+            {/* Adres Bilgileri */}
+            <section className="form-section">
               <h2>Adres Bilgileri</h2>
-              
-              {/* Guest kullanıcı için bilgilendirme */}
-              {!isAuthenticated && (
-                <div style={{ 
-                  padding: '1rem', 
-                  marginBottom: '1.5rem', 
-                  backgroundColor: '#f8f9fa', 
-                  borderRadius: '4px',
-                  border: '1px solid #dee2e6'
-                }}>
-                  <p style={{ margin: 0, color: '#495057' }}>
-                    Lütfen teslimat adresinizi giriniz. Tüm alanları doldurmanız gerekmektedir.
-                  </p>
-                </div>
-              )}
-              
-              {/* Giriş yapmış kullanıcı için bilgilendirme */}
-              {isAuthenticated && userAddresses.length > 0 && (
-                <div style={{ 
-                  padding: '1rem', 
-                  marginBottom: '1.5rem', 
-                  backgroundColor: '#e7f3ff', 
-                  borderRadius: '4px',
-                  border: '1px solid #b3d9ff',
-                  fontSize: '0.9rem',
-                  color: '#004085'
-                }}>
-                  <p style={{ margin: 0 }}>
-                    <strong>Bilgi:</strong> Varsayılan adresiniz otomatik olarak seçilmiştir. 
-                    Kayıtlı adreslerinizden birini seçebilir veya yeni adres girebilirsiniz.
-                  </p>
-                </div>
-              )}
               
               {/* Login kullanıcı için kayıtlı adresler */}
               {isAuthenticated && userAddresses.length > 0 && (
@@ -801,12 +777,10 @@ const Checkout = () => {
                             fillAddressFromSelected(address)
                           }
                         } else if (!e.target.checked) {
-                          // Yeni adres girmek istiyor, formu temizle
                           setAddressInfo({
                             address: '',
                             city: '',
-                            district: '',
-                            addressDetail: ''
+                            district: ''
                           })
                         }
                       }}
@@ -816,52 +790,60 @@ const Checkout = () => {
                   </label>
                   
                   {useSavedAddress && (
-                    <div style={{ marginTop: '1rem', padding: '1rem', border: '1px solid #ddd', borderRadius: '4px' }}>
+                    <div className="saved-addresses-container">
                       {loadingAddresses ? (
-                        <p>Adresler yükleniyor...</p>
+                        <div className="address-loading">
+                          <div className="loading-spinner"></div>
+                          <p>Adresler yükleniyor...</p>
+                        </div>
                       ) : (
-                        <div>
+                        <div className="saved-addresses-grid">
                           {userAddresses.map((address) => (
                             <div
                               key={address.id}
-                              style={{
-                                padding: '0.75rem',
-                                marginBottom: '0.5rem',
-                                border: selectedAddressId === address.id ? '2px solid #007bff' : '1px solid #ddd',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                backgroundColor: selectedAddressId === address.id ? '#f0f8ff' : '#fff'
-                              }}
+                              className={`saved-address-card ${selectedAddressId === address.id ? 'selected' : ''}`}
                               onClick={() => handleAddressSelect(address.id)}
                             >
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                                <div style={{ flex: 1 }}>
-                                  <div style={{ fontWeight: 'bold', marginBottom: '0.25rem' }}>
-                                    {address.fullName}
-                                    {address.isDefault && (
-                                      <span style={{ marginLeft: '0.5rem', fontSize: '0.85rem', color: '#28a745' }}>
-                                        (Varsayılan)
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div style={{ fontSize: '0.9rem', color: '#666' }}>
-                                    {address.addressLine}
-                                    {address.addressDetail && `, ${address.addressDetail}`}
-                                  </div>
-                                  <div style={{ fontSize: '0.9rem', color: '#666' }}>
-                                    {address.district}, {address.city}
-                                  </div>
-                                  <div style={{ fontSize: '0.9rem', color: '#666' }}>
-                                    {address.phone}
-                                  </div>
+                              <div className="address-card-header">
+                                <div className="address-radio-wrapper">
+                                  <input
+                                    type="radio"
+                                    name="selectedAddress"
+                                    checked={selectedAddressId === address.id}
+                                    onChange={() => handleAddressSelect(address.id)}
+                                    className="address-radio"
+                                  />
+                                  <div className="radio-custom"></div>
                                 </div>
-                                <input
-                                  type="radio"
-                                  name="selectedAddress"
-                                  checked={selectedAddressId === address.id}
-                                  onChange={() => handleAddressSelect(address.id)}
-                                  style={{ marginLeft: '1rem' }}
-                                />
+                                {address.isDefault && (
+                                  <span className="default-badge">
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                      <path d="M8 0L10.163 5.674L16 6.182L12 10.326L12.944 16L8 13.174L3.056 16L4 10.326L0 6.182L5.837 5.674L8 0Z" fill="currentColor"/>
+                                    </svg>
+                                    Varsayılan
+                                  </span>
+                                )}
+                              </div>
+                              <div className="address-card-body">
+                                <div className="address-name">
+                                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M10 10C11.3807 10 12.5 8.88071 12.5 7.5C12.5 6.11929 11.3807 5 10 5C8.61929 5 7.5 6.11929 7.5 7.5C7.5 8.88071 8.61929 10 10 10Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M10 18.3333C13.6819 18.3333 16.6667 15.3486 16.6667 11.6667C16.6667 7.98477 13.6819 5 10 5C6.3181 5 3.33334 7.98477 3.33334 11.6667C3.33334 15.3486 6.3181 18.3333 10 18.3333Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
+                                  {address.fullName}
+                                </div>
+                                <div className="address-line">
+                                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M8 1.33333C5.05448 1.33333 2.66667 3.72114 2.66667 6.66667C2.66667 10.3333 8 14.6667 8 14.6667C8 14.6667 13.3333 10.3333 13.3333 6.66667C13.3333 3.72114 10.9455 1.33333 8 1.33333ZM8 8.66667C7.26362 8.66667 6.66667 8.06971 6.66667 7.33333C6.66667 6.59695 7.26362 6 8 6C8.73638 6 9.33333 6.59695 9.33333 7.33333C9.33333 8.06971 8.73638 8.66667 8 8.66667Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
+                                  {address.addressLine}
+                                </div>
+                                <div className="address-location">
+                                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M8 1.33333C5.05448 1.33333 2.66667 3.72114 2.66667 6.66667C2.66667 10.3333 8 14.6667 8 14.6667C8 14.6667 13.3333 10.3333 13.3333 6.66667C13.3333 3.72114 10.9455 1.33333 8 1.33333ZM8 8.66667C7.26362 8.66667 6.66667 8.06971 6.66667 7.33333C6.66667 6.59695 7.26362 6 8 6C8.73638 6 9.33333 6.59695 9.33333 7.33333C9.33333 8.06971 8.73638 8.66667 8 8.66667Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
+                                  {address.district}, {address.city}
+                                </div>
                               </div>
                             </div>
                           ))}
@@ -874,422 +856,315 @@ const Checkout = () => {
 
               {(!isAuthenticated || !useSavedAddress) && (
                 <>
-                  {isAuthenticated && !useSavedAddress && (
-                    <div style={{ 
-                      padding: '0.75rem', 
-                      marginBottom: '1rem', 
-                      backgroundColor: '#fff3cd', 
-                      borderRadius: '4px',
-                      border: '1px solid #ffc107',
-                      fontSize: '0.9rem',
-                      color: '#856404'
-                    }}>
-                      Yeni adres bilgilerinizi giriniz.
-                    </div>
-                  )}
                   <div className="form-group">
-                <label htmlFor="address">
-                  Adres <span className="required">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="address"
-                  name="address"
-                  value={addressInfo.address}
-                  onChange={(e) => setAddressInfo({ ...addressInfo, address: e.target.value })}
-                  placeholder="Mahalle, Sokak, Cadde"
-                  autoComplete="street-address"
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="addressDetail">Adres Detayı (Opsiyonel)</label>
-                <textarea
-                  id="addressDetail"
-                  value={addressInfo.addressDetail}
-                  onChange={(e) => setAddressInfo({ ...addressInfo, addressDetail: e.target.value })}
-                  placeholder="Daire no, kat, bina adı vb."
-                  rows="3"
-                />
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="city">
-                    Şehir <span className="required">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="city"
-                    name="city"
-                    value={addressInfo.city}
-                    onChange={(e) => setAddressInfo({ ...addressInfo, city: e.target.value })}
-                    required
-                    placeholder="Şehir adı"
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="district">
-                    İlçe <span className="required">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="district"
-                    name="district"
-                    value={addressInfo.district}
-                    onChange={(e) => setAddressInfo({ ...addressInfo, district: e.target.value })}
-                    required
-                    placeholder="İlçe adı"
-                  />
-                </div>
-              </div>
-
+                    <label htmlFor="address">
+                      Adres <span className="required">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="address"
+                      name="address"
+                      value={addressInfo.address}
+                      onChange={(e) => setAddressInfo({ ...addressInfo, address: e.target.value })}
+                      placeholder="Mahalle, Sokak, Cadde"
+                      autoComplete="street-address"
+                      required
+                    />
+                  </div>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label htmlFor="city">
+                        Şehir <span className="required">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="city"
+                        name="city"
+                        value={addressInfo.city}
+                        onChange={(e) => setAddressInfo({ ...addressInfo, city: e.target.value })}
+                        required
+                        placeholder="Şehir adı"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="district">
+                        İlçe <span className="required">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="district"
+                        name="district"
+                        value={addressInfo.district}
+                        onChange={(e) => setAddressInfo({ ...addressInfo, district: e.target.value })}
+                        required
+                        placeholder="İlçe adı"
+                      />
+                    </div>
+                  </div>
                 </>
               )}
             </section>
-          )}
 
-          {/* Adım 3: Kart Bilgileri */}
-          {currentStep === 3 && (
-            <section className="checkout-step">
-              <h2>Ödeme Bilgileri</h2>
-              <p className="step-description">Güvenli ödeme için kart bilgilerinizi giriniz</p>
+            {/* Fatura Adresi */}
+            <section className="form-section">
+              <h2>Fatura Adresi</h2>
               
-              {/* Desteklenen Kartlar */}
-              <div className="supported-cards">
-                <div className="card-icons">
-                  <span className={`card-icon ${detectedCardType === 'visa' ? 'active' : ''}`} title="Visa">
-                    <img src="/images/visa.png" alt="Visa" className="card-logo-img" />
-                  </span>
-                  <span className={`card-icon ${detectedCardType === 'mastercard' ? 'active' : ''}`} title="Mastercard">
-                    <img src="/images/master.png" alt="Mastercard" className="card-logo-img" />
-                  </span>
-                  <span className={`card-icon ${detectedCardType === 'troy' ? 'active' : ''}`} title="Troy">
-                    <img src="/images/troy.png" alt="Troy" className="card-logo-img" />
-                  </span>
-                </div>
-              </div>
-
-              <form autoComplete="on">
-                <div className="form-group">
-                  <label htmlFor="cardNumber">
-                    Kart Numarası <span className="required">*</span>
-                  </label>
-                  <div className="card-input-wrapper">
-                    <input
-                      type="tel"
-                      id="cardNumber"
-                      name="cardNumber"
-                      value={cardInfo.cardNumber}
-                      onChange={(e) => {
-                        const formatted = formatCardNumber(e.target.value)
-                        setCardInfo({ ...cardInfo, cardNumber: formatted })
-                      }}
-                      placeholder="1234 5678 9012 3456"
-                      maxLength="19"
-                      autoComplete="cc-number"
-                      inputMode="numeric"
-                      pattern="[0-9\s]{13,19}"
-                      required
-                    />
-                    {detectedCardType && (
-                      <div className="detected-card-icon">
-                        {detectedCardType === 'visa' && (
-                          <img src="/images/visa.png" alt="Visa" className="detected-card-logo" />
-                        )}
-                        {detectedCardType === 'mastercard' && (
-                          <img src="/images/master.png" alt="Mastercard" className="detected-card-logo" />
-                        )}
-                        {detectedCardType === 'troy' && (
-                          <img src="/images/troy.png" alt="Troy" className="detected-card-logo" />
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="form-group">
-                  <label htmlFor="cardName">
-                    Kart Üzerindeki İsim <span className="required">*</span>
-                  </label>
+              <div className="form-group">
+                <label>
                   <input
-                    type="text"
-                    id="cardName"
-                    name="cardName"
-                    value={cardInfo.cardName}
-                    onChange={(e) => setCardInfo({ ...cardInfo, cardName: e.target.value.toUpperCase() })}
-                    placeholder="AD SOYAD"
-                    autoComplete="cc-name"
-                    required
+                    type="checkbox"
+                    checked={useSameAddressForInvoice}
+                    onChange={(e) => {
+                      setUseSameAddressForInvoice(e.target.checked)
+                      if (e.target.checked) {
+                        // Aynı adresi kullan, fatura adresini temizle
+                        setInvoiceAddressInfo({
+                          address: '',
+                          city: '',
+                          district: ''
+                        })
+                      }
+                    }}
+                    style={{ marginRight: '0.5rem' }}
                   />
-                </div>
-                <div className="form-row">
+                  Faturam kargo ile aynı adrese gönderilsin
+                </label>
+              </div>
+
+              {!useSameAddressForInvoice && (
+                <>
                   <div className="form-group">
-                    <label htmlFor="expiryMonth">
-                      Son Kullanma Tarihi <span className="required">*</span>
-                    </label>
-                    <div className="expiry-inputs">
-                      <select
-                        id="expiryMonth"
-                        name="expiryMonth"
-                        value={cardInfo.expiryMonth}
-                        onChange={(e) => setCardInfo({ ...cardInfo, expiryMonth: e.target.value })}
-                        autoComplete="cc-exp-month"
-                        required
-                      >
-                        <option value="">Ay</option>
-                        {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
-                          <option key={month} value={String(month).padStart(2, '0')}>
-                            {String(month).padStart(2, '0')}
-                          </option>
-                        ))}
-                      </select>
-                      <select
-                        id="expiryYear"
-                        name="expiryYear"
-                        value={cardInfo.expiryYear}
-                        onChange={(e) => setCardInfo({ ...cardInfo, expiryYear: e.target.value })}
-                        autoComplete="cc-exp-year"
-                        required
-                      >
-                        <option value="">Yıl</option>
-                        {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() + i).map((year) => (
-                          <option key={year} value={String(year).slice(-2)}>
-                            {year}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="cvv">
-                      CVV <span className="required">*</span>
+                    <label htmlFor="invoiceAddress">
+                      Fatura Adresi <span className="required">*</span>
                     </label>
                     <input
-                      type="tel"
-                      id="cvv"
-                      name="cvv"
-                      value={cardInfo.cvv}
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/\D/g, '')
-                        if (value.length <= 3) {
-                          setCardInfo({ ...cardInfo, cvv: value })
-                        }
-                      }}
-                      placeholder="123"
-                      maxLength="3"
-                      autoComplete="cc-csc"
-                      inputMode="numeric"
-                      pattern="[0-9]{3}"
-                      required
+                      type="text"
+                      id="invoiceAddress"
+                      name="invoiceAddress"
+                      value={invoiceAddressInfo.address}
+                      onChange={(e) => setInvoiceAddressInfo({ ...invoiceAddressInfo, address: e.target.value })}
+                      placeholder="Mahalle, Sokak, Cadde"
+                      autoComplete="street-address"
+                      required={!useSameAddressForInvoice}
                     />
                   </div>
-                </div>
-              </form>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label htmlFor="invoiceCity">
+                        Şehir <span className="required">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="invoiceCity"
+                        name="invoiceCity"
+                        value={invoiceAddressInfo.city}
+                        onChange={(e) => setInvoiceAddressInfo({ ...invoiceAddressInfo, city: e.target.value })}
+                        required={!useSameAddressForInvoice}
+                        placeholder="Şehir adı"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="invoiceDistrict">
+                        İlçe <span className="required">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="invoiceDistrict"
+                        name="invoiceDistrict"
+                        value={invoiceAddressInfo.district}
+                        onChange={(e) => setInvoiceAddressInfo({ ...invoiceAddressInfo, district: e.target.value })}
+                        required={!useSameAddressForInvoice}
+                        placeholder="İlçe adı"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
             </section>
-          )}
 
-          {/* Adım 4: Sipariş Özeti */}
-          {currentStep === 4 && (
-            <section className="checkout-step">
-              <h2>Sipariş Özeti</h2>
-              <p className="step-description">Lütfen bilgilerinizi kontrol ediniz</p>
-              
-              <div className="summary-section">
-                <div className="summary-info-card">
-                  <div className="card-header-with-edit">
-                    <h3>İletişim Bilgileri</h3>
-                    <button 
-                      type="button" 
-                      className="edit-info-btn-card"
-                      onClick={handleEditContact}
-                      aria-label="İletişim bilgilerini düzenle"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                      </svg>
-                    </button>
-                  </div>
-                  <div className="info-details">
-                    <p><strong>Ad Soyad:</strong> {contactInfo.firstName} {contactInfo.lastName}</p>
-                    <p><strong>E-posta:</strong> {contactInfo.email}</p>
-                    <p><strong>Telefon:</strong> {contactInfo.phone}</p>
-                  </div>
-                </div>
-
-                <div className="summary-info-card">
-                  <div className="card-header-with-edit">
-                    <h3>Adres Bilgileri</h3>
-                    <button 
-                      type="button" 
-                      className="edit-info-btn-card"
-                      onClick={handleEditAddress}
-                      aria-label="Adres bilgilerini düzenle"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                      </svg>
-                    </button>
-                  </div>
-                  <div className="info-details">
-                    <p>{addressInfo.address}</p>
-                    <p>{addressInfo.district}, {addressInfo.city}</p>
-                    {addressInfo.addressDetail && (
-                      <p><strong>Adres Detayı:</strong> {addressInfo.addressDetail}</p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="summary-info-card">
-                  <div className="card-header-with-edit">
-                    <h3>Ödeme Bilgileri</h3>
-                    <button 
-                      type="button" 
-                      className="edit-info-btn-card"
-                      onClick={handleEditPayment}
-                      aria-label="Ödeme bilgilerini düzenle"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                      </svg>
-                    </button>
-                  </div>
-                  <div className="info-details">
-                    <p><strong>Kart Numarası:</strong> •••• •••• •••• {cardInfo.cardNumber.length >= 4 ? cardInfo.cardNumber.slice(-4) : ''}</p>
-                    <p><strong>Kart Sahibi:</strong> {cardInfo.cardName}</p>
-                    <p><strong>Son Kullanma:</strong> {cardInfo.expiryMonth}/{cardInfo.expiryYear}</p>
-                  </div>
-                </div>
-
-                <div className="summary-info-card">
-                  <h3>Sipariş Detayları</h3>
-                  <div className="order-items-summary">
-                    {cartItems.map((item) => (
-                      <div key={item.itemKey || item.id} className="order-item">
-                        <div className="order-item-info">
-                          <span className="order-item-name">{item.name}</span>
-                          {item.customizations && (
-                            <div className="order-item-details">
-                              <span>En: {item.customizations.en} cm</span>
-                              <span>Boy: {item.customizations.boy} cm</span>
-                              <span>Pile: {item.customizations.pileSikligi === 'pilesiz' ? 'Pilesiz' : item.customizations.pileSikligi}</span>
-                            </div>
-                          )}
-                          <span className="order-item-quantity">Adet: {item.quantity}</span>
-                        </div>
-                        <div className="order-item-price">
-                          {((item.customizations?.calculatedPrice || item.price) * item.quantity).toFixed(2)} ₺
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="order-total-summary">
-                    <div className="total-row">
-                      <span>Ara Toplam:</span>
-                      <span>{getCartSubtotal().toFixed(2)} ₺</span>
-                    </div>
-                    {discountAmount > 0 && couponCode && (
-                      <div className="total-row discount-row">
-                        <span>Kupon İndirimi ({couponCode}):</span>
-                        <span className="discount-amount">-{discountAmount.toFixed(2)} ₺</span>
-                      </div>
-                    )}
-                    <div className="total-row">
-                      <span>Kargo:</span>
-                      <span className="free-shipping">Ücretsiz</span>
-                    </div>
-                    <div className="total-row final">
-                      <span>Toplam:</span>
-                      <span>{getCartTotal().toFixed(2)} ₺</span>
-                    </div>
-                  </div>
+                {/* Adım Butonları - Adres */}
+                <div className="checkout-step-actions">
+                  <button 
+                    type="button"
+                    onClick={handleNextStep}
+                    className="btn-next-step"
+                  >
+                    Ödeme Bilgilerine Geç →
+                  </button>
                 </div>
               </div>
-            </section>
-          )}
-
-          {/* Adım Butonları */}
-          <div className="checkout-actions">
-            {currentStep > 1 && (
-              <button type="button" onClick={handleBack} className="btn-back">
-                ← Geri
-              </button>
             )}
-            {currentStep < totalSteps ? (
-              <button type="button" onClick={handleNext} className="btn-next">
-                {currentStep === 3 ? 'Özet\'e Git →' : 'İlerle →'}
-              </button>
-            ) : currentStep === 4 ? (
-              <button 
-                type="button" 
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  handleCompleteOrder(e)
-                }}
-                onMouseDown={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                }}
-                className="btn-complete"
-                disabled={isProcessing}
-              >
-                {isProcessing ? 'Ödeme İşleniyor...' : 'Ödeme Yap'}
-              </button>
-            ) : null}
-          </div>
+
+            {/* Temp 2: Ödeme Bilgileri */}
+            {currentStep === 2 && (
+              <div className="payment-step">
+                <section className="form-section payment-section">
+                  <div className="payment-section-header">
+                    <h2>Ödeme Bilgileri</h2>
+                    <p className="payment-section-subtitle">Güvenli ödeme için kart bilgilerinizi giriniz</p>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="cardNumber">
+                      <span className="label-text">Kart Numarası</span>
+                      <span className="required">*</span>
+                    </label>
+                    <div className="card-input-wrapper">
+                      <input
+                        type="tel"
+                        id="cardNumber"
+                        name="cardNumber"
+                        value={cardInfo.cardNumber}
+                        onChange={(e) => {
+                          const formatted = formatCardNumber(e.target.value)
+                          setCardInfo({ ...cardInfo, cardNumber: formatted })
+                        }}
+                        placeholder="1234 5678 9012 3456"
+                        maxLength="19"
+                        autoComplete="cc-number"
+                        inputMode="numeric"
+                        pattern="[0-9\s]{13,19}"
+                        className="form-input card-number-input"
+                        required
+                      />
+                      {detectedCardType && (
+                        <div className="detected-card-icon">
+                          {detectedCardType === 'visa' && (
+                            <img src="/images/visa.png" alt="Visa" className="detected-card-logo" />
+                          )}
+                          {detectedCardType === 'mastercard' && (
+                            <img src="/images/master.png" alt="Mastercard" className="detected-card-logo" />
+                          )}
+                          {detectedCardType === 'troy' && (
+                            <img src="/images/troy.png" alt="Troy" className="detected-card-logo" />
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label htmlFor="expiry">
+                        <span className="label-text">Son Kullanma Tarihi</span>
+                        <span className="required">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="expiry"
+                        name="expiry"
+                        value={cardInfo.expiry}
+                        onChange={(e) => {
+                          const formatted = formatExpiry(e.target.value)
+                          setCardInfo({ ...cardInfo, expiry: formatted })
+                        }}
+                        placeholder="MM/YY"
+                        maxLength="5"
+                        autoComplete="cc-exp"
+                        inputMode="numeric"
+                        pattern="\d{2}/\d{2}"
+                        className="form-input"
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="cvv">
+                        <span className="label-text">CVV</span>
+                        <span className="required">*</span>
+                      </label>
+                      <input
+                        type="tel"
+                        id="cvv"
+                        name="cvv"
+                        value={cardInfo.cvv}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\D/g, '')
+                          if (value.length <= 3) {
+                            setCardInfo({ ...cardInfo, cvv: value })
+                          }
+                        }}
+                        placeholder="123"
+                        maxLength="3"
+                        autoComplete="cc-csc"
+                        inputMode="numeric"
+                        pattern="[0-9]{3}"
+                        className="form-input"
+                        required
+                      />
+                      <span className="input-hint">Kartınızın arkasındaki 3 haneli güvenlik kodu</span>
+                    </div>
+                  </div>
+
+                  {/* Desteklenen Kartlar */}
+                  <div className="supported-cards-section">
+                    <p className="supported-cards-label">Kabul Edilen Kartlar</p>
+                    <div className="card-icons">
+                      <span className={`card-icon ${detectedCardType === 'visa' ? 'active' : ''}`} title="Visa">
+                        <img src="/images/visa.png" alt="Visa" className="card-logo-img" />
+                      </span>
+                      <span className={`card-icon ${detectedCardType === 'mastercard' ? 'active' : ''}`} title="Mastercard">
+                        <img src="/images/master.png" alt="Mastercard" className="card-logo-img" />
+                      </span>
+                      <span className={`card-icon ${detectedCardType === 'troy' ? 'active' : ''}`} title="Troy">
+                        <img src="/images/troy.png" alt="Troy" className="card-logo-img" />
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Adım Butonları - Ödeme */}
+                  <div className="checkout-step-actions">
+                    <button 
+                      type="button"
+                      onClick={handlePrevStep}
+                      className="btn-prev-step"
+                    >
+                      ← Geri
+                    </button>
+                    <button 
+                      type="submit"
+                      className="btn-complete"
+                      disabled={isProcessing}
+                    >
+                      {isProcessing ? 'Ödeme İşleniyor...' : 'Ödeme Yap'}
+                    </button>
+                  </div>
+                </section>
+              </div>
+            )}
+          </form>
         </div>
 
         {/* Sipariş Özeti */}
         <aside className="checkout-summary">
-          <h2>Sipariş Özeti</h2>
+          <div className="summary-header">
+            <h2>Sipariş Özeti</h2>
+            <div className="item-count-badge">
+              {cartItems.length} {cartItems.length === 1 ? 'Ürün' : 'Ürün'}
+            </div>
+          </div>
           
-          {/* İletişim Bilgileri */}
-          {currentStep >= 1 && contactInfo.firstName && (
-            <div className="summary-info-section">
-              <h3>İletişim</h3>
-              <div className="summary-info-content">
-                <p>{contactInfo.firstName} {contactInfo.lastName}</p>
-                <p>{contactInfo.email}</p>
-                {contactInfo.phone && <p>{contactInfo.phone}</p>}
-              </div>
-            </div>
-          )}
-
-          {/* Adres Bilgileri */}
-          {currentStep >= 2 && addressInfo.address && (
-            <div className="summary-info-section">
-              <h3>Adres</h3>
-              <div className="summary-info-content">
-                <p>{addressInfo.address}</p>
-                <p>{addressInfo.district}, {addressInfo.city}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Ödeme Bilgileri */}
-          {currentStep >= 3 && cardInfo.cardNumber && (
-            <div className="summary-info-section">
-              <h3>Ödeme</h3>
-              <div className="summary-info-content">
-                <p>•••• •••• •••• {cardInfo.cardNumber.length >= 4 ? cardInfo.cardNumber.slice(-4) : ''}</p>
-                <p>{cardInfo.cardName}</p>
-                <p>{cardInfo.expiryMonth}/{cardInfo.expiryYear}</p>
-              </div>
-            </div>
-          )}
-
           <div className="summary-items">
             {cartItems.map((item) => (
-              <div key={item.itemKey || item.id} className="summary-item">
-                <div className="summary-item-info">
-                  <span className="item-name">{item.name}</span>
+              <div key={item.itemKey || item.id} className="summary-item-card">
+                <div className="summary-item-content">
+                  <div className="summary-item-header">
+                    <h3 className="item-name">{item.name}</h3>
+                    <div className="item-quantity-badge">{item.quantity}x</div>
+                  </div>
                   {item.customizations && (
-                    <div className="item-details">
-                      <span>En: {item.customizations.en} cm</span>
-                      <span>Boy: {item.customizations.boy} cm</span>
-                      <span>Pile: {item.customizations.pileSikligi === 'pilesiz' ? 'Pilesiz' : item.customizations.pileSikligi}</span>
+                    <div className="item-specs">
+                      <div className="spec-item">
+                        <span className="spec-label">En:</span>
+                        <span className="spec-value">{item.customizations.en} cm</span>
+                      </div>
+                      <div className="spec-item">
+                        <span className="spec-label">Boy:</span>
+                        <span className="spec-value">{item.customizations.boy} cm</span>
+                      </div>
+                      <div className="spec-item">
+                        <span className="spec-label">Pile:</span>
+                        <span className="spec-value">{item.customizations.pileSikligi === 'pilesiz' ? 'Pilesiz' : item.customizations.pileSikligi}</span>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1299,24 +1174,42 @@ const Checkout = () => {
               </div>
             ))}
           </div>
-          <div className="summary-total">
-            <div className="total-row">
-              <span>Ara Toplam:</span>
-              <span>{getCartSubtotal().toFixed(2)} ₺</span>
-            </div>
-            {discountAmount > 0 && couponCode && (
-              <div className="total-row discount-row">
-                <span>Kupon İndirimi ({couponCode}):</span>
-                <span className="discount-amount">-{discountAmount.toFixed(2)} ₺</span>
+          
+          <div className="summary-total-section">
+            <div className="total-divider"></div>
+            <div className="total-rows">
+              <div className="total-row">
+                <span className="total-label">Ara Toplam</span>
+                <span className="total-value">{getCartSubtotal().toFixed(2)} ₺</span>
               </div>
-            )}
-            <div className="total-row">
-              <span>Kargo:</span>
-              <span className="free-shipping">Ücretsiz</span>
+              {discountAmount > 0 && couponCode && (
+                <div className="total-row discount-row">
+                  <span className="total-label">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M8 1L9.5 5.5L14 7L9.5 8.5L8 13L6.5 8.5L2 7L6.5 5.5L8 1Z" fill="currentColor"/>
+                    </svg>
+                    Kupon İndirimi ({couponCode})
+                  </span>
+                  <span className="total-value discount-amount">-{discountAmount.toFixed(2)} ₺</span>
+                </div>
+              )}
+              <div className="total-row shipping-row">
+                <span className="total-label">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M2 4H10V12H2V4Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M10 6H14L15 7V12H10V6Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M5 12C5.55228 12 6 11.5523 6 11C6 10.4477 5.55228 10 5 10C4.44772 10 4 10.4477 4 11C4 11.5523 4.44772 12 5 12Z" fill="currentColor"/>
+                    <path d="M12 12C12.5523 12 13 11.5523 13 11C13 10.4477 12.5523 10 12 10C11.4477 10 11 10.4477 11 11C11 11.5523 11.4477 12 12 12Z" fill="currentColor"/>
+                  </svg>
+                  Kargo
+                </span>
+                <span className="total-value free-shipping">Ücretsiz</span>
+              </div>
             </div>
-            <div className="total-row final">
-              <span>Toplam:</span>
-              <span>{getCartTotal().toFixed(2)} ₺</span>
+            <div className="total-divider"></div>
+            <div className="total-final">
+              <span className="final-label">Toplam</span>
+              <span className="final-value">{getCartTotal().toFixed(2)} ₺</span>
             </div>
           </div>
         </aside>

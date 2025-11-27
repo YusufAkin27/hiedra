@@ -1352,23 +1352,6 @@ public class PaymentManager implements PaymentService {
             paymentCard.setCvc(paymentRequest.getCardCvc());
             paymentCard.setRegisterCard(0);
 
-            // 9️⃣ Buyer bilgileri
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-            Buyer buyer = new Buyer();
-            buyer.setId(UUID.randomUUID().toString());
-            buyer.setName(paymentRequest.getFirstName());
-            buyer.setSurname(paymentRequest.getLastName());
-            buyer.setGsmNumber(paymentRequest.getPhone());
-            buyer.setEmail(paymentRequest.getEmail());
-            buyer.setIdentityNumber("00000000000");
-            buyer.setLastLoginDate(LocalDateTime.now().format(formatter));
-            buyer.setRegistrationDate(LocalDateTime.now().format(formatter));
-            buyer.setRegistrationAddress(paymentRequest.getAddress());
-            buyer.setIp("0.0.0.0");
-            buyer.setCity(paymentRequest.getCity());
-            buyer.setCountry("Turkey");
-            buyer.setZipCode("34000");
-
             // 🔟 Adres bilgileri - Login kullanıcı için seçilen adresi kullan
             com.iyzipay.model.Address address = new com.iyzipay.model.Address();
             String addressLine;
@@ -1391,6 +1374,16 @@ public class PaymentManager implements PaymentService {
                             paymentRequest.getAddressId(), paymentRequest.getUserId());
                 } else {
                     // Adres bulunamadı veya kullanıcıya ait değil, request'ten al
+                    // Validasyon: addressId varsa ama adres bulunamadıysa, request'ten adres zorunlu
+                    if (paymentRequest.getAddress() == null || paymentRequest.getAddress().trim().isEmpty()) {
+                        return new ResponseMessage("Adres bilgileri zorunludur. Lütfen adres bilgilerinizi giriniz.", false);
+                    }
+                    if (paymentRequest.getCity() == null || paymentRequest.getCity().trim().isEmpty()) {
+                        return new ResponseMessage("Şehir bilgisi zorunludur. Lütfen şehir bilgisini giriniz.", false);
+                    }
+                    if (paymentRequest.getDistrict() == null || paymentRequest.getDistrict().trim().isEmpty()) {
+                        return new ResponseMessage("İlçe bilgisi zorunludur. Lütfen ilçe bilgisini giriniz.", false);
+                    }
                     addressLine = paymentRequest.getAddress() +
                             (paymentRequest.getAddressDetail() != null ? " - " + paymentRequest.getAddressDetail() : "");
                     city = paymentRequest.getCity();
@@ -1400,6 +1393,16 @@ public class PaymentManager implements PaymentService {
                 }
             } else {
                 // Guest kullanıcı veya adres seçilmemiş, request'ten al
+                // Validasyon: addressId yoksa adres bilgileri zorunlu
+                if (paymentRequest.getAddress() == null || paymentRequest.getAddress().trim().isEmpty()) {
+                    return new ResponseMessage("Adres bilgileri zorunludur. Lütfen adres bilgilerinizi giriniz.", false);
+                }
+                if (paymentRequest.getCity() == null || paymentRequest.getCity().trim().isEmpty()) {
+                    return new ResponseMessage("Şehir bilgisi zorunludur. Lütfen şehir bilgisini giriniz.", false);
+                }
+                if (paymentRequest.getDistrict() == null || paymentRequest.getDistrict().trim().isEmpty()) {
+                    return new ResponseMessage("İlçe bilgisi zorunludur. Lütfen ilçe bilgisini giriniz.", false);
+                }
                 addressLine = paymentRequest.getAddress() +
                         (paymentRequest.getAddressDetail() != null ? " - " + paymentRequest.getAddressDetail() : "");
                 city = paymentRequest.getCity();
@@ -1407,11 +1410,52 @@ public class PaymentManager implements PaymentService {
                 fullName = paymentRequest.getFirstName() + " " + paymentRequest.getLastName();
             }
             
+            // 9️⃣ Buyer bilgileri
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            Buyer buyer = new Buyer();
+            buyer.setId(UUID.randomUUID().toString());
+            buyer.setName(paymentRequest.getFirstName());
+            buyer.setSurname(paymentRequest.getLastName());
+            buyer.setGsmNumber(paymentRequest.getPhone());
+            buyer.setEmail(paymentRequest.getEmail());
+            buyer.setIdentityNumber("00000000000");
+            buyer.setLastLoginDate(LocalDateTime.now().format(formatter));
+            buyer.setRegistrationDate(LocalDateTime.now().format(formatter));
+            buyer.setRegistrationAddress(addressLine != null ? addressLine : "");
+            buyer.setIp("0.0.0.0");
+            buyer.setCity(city != null ? city : "");
+            buyer.setCountry("Turkey");
+            buyer.setZipCode("34000");
+            
             address.setContactName(fullName);
             address.setCity(city);
             address.setCountry("Turkey");
             address.setAddress(addressLine);
             address.setZipCode("34000");
+
+            // 🔟1️⃣ Fatura adresi (billing address) - Eğer farklı fatura adresi varsa
+            com.iyzipay.model.Address billingAddress = new com.iyzipay.model.Address();
+            if (paymentRequest.getInvoiceAddress() != null && 
+                paymentRequest.getInvoiceCity() != null && 
+                paymentRequest.getInvoiceDistrict() != null &&
+                !paymentRequest.getInvoiceAddress().trim().isEmpty() &&
+                !paymentRequest.getInvoiceCity().trim().isEmpty() &&
+                !paymentRequest.getInvoiceDistrict().trim().isEmpty()) {
+                // Farklı fatura adresi var
+                String invoiceAddressLine = paymentRequest.getInvoiceAddress();
+                String invoiceCity = paymentRequest.getInvoiceCity();
+                
+                billingAddress.setContactName(fullName);
+                billingAddress.setCity(invoiceCity);
+                billingAddress.setCountry("Turkey");
+                billingAddress.setAddress(invoiceAddressLine);
+                billingAddress.setZipCode("34000");
+                log.info("Farklı fatura adresi kullanılıyor: {}, {}, {}", invoiceAddressLine, invoiceCity, paymentRequest.getInvoiceDistrict());
+            } else {
+                // Aynı adres fatura adresi olarak kullanılıyor
+                billingAddress = address;
+                log.info("Kargo adresi fatura adresi olarak kullanılıyor");
+            }
 
             // 7️⃣ Basket items oluştur (kupon indirimi ile)
             List<BasketItem> basketItems = createBasketItems(
@@ -1440,7 +1484,7 @@ public class PaymentManager implements PaymentService {
             request.setPaymentCard(paymentCard);
             request.setBuyer(buyer);
             request.setShippingAddress(address);
-            request.setBillingAddress(address);
+            request.setBillingAddress(billingAddress);
             request.setBasketItems(basketItems);
 
             // 🔹 Payment Record oluştur (pending durumunda - 3D Secure başlatılmadan önce)

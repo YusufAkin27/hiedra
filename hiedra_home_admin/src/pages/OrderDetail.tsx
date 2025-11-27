@@ -469,12 +469,14 @@ function OrderDetailPage({ session, orderId, onBack }: OrderDetailPageProps) {
                     <th>Boy (cm)</th>
                     <th>Pile Tipi</th>
                     <th>Adet</th>
-                    <th>Fiyat</th>
+                    <th>Birim Fiyat</th>
+                    <th>Toplam Fiyat</th>
                   </tr>
                 </thead>
                 <tbody>
                   {order.orderItems.map((item) => {
-                    const itemPrice = item.totalPrice ?? item.price ?? 0
+                    const unitPrice = item.unitPrice ?? 0
+                    const totalPrice = item.totalPrice ?? item.price ?? 0
                     return (
                       <tr key={item.id}>
                         <td>{item.productName}</td>
@@ -482,10 +484,19 @@ function OrderDetailPage({ session, orderId, onBack }: OrderDetailPageProps) {
                         <td>{item.height}</td>
                         <td>{item.pleatType}</td>
                         <td>{item.quantity}</td>
-                        <td>{itemPrice.toFixed(2)} ₺</td>
+                        <td>{Number(unitPrice).toFixed(2)} ₺</td>
+                        <td>{Number(totalPrice).toFixed(2)} ₺</td>
                       </tr>
                     )
                   })}
+                  <tr style={{ fontWeight: 'bold', borderTop: '2px solid #e5e7eb', backgroundColor: '#f9fafb' }}>
+                    <td colSpan={6} style={{ textAlign: 'right', paddingRight: '1rem' }}>
+                      Sipariş Toplam Tutarı:
+                    </td>
+                    <td style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>
+                      {order.totalAmount.toFixed(2)} ₺
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from './Toast'
@@ -134,7 +134,6 @@ const ProductSpecificationsAccordion = React.memo(({ selectedProduct }) => {
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
 
 const ProductList = () => {
-  const location = useLocation()
   const navigate = useNavigate()
   const { addToCart, refreshCart } = useCart()
   const { accessToken } = useAuth()
@@ -146,10 +145,6 @@ const ProductList = () => {
   const [transitioningCategories, setTransitioningCategories] = useState({}) // Her kategori için geçiş durumu
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
   const [selectedDetailImage, setSelectedDetailImage] = useState(null)
-  const [searchInput, setSearchInput] = useState('')
-  const [searchSuggestions, setSearchSuggestions] = useState([])
-  const [showSuggestions, setShowSuggestions] = useState(false)
-  const [isSearching, setIsSearching] = useState(false)
   
   // Modal state'leri
   const [isPricingModalOpen, setIsPricingModalOpen] = useState({}) // Her kategori için modal durumu
@@ -166,17 +161,6 @@ const ProductList = () => {
   ]
   
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
-  
-  // URL'den arama terimini al
-  const searchParams = new URLSearchParams(location.search)
-  const searchTerm = searchParams.get('search') || ''
-  
-  // URL'den arama terimini input'a set et
-  useEffect(() => {
-    if (searchTerm) {
-      setSearchInput(searchTerm)
-    }
-  }, [searchTerm])
 
   // Backend'den ürünleri ve kategorileri çek
   useEffect(() => {
@@ -316,141 +300,6 @@ const ProductList = () => {
       .filter(cat => cat.products.length > 0) // Sadece ürünü olan kategorileri göster
   }, [products])
 
-  // Gelişmiş arama fonksiyonu - useCallback ile memoize et
-  const searchInProduct = useCallback((product, searchTerm) => {
-    if (!searchTerm || searchTerm.trim() === '') return false
-    
-    const searchLower = searchTerm.toLowerCase().trim()
-    const searchWords = searchLower.split(/\s+/).filter(word => word.length > 0)
-    
-    // Eğer tek kelime ise, her alanda ara
-    if (searchWords.length === 1) {
-      const word = searchWords[0]
-      return (
-        (product.name && product.name.toLowerCase().includes(word)) ||
-        (product.description && product.description.toLowerCase().includes(word)) ||
-        (product.shortDescription && product.shortDescription.toLowerCase().includes(word)) ||
-        (product.category && product.category.toLowerCase().includes(word)) ||
-        (product.productCode && product.productCode.toLowerCase().includes(word)) ||
-        (product.color && product.color.toLowerCase().includes(word)) ||
-        (product.material && product.material.toLowerCase().includes(word)) ||
-        (product.mountingType && product.mountingType.toLowerCase().includes(word)) ||
-        (product.usageArea && product.usageArea.toLowerCase().includes(word)) ||
-        (product.lightTransmittance && product.lightTransmittance.toLowerCase().includes(word))
-      )
-    }
-    
-    // Çok kelimeli aramada, tüm kelimelerin eşleşmesi gerekir
-    const searchableText = [
-      product.name,
-      product.description,
-      product.shortDescription,
-      product.category,
-      product.productCode,
-      product.color,
-      product.material,
-      product.mountingType,
-      product.usageArea,
-      product.lightTransmittance
-    ].filter(Boolean).join(' ').toLowerCase()
-    
-    return searchWords.every(word => searchableText.includes(word))
-  }, [])
-
-  // Arama sonuçlarını filtrele ve sırala - optimize edilmiş
-  const filteredProducts = useMemo(() => {
-    if (!searchTerm || searchTerm.trim() === '') return products
-    
-    const searchLower = searchTerm.toLowerCase().trim()
-    const results = products.filter(product => searchInProduct(product, searchTerm))
-    
-    // Sonuçları öncelik sırasına göre sırala
-    return results.sort((a, b) => {
-      // İsim eşleşmesi en yüksek öncelik
-      const aNameMatch = a.name.toLowerCase().includes(searchLower)
-      const bNameMatch = b.name.toLowerCase().includes(searchLower)
-      if (aNameMatch && !bNameMatch) return -1
-      if (!aNameMatch && bNameMatch) return 1
-      
-      // Ürün kodu eşleşmesi ikinci öncelik
-      const aCodeMatch = a.productCode && a.productCode.toLowerCase().includes(searchLower)
-      const bCodeMatch = b.productCode && b.productCode.toLowerCase().includes(searchLower)
-      if (aCodeMatch && !bCodeMatch) return -1
-      if (!aCodeMatch && bCodeMatch) return 1
-      
-      // İsim başlangıcı eşleşmesi üçüncü öncelik
-      const aStartsWith = a.name.toLowerCase().startsWith(searchLower)
-      const bStartsWith = b.name.toLowerCase().startsWith(searchLower)
-      if (aStartsWith && !bStartsWith) return -1
-      if (!aStartsWith && bStartsWith) return 1
-      
-      // Alfabetik sıralama
-      return a.name.localeCompare(b.name)
-    })
-  }, [products, searchTerm, searchInProduct])
-  
-  // Arama önerileri oluştur - optimize edilmiş (debounce ile)
-  const generateSearchSuggestions = useMemo(() => {
-    if (!searchInput || searchInput.trim().length < 2) return []
-    
-    const inputLower = searchInput.toLowerCase().trim()
-    const suggestions = new Set()
-    
-    // Performans için sadece ilk 50 üründe ara
-    const limitedProducts = products.slice(0, 50)
-    
-    // Ürün isimlerinden öneriler
-    limitedProducts.forEach(product => {
-      if (product.name && product.name.toLowerCase().includes(inputLower)) {
-        const words = product.name.split(/\s+/)
-        words.forEach(word => {
-          if (word.toLowerCase().startsWith(inputLower) && word.length > inputLower.length) {
-            suggestions.add(word)
-          }
-        })
-      }
-    })
-    
-    // Kategori önerileri
-    limitedProducts.forEach(product => {
-      if (product.category && product.category.toLowerCase().includes(inputLower)) {
-        suggestions.add(product.category)
-      }
-    })
-    
-    // Renk önerileri
-    limitedProducts.forEach(product => {
-      if (product.color && product.color.toLowerCase().includes(inputLower)) {
-        suggestions.add(product.color)
-      }
-    })
-    
-    // Ürün kodları
-    limitedProducts.forEach(product => {
-      if (product.productCode && product.productCode.toLowerCase().includes(inputLower)) {
-        suggestions.add(product.productCode)
-      }
-    })
-    
-    return Array.from(suggestions).slice(0, 8)
-  }, [searchInput, products])
-  
-  // Arama önerilerini güncelle - debounce ile optimize et (main-thread work azaltma)
-  useEffect(() => {
-    if (searchInput.trim().length < 2) {
-      setSearchSuggestions([])
-      setShowSuggestions(false)
-      return
-    }
-
-    // Debounce - 300ms bekle, main-thread'i bloklamadan
-    const timeoutId = setTimeout(() => {
-      setSearchSuggestions(generateSearchSuggestions)
-      setShowSuggestions(true)
-    }, 300)
-
-    return () => clearTimeout(timeoutId)
-  }, [searchInput, generateSearchSuggestions])
 
   // Ürün detay sayfasına git
   const handleProductClick = (productId) => {
@@ -945,179 +794,7 @@ const ProductList = () => {
     return colorMap[normalized] || trimmed // Eğer map'te yoksa direkt değeri döndür (hex olabilir)
   }
 
-  // Arama terimini vurgula
-  const highlightSearchTerm = (text, term) => {
-    if (!term || !text) return text
-    const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')
-    const parts = text.split(regex)
-    return (
-      <span>
-        {parts.map((part, index) => 
-          regex.test(part) ? (
-            <mark key={index} className="search-highlight">{part}</mark>
-          ) : (
-            part
-          )
-        )}
-      </span>
-    )
-  }
 
-  // Arama modunda tüm ürünleri göster
-  if (searchTerm) {
-    return (
-      <div className="product-list-container">
-        <SEO
-          title={`"${searchTerm}" Arama Sonuçları`}
-          description={`"${searchTerm}" için ${filteredProducts.length} ürün bulundu`}
-          url={`/?search=${encodeURIComponent(searchTerm)}`}
-        />
-        <header className="product-list-header-premium">
-          <div className="section-header-content-premium">
-            <div className="section-header-badge-premium">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="8" />
-                <path d="m21 21-4.35-4.35" />
-              </svg>
-              <span>Arama Sonuçları</span>
-            </div>
-            <h1 className="section-header-title-premium">
-              "{searchTerm}" için {filteredProducts.length} sonuç bulundu
-            </h1>
-            <p className="section-header-subtitle-premium">
-              Aradığınız kriterlere uygun ürünler aşağıda listelenmiştir
-            </p>
-          </div>
-        </header>
-
-        {filteredProducts.length === 0 ? (
-          <div className="no-products-search">
-            <div className="no-products-icon">
-              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="8" />
-                <path d="m21 21-4.35-4.35" />
-              </svg>
-            </div>
-            <h2>Ürün Bulunamadı</h2>
-            <p>"{searchTerm}" için aradığınız kriterlere uygun ürün bulunamadı.</p>
-            <div className="no-products-suggestions">
-              <p>Öneriler:</p>
-              <ul>
-                <li>Farklı anahtar kelimeler deneyin</li>
-                <li>Yazım hatalarını kontrol edin</li>
-                <li>Daha genel terimler kullanın</li>
-                <li>Ürün kodunu doğrudan arayın</li>
-              </ul>
-            </div>
-          </div>
-        ) : (
-          <div className="product-grid-search">
-            {filteredProducts.map(product => (
-              <div 
-                key={product.id} 
-                className="product-card-search" 
-                onClick={() => handleProductClick(product.id)}
-              >
-                <div className="product-card-search-image">
-                  <LazyImage src={product.image} alt={product.name} />
-                  {product.inStock && (
-                    <div className="product-stock-badge-search">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                      Stokta
-                    </div>
-                  )}
-                </div>
-                <div className="product-card-info">
-                  <div className="product-card-category">{product.category}</div>
-                  <h3>{highlightSearchTerm(product.name, searchTerm)}</h3>
-                  {product.productCode && (
-                    <div className="product-card-code">Kod: {highlightSearchTerm(product.productCode, searchTerm)}</div>
-                  )}
-                  {product.color && (
-                    <div className="product-card-color">Renk: {product.color}</div>
-                  )}
-                  <p className="product-price">Başlangıç: {product.price.toFixed(2)} ₺</p>
-                  {(product.averageRating > 0 || product.reviewCount > 0) && (
-                    <div
-                      className="product-card-rating review-link"
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => handleReviewNavigation(product.id)}
-                      onKeyDown={(e) => handleReviewKeyDown(e, product.id, handleReviewNavigation)}
-                      aria-label={`${product.name} yorumlarını görüntüle`}
-                    >
-                      <div className="rating-stars-small">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <svg
-                            key={star}
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill={star <= Math.floor(product.averageRating) ? "#FFD700" : "none"}
-                            stroke={star <= Math.floor(product.averageRating) ? "#FFD700" : "#ddd"}
-                            strokeWidth="2"
-                          >
-                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                          </svg>
-                        ))}
-                      </div>
-                      <span className="rating-value-small">{product.averageRating.toFixed(1)}</span>
-                      {product.reviewCount > 0 && (
-                        <span className="review-count-small">({product.reviewCount})</span>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    )
-  }
-
-  // Arama fonksiyonu
-  const handleSearch = (e) => {
-    e.preventDefault()
-    const trimmedInput = searchInput.trim()
-    if (trimmedInput) {
-      setIsSearching(true)
-      setShowSuggestions(false)
-      navigate(`/?search=${encodeURIComponent(trimmedInput)}`)
-      // Scroll to top
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-      setTimeout(() => setIsSearching(false), 500)
-    }
-  }
-  
-  // Öneri seçildiğinde
-  const handleSuggestionClick = (suggestion) => {
-    setSearchInput(suggestion)
-    setShowSuggestions(false)
-    setIsSearching(true)
-    navigate(`/?search=${encodeURIComponent(suggestion)}`)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-    setTimeout(() => setIsSearching(false), 500)
-  }
-  
-  // Arama input değiştiğinde
-  const handleSearchInputChange = (e) => {
-    setSearchInput(e.target.value)
-  }
-  
-  // Dışarı tıklandığında önerileri kapat
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (!event.target.closest('.hero-search-form') && !event.target.closest('.search-suggestions')) {
-        setShowSuggestions(false)
-      }
-    }
-    
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
 
   if (isLoading) {
     return (
@@ -1224,23 +901,6 @@ const ProductList = () => {
         <div className="hero-content-modern">
           <h1 className="hero-title-modern">Perde Satış - Tül Perde ve Modern Perde Modelleri</h1>
           <h2 className="hero-subtitle-modern">Uygun Perde Fiyatları ile Toptan Fiyatına Perakende Satış</h2>
-          
-          {/* Arama Çubuğu */}
-          <form className="hero-search-form" onSubmit={handleSearch}>
-            <input
-              type="text"
-              className="hero-search-input"
-              placeholder="Ürünün ismini, kodunu veya etiketini yazınız."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-            />
-            <button type="submit" className="hero-search-btn">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="8" />
-                <path d="m21 21-4.35-4.35" />
-              </svg>
-            </button>
-          </form>
           
           {/* İstatistik */}
           <div className="hero-statistics">

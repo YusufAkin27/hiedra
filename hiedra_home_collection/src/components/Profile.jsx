@@ -36,6 +36,23 @@ const Profile = () => {
     }
   }, [isAuthenticated, accessToken])
 
+  // Telefon numarasını temizle (backend'e gönderirken 0'ı kaldır, 10 haneli olmalı)
+  const cleanPhoneNumber = (phone) => {
+    if (!phone) return ''
+    // Sadece rakamları al
+    let cleaned = phone.replace(/\D/g, '')
+    // +90 veya 90 ile başlıyorsa kaldır
+    if (cleaned.startsWith('90') && cleaned.length > 10) {
+      cleaned = cleaned.substring(2)
+    }
+    // 0 ile başlıyorsa kaldır (backend'e 10 haneli gönderilecek)
+    if (cleaned.startsWith('0')) {
+      cleaned = cleaned.substring(1)
+    }
+    // Maksimum 10 karakter
+    return cleaned.substring(0, 10)
+  }
+
   const loadProfile = async () => {
     try {
       setLoading(true)
@@ -53,9 +70,29 @@ const Profile = () => {
       const data = await response.json()
       if (data.success && data.data) {
         setProfile(data.data)
+        // Telefon numarasını 05 ile başlayacak şekilde formatla
+        let phone = data.data.phone || ''
+        if (phone) {
+          // Sadece rakamları al
+          phone = phone.replace(/\D/g, '')
+          // +90 veya 90 ile başlıyorsa kaldır
+          if (phone.startsWith('90') && phone.length > 10) {
+            phone = phone.substring(2)
+          }
+          // 0 ile başlamıyorsa 0 ekle
+          if (!phone.startsWith('0') && phone.length === 10) {
+            phone = '0' + phone
+          }
+          // 05 ile başlamalı, eğer 0 ile başlıyorsa ama 5 değilse 05 yap
+          if (phone.startsWith('0') && phone.length > 1 && phone[1] !== '5') {
+            phone = '05' + phone.substring(1)
+          }
+          // Maksimum 11 karakter
+          phone = phone.substring(0, 11)
+        }
         setProfileForm({
           fullName: data.data.fullName || '',
-          phone: data.data.phone || ''
+          phone: phone
         })
       }
     } catch (err) {
@@ -66,11 +103,88 @@ const Profile = () => {
     }
   }
 
+  const handlePhoneChange = (e) => {
+    let value = e.target.value
+    
+    // +90 veya + karakteri girilirse engelle ve uyar
+    if (value.includes('+')) {
+      value = value.replace(/\+/g, '')
+    }
+    if (value.includes('90') && value.length > 2) {
+      // 90 ile başlıyorsa kaldır
+      if (value.startsWith('90')) {
+        value = value.substring(2)
+      } else {
+        value = value.replace(/90/g, '')
+      }
+    }
+    
+    // Sadece rakamları al
+    let cleaned = value.replace(/\D/g, '')
+    
+    // 05 ile başlamalı mantığı
+    if (cleaned.length > 0) {
+      // Eğer 5 ile başlıyorsa 0 ekle
+      if (cleaned.startsWith('5')) {
+        cleaned = '0' + cleaned
+      }
+      // Eğer 0 ile başlıyorsa ama ikinci karakter 5 değilse
+      else if (cleaned.startsWith('0') && cleaned.length > 1 && cleaned[1] !== '5') {
+        // İkinci karakteri 5 yap
+        cleaned = '05' + cleaned.substring(2)
+      }
+      // Eğer sadece 0 varsa, 05 yapmaya izin ver (kullanıcı 5 yazacak)
+      else if (cleaned === '0') {
+        // 0 var, kullanıcı 5 yazacak, olduğu gibi bırak
+      }
+    }
+    
+    // 0 ile başlıyorsa (05 ile başlamalı) maksimum 11 karakter
+    // 0 ile başlamıyorsa maksimum 10 karakter
+    if (cleaned.startsWith('0')) {
+      // Maksimum 11 karakter (05XXXXXXXXX)
+      cleaned = cleaned.substring(0, 11)
+    } else {
+      // 0 ile başlamıyorsa maksimum 10 karakter
+      cleaned = cleaned.substring(0, 10)
+    }
+    
+    setProfileForm({ ...profileForm, phone: cleaned })
+  }
+
   const handleProfileSubmit = async (e) => {
     e.preventDefault()
     setSaving(true)
     setError('')
     setSuccess('')
+
+    // Telefon numarası validasyonu
+    const phone = profileForm.phone.replace(/\D/g, '')
+    
+    // 05 ile başlamalı kontrolü
+    if (!phone.startsWith('05')) {
+      setError('Telefon numarası 05 ile başlamalıdır (örn: 05336360079)')
+      setSaving(false)
+      return
+    }
+    
+    // 0 ile başlıyorsa 11 karakter, değilse 10 karakter olmalı
+    if (phone.startsWith('0')) {
+      if (phone.length !== 11) {
+        setError('Telefon numarası 11 haneli olmalıdır (örn: 05336360079)')
+        setSaving(false)
+        return
+      }
+    } else {
+      if (phone.length !== 10) {
+        setError('Telefon numarası 10 haneli olmalıdır (örn: 5336360079)')
+        setSaving(false)
+        return
+      }
+    }
+    
+    // Backend'e gönderirken 0'ı kaldır (10 haneli)
+    const cleanedPhone = cleanPhoneNumber(profileForm.phone)
 
     try {
       const response = await fetch(`${API_BASE_URL}/user/profile`, {
@@ -79,7 +193,10 @@ const Profile = () => {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(profileForm)
+        body: JSON.stringify({
+          ...profileForm,
+          phone: cleanedPhone
+        })
       })
 
       const data = await response.json()
@@ -231,11 +348,15 @@ const Profile = () => {
                 type="tel"
                 id="phone"
                 value={profileForm.phone}
-                onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
-                placeholder="05XX XXX XX XX"
+                onChange={handlePhoneChange}
+                placeholder="05336360079"
                 className="profile-form-input"
                 required
+                minLength={11}
+                maxLength={11}
+                pattern="05[0-9]{9}"
               />
+              <span className="profile-form-hint">05 ile başlayan 11 haneli telefon numarası giriniz (örn: 05336360079). +90 girişi yapılamaz.</span>
             </div>
 
             {/* Form Actions */}

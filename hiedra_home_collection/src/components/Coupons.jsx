@@ -168,9 +168,9 @@ const Coupons = () => {
 
       {!error && coupons.length === 0 && (
         <div className="no-coupons">
-          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-            <circle cx="12" cy="10" r="3" />
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
+            <path d="M9 9h6M9 15h6" />
           </svg>
           <h2>Şu anda geçerli kupon bulunmuyor</h2>
           <p>Yeni kampanyalar ve özel fırsatlar için bizi takip edin!</p>
