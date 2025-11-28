@@ -1,0 +1,176 @@
+.promotion-banner-wrapper {
+  width: 100%;
+  max-width: 100%;
+  margin: 4rem 0 3rem 0;
+  padding: 1rem 0;
+  background: rgba(255, 255, 255, 0.95);
+  border-top: 1px solid rgba(193, 164, 102, 0.15);
+  border-bottom: 1px solid rgba(193, 164, 102, 0.15);
+  border-left: none;
+  border-right: none;
+  border-radius: 0;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04),
+              inset 0 1px 0 rgba(255, 255, 255, 1);
+}
+
+.promotion-banner {
+  display: flex;
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  /* Masaüstünde tam genişlik için mask kaldırıldı */
+}
+
+.promotion-banner-content {
+  display: flex;
+  gap: 3rem;
+  animation: scroll-left 30s linear infinite;
+  white-space: nowrap;
+  flex-shrink: 0;
+  will-change: transform;
+  min-width: max-content;
+}
+
+@keyframes scroll-left {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(calc(-100% / 2));
+  }
+}
+
+.promotion-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.65rem 1.75rem;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.promotion-item::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1px;
+  height: 20px;
+  background: rgba(193, 164, 102, 0.2);
+}
+
+.promotion-item:last-child::after {
+  display: none;
+}
+
+.promotion-item:hover {
+  transform: translateY(-1px);
+}
+
+.promotion-text {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #2c3e50;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  transition: color 0.3s ease;
+  text-transform: uppercase;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  position: relative;
+}
+
+.promotion-item:hover .promotion-text {
+  color: #C1A466;
+}
+
+.promotion-text::before {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: #C1A466;
+  transition: width 0.3s ease;
+}
+
+.promotion-item:hover .promotion-text::before {
+  width: 100%;
+}
+
+/* Tablet ve mobil görünüm */
+@media (max-width: 1024px) {
+  .promotion-banner {
+    mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  }
+}
+
+@media (max-width: 768px) {
+  .promotion-banner-wrapper {
+    margin: 2.5rem 1rem 2rem 1rem;
+    padding: 1rem 1rem;
+    border-radius: 12px;
+    max-width: calc(100% - 2rem);
+    border-left: 1px solid rgba(193, 164, 102, 0.15);
+    border-right: 1px solid rgba(193, 164, 102, 0.15);
+  }
+
+  .promotion-banner-content {
+    gap: 2rem;
+    animation-duration: 25s;
+  }
+
+  .promotion-item {
+    padding: 0.5rem 1.25rem;
+  }
+
+  .promotion-item::after {
+    height: 16px;
+  }
+
+  .promotion-text {
+    font-size: 0.75rem;
+    letter-spacing: 0.4px;
+  }
+}
+
+@media (max-width: 480px) {
+  .promotion-banner-wrapper {
+    margin: 2rem auto 1.5rem auto;
+    padding: 0.875rem 0.75rem;
+    border-radius: 10px;
+    max-width: calc(100% - 1.5rem);
+  }
+
+  .promotion-banner-content {
+    gap: 1.5rem;
+    animation-duration: 20s;
+  }
+
+  .promotion-item {
+    padding: 0.45rem 1rem;
+  }
+
+  .promotion-item::after {
+    height: 14px;
+  }
+
+  .promotion-text {
+    font-size: 0.7rem;
+    letter-spacing: 0.3px;
+  }
+}
+
+/* Pause on hover */
+.promotion-banner:hover .promotion-banner-content {
+  animation-play-state: paused;
+}
+

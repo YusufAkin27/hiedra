@@ -130,37 +130,6 @@ const Header = () => {
     }
   }
 
-  const benefitIcons = {
-    shipping: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-        <path d="M3 7h13v10H3z" />
-        <path d="M16 11h4l1 2v4h-5z" />
-        <circle cx="7.5" cy="18" r="1.5" />
-        <circle cx="17.5" cy="18" r="1.5" />
-      </svg>
-    ),
-    return: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-        <polyline points="1 4 1 10 7 10" />
-        <path d="M3.51 15a9 9 0 1 0 .49-9.5" />
-      </svg>
-    ),
-    fast: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-        <line x1="4" y1="4" x2="10" y2="4" />
-        <line x1="4" y1="9" x2="10" y2="9" />
-        <line x1="4" y1="14" x2="10" y2="14" />
-        <polyline points="14 17 18 21 22 17" />
-        <line x1="18" y1="3" x2="18" y2="17" />
-      </svg>
-    )
-  }
-
-  const benefitItems = [
-    { title: 'Ücretsiz Kargo', icon: 'shipping' },
-    { title: '14 Gün Koşulsuz İade', icon: 'return' }
-  ]
-
   return (
     <>
       {/* Skip to Content Link - Erişilebilirlik için */}
@@ -169,21 +138,6 @@ const Header = () => {
       </a>
       
       <header className={`header ${isHeaderVisible ? 'header-visible' : 'header-hidden'} ${isScrolled ? 'scrolled' : ''}`} role="banner">
-        <div className="header-benefits" role="region" aria-label="Hiedra avantajları">
-          <div className="header-benefits-container">
-            {benefitItems.map((item) => (
-              <div key={item.title} className="header-benefit-item">
-                <div className="benefit-icon-wrapper" aria-hidden="true">
-                  {benefitIcons[item.icon]}
-                </div>
-                <div className="benefit-text-wrapper">
-                  <span className="benefit-title">{item.title}</span>
-                  <span className="benefit-subtitle">{item.subtitle}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
         <div className="header-main">
           <div className="header-container">
             <div className="logo-area">

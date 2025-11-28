@@ -30,7 +30,7 @@ const ProductDetail = () => {
   const [calculatedPrice, setCalculatedPrice] = useState(0)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isCalculatingPrice, setIsCalculatingPrice] = useState(false)
-  const [isFormOpen, setIsFormOpen] = useState(false)
+  const [isFormOpen, setIsFormOpen] = useState(true)
   const [allProducts, setAllProducts] = useState([]) // Tüm ürünler (ilgili ürünler için)
   const [formErrors, setFormErrors] = useState({ en: '', boy: '' }) // Form hata mesajları
   const [activeImageIndex] = useState(0)

@@ -7,6 +7,7 @@ import LazyImage from './LazyImage'
 import Loading from './Loading'
 import SEO from './SEO'
 import CategoryHeader from './CategoryHeader'
+import PromotionBanner from './PromotionBanner'
 import './ProductList.css'
 
 // Ürün Özellikleri Accordion Component - React.memo ile optimize et
@@ -898,6 +899,11 @@ const ProductList = () => {
       
       {/* Modern Hero Section */}
       <section className="hero-section-modern">
+        {/* Background Image - Sadece hero section içinde görünür */}
+        <div 
+          className="fixed-background-image"
+          aria-hidden="true"
+        />
         <div className="hero-content-modern">
           <h1 className="hero-title-modern">Perde Satış - Tül Perde ve Modern Perde Modelleri</h1>
           <h2 className="hero-subtitle-modern">Uygun Perde Fiyatları ile Toptan Fiyatına Perakende Satış</h2>
@@ -920,6 +926,9 @@ const ProductList = () => {
           </div>
         </div>
       </section>
+      
+      {/* Promotion Banner - Soldan sağa kayan şerit */}
+      <PromotionBanner />
       
       {/* Premium Section Header */}
       <header className="product-list-header-premium">

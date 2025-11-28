@@ -1224,7 +1224,7 @@
 
 .quantity-section label {
   font-weight: 500;
-  color: var(--text-primary);
+  color: #000000;
   transition: color 0.3s ease;
 }
 
@@ -1243,11 +1243,12 @@
   height: 40px;
   border: none;
   background: var(--bg-header);
-  color: white;
+  color: #000000;
   border-radius: 6px;
   font-size: 1.25rem;
   cursor: pointer;
   transition: background 0.3s ease, opacity 0.3s ease;
+  font-weight: 700;
 }
 
 .quantity-controls button:hover {
@@ -1258,6 +1259,7 @@
   min-width: 40px;
   text-align: center;
   font-weight: 600;
+  color: #000000;
 }
 
 .pricing-form {
@@ -1274,7 +1276,7 @@
   width: 100%;
   padding: 1.25rem 2rem;
   background: var(--bg-header);
-  color: white;
+  color: #000000;
   border: none;
   border-radius: 12px;
   font-weight: 700;
@@ -1340,18 +1342,18 @@
 }
 
 .pricing-form-toggle:hover .form-title {
-  color: var(--bg-header);
+  color: #000000;
 }
 
 .form-toggle-arrow {
-  color: var(--text-secondary);
+  color: #000000;
   transition: transform 0.3s ease, color 0.3s ease;
   flex-shrink: 0;
 }
 
 .form-toggle-arrow.open {
   transform: rotate(180deg);
-  color: var(--bg-header);
+  color: #000000;
 }
 
 .pricing-form {
@@ -1366,6 +1368,15 @@
   max-height: 2000px;
   opacity: 1;
   padding-top: 2rem;
+  color: #000000;
+}
+
+.pricing-form {
+  color: #000000;
+}
+
+.pricing-form input::placeholder {
+  color: #666666;
 }
 
 .form-section {
@@ -1375,7 +1386,7 @@
 .form-title {
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--text-primary);
+  color: #000000;
   margin: 0;
   transition: color 0.3s ease;
 }
@@ -1384,7 +1395,7 @@
 h2.form-title {
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--text-primary);
+  color: #000000;
   margin: 0;
   transition: color 0.3s ease;
 }
@@ -1404,7 +1415,7 @@ h2.form-title {
 
 .form-group label {
   font-weight: 600;
-  color: var(--text-primary);
+  color: #000000;
   font-size: 0.95rem;
   transition: color 0.3s ease;
 }
@@ -1417,7 +1428,7 @@ h2.form-title {
   display: block;
   font-size: 0.75rem;
   font-weight: 400;
-  color: var(--text-secondary);
+  color: #000000;
   margin-top: 0.25rem;
 }
 
@@ -1426,7 +1437,7 @@ h2.form-title {
   border: 2px solid var(--border-color);
   border-radius: 8px;
   background: var(--bg-primary);
-  color: var(--text-primary);
+  color: #000000;
   font-size: 1rem;
   transition: all 0.3s ease;
 }
@@ -1491,7 +1502,7 @@ h2.form-title {
   border: 2px solid var(--border-color);
   border-radius: 12px;
   background: var(--bg-primary);
-  color: var(--text-primary);
+  color: #000000;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
@@ -1517,7 +1528,7 @@ h2.form-title {
 
 .dropdown-selected {
   flex: 1;
-  color: var(--text-primary);
+  color: #000000;
   transition: color 0.3s ease;
 }
 
@@ -1530,12 +1541,12 @@ h2.form-title {
 
 .dropdown-arrow.open {
   transform: rotate(180deg);
-  color: var(--bg-header);
+  color: #000000;
 }
 
 .dropdown-trigger:hover .dropdown-arrow,
 .dropdown-trigger:focus .dropdown-arrow {
-  color: var(--bg-header);
+  color: #000000;
 }
 
 .dropdown-menu {
@@ -1570,7 +1581,7 @@ h2.form-title {
   padding: 1rem 1.25rem;
   background: transparent;
   border: none;
-  color: var(--text-primary);
+  color: #000000;
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
@@ -1599,7 +1610,7 @@ h2.form-title {
 
 .dropdown-option.selected {
   background: rgba(102, 126, 234, 0.1);
-  color: var(--bg-header);
+  color: #000000;
   font-weight: 600;
 }
 
@@ -1614,7 +1625,7 @@ h2.form-title {
 
 .option-multiplier {
   background: rgba(102, 126, 234, 0.1);
-  color: var(--bg-header);
+  color: #000000;
   padding: 0.3rem 0.75rem;
   border-radius: 8px;
   font-weight: 700;
@@ -1624,7 +1635,7 @@ h2.form-title {
 
 .form-info {
   font-size: 0.85rem;
-  color: var(--text-secondary);
+  color: #000000;
   margin-top: 0.5rem;
   line-height: 1.4;
   transition: color 0.3s ease;
@@ -1638,6 +1649,11 @@ h2.form-title {
   border-radius: 12px;
   border: 2px solid var(--border-color);
   transition: all 0.3s ease;
+  color: #000000;
+}
+
+.calculated-price-section * {
+  color: #000000;
 }
 
 .price-breakdown {
@@ -1652,6 +1668,11 @@ h2.form-title {
   align-items: center;
   padding: 0.5rem 0;
   border-bottom: 1px solid var(--border-color);
+  color: #000000;
+}
+
+.breakdown-item span {
+  color: #000000;
 }
 
 .breakdown-item:last-child {
@@ -1664,11 +1685,16 @@ h2.form-title {
   border-top: 2px solid var(--border-color);
   font-weight: 600;
   font-size: 1.1rem;
+  color: #000000;
+}
+
+.breakdown-item.total span {
+  color: #000000;
 }
 
 .total-price {
   font-size: 1.5rem;
-  color: var(--bg-header);
+  color: #000000;
   font-weight: 700;
 }
 
@@ -2012,6 +2038,79 @@ h2.form-title {
 
   .total-price {
     font-size: 1.25rem;
+  }
+
+  /* Özel Fiyatlandırma Formu - Mobil Optimizasyonu */
+  .pricing-form-wrapper {
+    margin-top: 1.5rem;
+  }
+
+  .pricing-form-toggle {
+    padding: 1rem 0;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .form-toggle-arrow {
+    width: 20px;
+    height: 20px;
+  }
+
+  .form-title,
+  h2.form-title {
+    font-size: 1.25rem;
+  }
+
+  .form-section {
+    margin-bottom: 1.25rem;
+  }
+
+  .form-group label {
+    font-size: 0.9rem;
+  }
+
+  .form-group input {
+    padding: 0.875rem;
+    font-size: 0.95rem;
+  }
+
+  .form-info {
+    font-size: 0.8rem;
+  }
+
+  .dropdown-trigger {
+    padding: 0.75rem 2.5rem 0.75rem 1rem;
+    font-size: 0.95rem;
+  }
+
+  .add-to-cart-btn {
+    padding: 1rem 1.5rem;
+    font-size: 1rem;
+    margin-top: 1.25rem;
+  }
+
+  .quantity-controls {
+    gap: 0.75rem;
+    padding: 0.4rem;
+  }
+
+  .quantity-controls button {
+    width: 36px;
+    height: 36px;
+    font-size: 1.1rem;
+  }
+
+  .quantity-controls span {
+    min-width: 36px;
+    font-size: 0.95rem;
+  }
+
+  .quantity-section {
+    gap: 0.75rem;
+  }
+
+  .quantity-section label {
+    font-size: 0.9rem;
   }
 }
 
@@ -2638,6 +2737,108 @@ h2.form-title {
   
   .similar-product-name {
     font-size: 0.875rem;
+  }
+
+  /* Özel Fiyatlandırma Formu - Çok Küçük Ekranlar */
+  .pricing-form-wrapper {
+    margin-top: 1.25rem;
+  }
+
+  .pricing-form-toggle {
+    padding: 0.875rem 0;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .form-toggle-arrow {
+    width: 18px;
+    height: 18px;
+  }
+
+  .form-title,
+  h2.form-title {
+    font-size: 1.1rem;
+  }
+
+  .form-section {
+    margin-bottom: 1rem;
+  }
+
+  .form-group label {
+    font-size: 0.85rem;
+  }
+
+  .form-group label .form-hint {
+    font-size: 0.7rem;
+  }
+
+  .form-group input {
+    padding: 0.75rem;
+    font-size: 0.9rem;
+  }
+
+  .form-info {
+    font-size: 0.75rem;
+    margin-top: 0.375rem;
+  }
+
+  .dropdown-trigger {
+    padding: 0.65rem 2rem 0.65rem 0.875rem;
+    font-size: 0.9rem;
+  }
+
+  .dropdown-option {
+    padding: 0.875rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  .add-to-cart-btn {
+    padding: 0.875rem 1.25rem;
+    font-size: 0.95rem;
+    margin-top: 1rem;
+  }
+
+  .quantity-controls {
+    gap: 0.5rem;
+    padding: 0.35rem;
+  }
+
+  .quantity-controls button {
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
+  }
+
+  .quantity-controls span {
+    min-width: 32px;
+    font-size: 0.9rem;
+  }
+
+  .quantity-section {
+    gap: 0.5rem;
+  }
+
+  .quantity-section label {
+    font-size: 0.85rem;
+  }
+
+  .calculated-price-section {
+    padding: 0.875rem;
+    margin-top: 1.25rem;
+  }
+
+  .breakdown-item {
+    padding: 0.4rem 0;
+    font-size: 0.9rem;
+  }
+
+  .breakdown-item.total {
+    font-size: 0.95rem;
+    padding-top: 0.75rem;
+  }
+
+  .total-price {
+    font-size: 1.1rem;
   }
 }
 

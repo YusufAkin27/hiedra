@@ -5,10 +5,11 @@
   overflow-x: hidden;
   overflow-y: visible;
   position: relative;
-  background: #FFFFFF;
+  background: transparent;
   margin-top: calc(-1 * var(--header-offset-desktop));
   width: 100%;
   height: auto;
+  z-index: 1;
 }
 
 @media (max-width: 1024px) {
@@ -23,22 +24,35 @@
   }
 }
 
-/* Modern Hero Section - Normal Document Flow */
+/* Background Image - Sadece hero section'da görünür, scroll yapıldığında kaybolur */
+.fixed-background-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background-image: url('/images/arkaplan.png');
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Modern Hero Section - Scroll ile birlikte hareket eder, arka plan fotoğrafı sadece burada görünür */
 .hero-section-modern {
   position: relative;
   width: 100%;
-  min-height: calc(100vh - var(--header-offset-desktop));
-  height: calc(100vh - var(--header-offset-desktop));
+  min-height: 100vh;
+  height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0 2rem;
-  margin-top: var(--header-offset-desktop);
-  background-image: url('/images/arkaplan.png');
-  background-size: 100% auto;
-  background-position: center calc(50% - 50px);
-  background-repeat: no-repeat;
+  margin-top: 0;
+  background: transparent;
   overflow: hidden;
+  z-index: 1;
 }
 
 .hero-section-modern::before {
@@ -48,7 +62,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.25);
+  background: rgba(0, 0, 0, 0.15);
   z-index: 1;
   pointer-events: none;
 }
@@ -57,7 +71,7 @@
   max-width: 900px;
   width: 100%;
   text-align: center;
-  z-index: 2;
+  z-index: 10;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -65,7 +79,7 @@
   justify-content: center;
   gap: 2.5rem;
   padding: 2rem;
-  min-height: calc(100vh - var(--header-offset-desktop));
+  min-height: 100vh;
   animation: heroContentFadeIn 1.2s ease-out;
 }
 
@@ -749,31 +763,41 @@
 }
 
 @media (max-width: 1024px) {
+  .fixed-background-image {
+    height: 100vh;
+    background-size: cover;
+    background-attachment: fixed;
+  }
+
   .hero-section-modern {
-    min-height: calc(100vh - var(--header-offset-tablet));
-    height: calc(100vh - var(--header-offset-tablet));
-    margin-top: var(--header-offset-tablet);
+    min-height: 100vh;
+    height: 100vh;
+    margin-top: 0;
   }
 
   .hero-content-modern {
-    min-height: calc(100vh - var(--header-offset-tablet));
+    min-height: 100vh;
   }
 }
 
 @media (max-width: 768px) {
-  .hero-section-modern {
-    min-height: calc(100vh - var(--header-offset-mobile));
-    height: calc(100vh - var(--header-offset-mobile));
-    padding: 0 1rem;
-    margin-top: var(--header-offset-mobile);
+  .fixed-background-image {
+    height: 100vh;
     background-size: cover;
-    background-position: center center;
+    background-attachment: fixed;
+  }
+
+  .hero-section-modern {
+    min-height: 100vh;
+    height: 100vh;
+    padding: 0 1rem;
+    margin-top: 0;
   }
 
   .hero-content-modern {
     padding: 2rem 1rem;
     gap: 2rem;
-    min-height: calc(100vh - var(--header-offset-mobile));
+    min-height: 100vh;
   }
 
   .hero-title-modern {
@@ -1220,6 +1244,15 @@
 
 .hero-scroll-indicator:hover {
   color: var(--bg-header);
+}
+
+/* Hero section'dan sonraki içerikler için beyaz arka plan */
+.product-list-header-premium,
+.categories-showcase-home,
+.promotion-banner-wrapper {
+  background: #FFFFFF;
+  position: relative;
+  z-index: 1;
 }
 
 .product-list-header-premium {
