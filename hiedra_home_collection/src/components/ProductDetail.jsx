@@ -33,8 +33,7 @@ const ProductDetail = () => {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [allProducts, setAllProducts] = useState([]) // Tüm ürünler (ilgili ürünler için)
   const [formErrors, setFormErrors] = useState({ en: '', boy: '' }) // Form hata mesajları
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false) // Detay fotoğraf modal durumu
-  const [activeModalImage, setActiveModalImage] = useState(null)
+  const [activeImageIndex] = useState(0)
   const [reviews, setReviews] = useState([])
   const [reviewSummary, setReviewSummary] = useState(null)
   const [reviewPageMeta, setReviewPageMeta] = useState({
@@ -48,6 +47,48 @@ const ProductDetail = () => {
   const [reviewSortOption, setReviewSortOption] = useState('LATEST')
   const [withImageReviewsOnly, setWithImageReviewsOnly] = useState(false)
   const [reviewError, setReviewError] = useState('')
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
+  const [modalImageSrc, setModalImageSrc] = useState(null)
+  const galleryImages = useMemo(() => {
+    if (!product) return []
+    const images = []
+    if (product.image) {
+      images.push(product.image)
+    }
+    if (Array.isArray(product.detailImages)) {
+      product.detailImages
+        .filter(Boolean)
+        .forEach(img => images.push(img))
+    }
+    return images
+      .filter(Boolean)
+      .filter((img, index, arr) => arr.indexOf(img) === index)
+  }, [product])
+
+  const currentImage = galleryImages[activeImageIndex] || galleryImages[0] || product?.image || '/images/perde1kapak.jpg'
+  const detailImage = galleryImages.length > 1 ? galleryImages[1] : null
+
+  useEffect(() => {
+    if (isDetailModalOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [isDetailModalOpen])
+
+  const openDetailModal = useCallback((imageSrc) => {
+    if (!imageSrc) return
+    setModalImageSrc(imageSrc)
+    setIsDetailModalOpen(true)
+  }, [])
+
+  const closeDetailModal = useCallback(() => {
+    setIsDetailModalOpen(false)
+    setModalImageSrc(null)
+  }, [])
 
   const pileOptions = [
     { value: '1x1', label: 'Pilesiz (1x1)' },
@@ -176,18 +217,6 @@ const ProductDetail = () => {
 
     fetchProduct()
   }, [id])
-
-  // Modal açıldığında body scroll'unu devre dışı bırak
-  useEffect(() => {
-    if (isDetailModalOpen) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
-    }
-    return () => {
-      document.body.style.overflow = ''
-    }
-  }, [isDetailModalOpen])
 
   useEffect(() => {
     if (!product) return
@@ -666,42 +695,33 @@ const ProductDetail = () => {
         <div className="product-detail-content">
           <section className="product-detail-images">
             <div className="product-image-section-home">
-              <div className="main-product-image-wrapper-home fade-in">
-                <LazyImage
-                  src={product.image || ''}
-                  alt={`${product.name} - ${product.category} perde modeli`}
-                  className="main-product-image-home"
-                  isLCP={true}
-                  fetchPriority="high"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 800px"
-                  width={800}
-                  height={800}
-                />
-                
-                {/* Detay fotoğraf butonu */}
-                {product.detailImages && product.detailImages.length > 0 && product.detailImages[0] && (
-                  <div 
-                    className="detail-image-preview-home"
-                    onClick={() => {
-                      setActiveModalImage(product.detailImages[0])
-                      setIsDetailModalOpen(true)
-                    }}
-                    title="Detay fotoğrafını görüntüle"
-                  >
-                    <div className="detail-image-preview-overlay-home">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                        <circle cx="11" cy="11" r="8" />
-                        <path d="m21 21-4.35-4.35" />
-                      </svg>
-                    </div>
-                    <LazyImage
-                      src={product.detailImages[0]}
-                      alt={`${product.name} detay`}
-                      className="detail-image-preview-img-home"
-                    />
-                  </div>
-                )}
-                
+              <div className="product-image-wrapper">
+                <div className="main-product-image-wrapper-home fade-in">
+                  <LazyImage
+                    src={currentImage || ''}
+                    alt={`${product.name} - ${product.category} perde modeli - Görsel ${activeImageIndex + 1}`}
+                    className="main-product-image-home"
+                    isLCP={true}
+                    fetchPriority="high"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 800px"
+                    width={800}
+                    height={800}
+                  />
+                  {detailImage && (
+                    <button
+                      type="button"
+                      className="product-image-thumb"
+                      onClick={() => openDetailModal(detailImage)}
+                      aria-label="Detay fotoğrafını görüntüle"
+                    >
+                      <LazyImage
+                        src={detailImage}
+                        alt={`${product.name} detay fotoğrafı`}
+                        className="product-image-thumb-img"
+                      />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
             
@@ -1159,8 +1179,8 @@ const ProductDetail = () => {
           </div>
         </article>
       </div>
-      </div>
-      )}
+    </div>
+    )}
 
       {/* Benzer Ürünler Widget - Aynı kategorideki ürünler */}
       {product && (() => {
@@ -1313,17 +1333,13 @@ const ProductDetail = () => {
                     {review.imageUrls && review.imageUrls.length > 0 && (
                       <div className="review-image-grid">
                         {review.imageUrls.map((url, idx) => (
-                          <button
-                            type="button"
+                          <div
                             key={`${review.id}-img-${idx}`}
                             className="review-image-thumb"
-                            onClick={() => {
-                              setActiveModalImage(url)
-                              setIsDetailModalOpen(true)
-                            }}
+                            aria-label={`Yorum görseli ${idx + 1}`}
                           >
                             <LazyImage src={url} alt={`Yorum görseli ${idx + 1}`} />
-                          </button>
+                          </div>
                         ))}
                       </div>
                     )}
@@ -1347,41 +1363,30 @@ const ProductDetail = () => {
           )}
         </section>
       )}
-
-        {/* Detay Fotoğraf Modal */}
-        {isDetailModalOpen && (
-          <div 
-            className="detail-image-modal"
-            onClick={() => {
-              setIsDetailModalOpen(false)
-              setActiveModalImage(null)
-            }}
-          >
-            <div className="detail-image-modal-content" onClick={(e) => e.stopPropagation()}>
-              <button 
-                className="detail-image-modal-close"
-                onClick={() => {
-                  setIsDetailModalOpen(false)
-                  setActiveModalImage(null)
-                }}
-                aria-label="Kapat"
-              >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
-              <LazyImage
-                src={activeModalImage || product?.detailImages?.[0] || product?.image}
-                alt="Detay görsel"
-                className="detail-image-modal-img"
-              />
-            </div>
+      {isDetailModalOpen && (
+        <div className="image-modal-backdrop" onClick={closeDetailModal}>
+          <div className="image-modal-content" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="image-modal-close"
+              onClick={closeDetailModal}
+              aria-label="Modalı kapat"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+            <LazyImage
+              src={modalImageSrc || detailImage || currentImage}
+              alt="Detay görsel"
+              className="image-modal-photo"
+            />
           </div>
-        )}
+        </div>
+      )}
     </div>
   )
 }
 
 export default ProductDetail
-
