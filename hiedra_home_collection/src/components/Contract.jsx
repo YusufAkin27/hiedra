@@ -130,7 +130,7 @@ const Contract = () => {
     return (
       <div className="legal-page">
         <div className="legal-container">
-          <div style={{ textAlign: 'center', padding: '3rem' }}>
+          <div className="legal-loading">
             <p>Yükleniyor...</p>
           </div>
         </div>
@@ -142,10 +142,10 @@ const Contract = () => {
     return (
       <div className="legal-page">
         <div className="legal-container">
-          <div style={{ textAlign: 'center', padding: '3rem' }}>
+          <div className="legal-error">
             <h1>Hata</h1>
             <p>{error || 'Sözleşme bulunamadı'}</p>
-            <button onClick={() => navigate('/')} className="btn btn-primary" style={{ marginTop: '1rem' }}>
+            <button onClick={() => navigate('/')} className="btn btn-primary">
               Ana Sayfaya Dön
             </button>
           </div>
@@ -187,16 +187,13 @@ const Contract = () => {
             <div className="legal-actions">
               {isAccepted ? (
                 <div className="legal-accepted">
-                  <p style={{ color: 'var(--success)', fontWeight: 'bold' }}>
-                    ✓ Bu sözleşmeyi onayladınız
-                  </p>
+                  <p>✓ Bu sözleşmeyi onayladınız</p>
                 </div>
               ) : (
                 <button
                   onClick={handleAccept}
                   disabled={isAccepting}
                   className="btn btn-primary"
-                  style={{ padding: '1rem 2rem', fontSize: '1.1rem' }}
                 >
                   {isAccepting ? 'Onaylanıyor...' : 'Sözleşmeyi Onayla'}
                 </button>

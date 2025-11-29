@@ -46,7 +46,7 @@ const ContractsList = () => {
     return (
       <div className="legal-page">
         <div className="legal-container">
-          <div style={{ textAlign: 'center', padding: '3rem' }}>
+          <div className="legal-loading">
             <p>Yükleniyor...</p>
           </div>
         </div>
@@ -58,10 +58,10 @@ const ContractsList = () => {
     return (
       <div className="legal-page">
         <div className="legal-container">
-          <div style={{ textAlign: 'center', padding: '3rem' }}>
+          <div className="legal-error">
             <h1>Hata</h1>
             <p>{error}</p>
-            <button onClick={() => navigate('/')} className="btn btn-primary" style={{ marginTop: '1rem' }}>
+            <button onClick={() => navigate('/')} className="btn btn-primary">
               Ana Sayfaya Dön
             </button>
           </div>
@@ -84,56 +84,38 @@ const ContractsList = () => {
           </div>
 
           {contracts.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '2rem' }}>
+            <div className="contracts-empty">
               <p>Henüz sözleşme bulunmamaktadır.</p>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div className="contracts-list">
               {contracts.map((contract) => (
                 <div
                   key={contract.id}
-                  style={{
-                    padding: '1.5rem',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '8px',
-                    transition: 'all 0.3s ease',
-                    cursor: 'pointer',
-                  }}
+                  className="contract-card"
                   onClick={() => navigate(`/sozlesme/${contract.id}`)}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--primary)'
-                    e.currentTarget.style.boxShadow = '0 2px 8px var(--shadow)'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--border-color)'
-                    e.currentTarget.style.boxShadow = 'none'
-                  }}
                 >
-                  <h2 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-primary)' }}>
-                    {contract.title}
-                  </h2>
-                  {contract.type && (
-                    <p style={{ margin: '0.25rem 0', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                      Tür: {contract.type}
-                    </p>
-                  )}
-                  {contract.version && (
-                    <p style={{ margin: '0.25rem 0', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                      Versiyon: {contract.version}
-                    </p>
-                  )}
-                  {contract.updatedAt && (
-                    <p style={{ margin: '0.25rem 0', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                      Son Güncelleme: {new Date(contract.updatedAt).toLocaleDateString('tr-TR', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })}
-                    </p>
-                  )}
-                  <div style={{ marginTop: '1rem' }}>
+                  <h2 className="contract-title">{contract.title}</h2>
+                  <div className="contract-meta">
+                    {contract.type && (
+                      <p className="contract-meta-item">
+                        <span className="contract-meta-label">Tür:</span> {contract.type}
+                      </p>
+                    )}
+                  
+                    {contract.updatedAt && (
+                      <p className="contract-meta-item">
+                        <span className="contract-meta-label">Son Güncelleme:</span> {new Date(contract.updatedAt).toLocaleDateString('tr-TR', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </p>
+                    )}
+                  </div>
+                  <div className="contract-actions">
                     <button
-                      className="btn btn-primary"
+                      className="btn btn-primary contract-view-btn"
                       onClick={(e) => {
                         e.stopPropagation()
                         navigate(`/sozlesme/${contract.id}`)

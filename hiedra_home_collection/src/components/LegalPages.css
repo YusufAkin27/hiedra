@@ -1,6 +1,6 @@
 .legal-page {
   min-height: 60vh;
-  padding: 3rem 2rem;
+  padding: 1.5rem 1rem;
   max-width: 1000px;
   margin: 0 auto;
   color: var(--text-primary);
@@ -9,14 +9,14 @@
 .legal-container {
   background: var(--bg-primary);
   border-radius: 12px;
-  padding: 3rem;
+  padding: 2rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .legal-container h1 {
   font-size: 2.5rem;
   font-weight: 700;
-  color: var(--text-primary);
+  color: #000000;
   margin-bottom: 0.5rem;
   text-align: center;
 }
@@ -41,7 +41,7 @@
 .legal-container h2 {
   font-size: 1.5rem;
   font-weight: 600;
-  color: var(--bg-header);
+  color: #000000;
   margin-bottom: 1rem;
   margin-top: 0;
 }
@@ -49,7 +49,7 @@
 .legal-container h3 {
   font-size: 1.2rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: #000000;
   margin-bottom: 0.75rem;
   margin-top: 1.5rem;
 }
@@ -57,7 +57,7 @@
 .legal-container p {
   font-size: 1rem;
   line-height: 1.8;
-  color: var(--text-primary);
+  color: #000000;
   margin-bottom: 1rem;
 }
 
@@ -70,7 +70,7 @@
 
 .legal-container li {
   margin-bottom: 0.75rem;
-  color: var(--text-primary);
+  color: #000000;
 }
 
 .legal-container a {
@@ -86,36 +86,36 @@
 }
 
 .legal-container strong {
-  color: var(--text-primary);
+  color: #000000;
   font-weight: 600;
 }
 
-/* Responsive */
+/* Responsive - Mobil Uyumluluk */
 @media (max-width: 768px) {
   .legal-page {
-    padding: 2rem 1rem;
+    padding: 1rem 0.75rem;
+    min-height: calc(100vh - 80px);
   }
 
   .legal-container {
-    padding: 2rem 1.5rem;
+    padding: 1.5rem 1.25rem;
+    border-radius: 10px;
   }
 
-  .legal-container h1 {
-    font-size: 2rem;
+  .legal-header {
+    padding-top: 5rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.25rem;
   }
 
-  .legal-container h2 {
-    font-size: 1.3rem;
+  .legal-header h1 {
+    font-size: 1.75rem;
+    margin-bottom: 0.625rem;
   }
 
-  .legal-container h3 {
-    font-size: 1.1rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .legal-container {
-    padding: 1.5rem 1rem;
+  .legal-header p {
+    font-size: 0.95rem;
+    line-height: 1.5;
   }
 
   .legal-container h1 {
@@ -123,12 +123,368 @@
   }
 
   .legal-container h2 {
-    font-size: 1.2rem;
+    font-size: 1.25rem;
+  }
+
+  .legal-container h3 {
+    font-size: 1.1rem;
+  }
+
+  .legal-content {
+    font-size: 0.95rem;
+  }
+
+  .legal-content h1 {
+    font-size: 1.5rem;
+  }
+
+  .legal-content h2 {
+    font-size: 1.25rem;
+  }
+
+  .legal-content h3 {
+    font-size: 1.1rem;
+  }
+
+  .legal-content p,
+  .legal-content li {
+    font-size: 0.95rem;
+  }
+
+  .legal-content table {
+    font-size: 0.9rem;
+  }
+
+  .legal-content table th,
+  .legal-content table td {
+    padding: 0.5rem;
+  }
+
+  .contracts-list {
+    gap: 1rem;
+  }
+
+  .contract-card {
+    padding: 1.25rem;
+    border-radius: 10px;
+  }
+
+  .contract-title {
+    font-size: 1.25rem;
+    margin-bottom: 0.875rem;
+  }
+
+  .contract-meta {
+    gap: 0.375rem;
+    margin-bottom: 1rem;
+  }
+
+  .contract-meta-item {
+    font-size: 0.85rem;
+  }
+
+  .contract-actions {
+    margin-top: 0.875rem;
+  }
+
+  .contract-view-btn {
+    min-height: 48px;
+    font-size: 0.95rem;
+  }
+
+  .legal-footer {
+    padding-top: 1.25rem;
+    margin-top: 1.5rem;
+  }
+
+  .legal-actions {
+    padding: 1.5rem 0;
+    margin-top: 1.5rem;
+  }
+
+  .legal-actions .btn {
+    min-width: 100%;
+    min-height: 48px;
+    font-size: 0.95rem;
+    padding: 0.875rem 1.5rem;
+  }
+
+  .legal-accepted {
+    padding: 1rem 1.25rem;
+    width: 100%;
+  }
+
+  .legal-accepted p {
+    font-size: 0.9rem;
+  }
+
+  .legal-loading,
+  .legal-error {
+    padding: 2rem 1rem;
+  }
+
+  .legal-error h1 {
+    font-size: 1.5rem;
+    margin-bottom: 0.875rem;
+  }
+
+  .legal-error p {
+    font-size: 0.9rem;
+    margin-bottom: 1.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .legal-page {
+    padding: 0.75rem 0.5rem;
+  }
+
+  .legal-container {
+    padding: 1.25rem 1rem;
+    border-radius: 8px;
+  }
+
+  .legal-header {
+    padding-top: 4.5rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+  }
+
+  .legal-header h1 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .legal-header p {
+    font-size: 0.85rem;
+  }
+
+  .legal-container h1 {
+    font-size: 1.5rem;
+  }
+
+  .legal-container h2 {
+    font-size: 1.125rem;
+  }
+
+  .legal-container h3 {
+    font-size: 1rem;
   }
 
   .legal-container p,
   .legal-container li {
+    font-size: 0.9rem;
+    line-height: 1.7;
+  }
+
+  .legal-content {
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .legal-content h1 {
+    font-size: 1.375rem;
+    margin-top: 1.5rem;
+  }
+
+  .legal-content h2 {
+    font-size: 1.125rem;
+    margin-top: 1.25rem;
+  }
+
+  .legal-content h3 {
+    font-size: 1rem;
+    margin-top: 1rem;
+  }
+
+  .legal-content p,
+  .legal-content li {
+    font-size: 0.9rem;
+    line-height: 1.7;
+  }
+
+  .legal-content ul,
+  .legal-content ol {
+    padding-left: 1.5rem;
+  }
+
+  .legal-content blockquote {
+    padding-left: 1rem;
+    margin: 1rem 0;
+  }
+
+  .legal-content table {
+    font-size: 0.85rem;
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .legal-content table th,
+  .legal-content table td {
+    padding: 0.5rem 0.375rem;
+    font-size: 0.85rem;
+  }
+
+  .contracts-empty {
+    padding: 2rem 1rem;
+  }
+
+  .contracts-list {
+    gap: 0.875rem;
+  }
+
+  .contract-card {
+    padding: 1rem;
+    border-radius: 8px;
+  }
+
+  .contract-title {
+    font-size: 1.125rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .contract-meta {
+    gap: 0.25rem;
+    margin-bottom: 0.875rem;
+  }
+
+  .contract-meta-item {
+    font-size: 0.8rem;
+  }
+
+  .contract-meta-label {
+    font-size: 0.8rem;
+  }
+
+  .contract-actions {
+    margin-top: 0.75rem;
+  }
+
+  .contract-view-btn {
+    min-height: 48px;
+    font-size: 0.9rem;
+    padding: 0.75rem 1.25rem;
+  }
+
+  .legal-footer {
+    padding-top: 1rem;
+    margin-top: 1.25rem;
+  }
+
+  .legal-actions {
+    padding: 1.25rem 0;
+    margin-top: 1.25rem;
+  }
+
+  .legal-actions .btn {
+    min-width: 100%;
+    min-height: 48px;
+    font-size: 0.9rem;
+    padding: 0.75rem 1.25rem;
+  }
+
+  .legal-accepted {
+    padding: 0.875rem 1rem;
+    width: 100%;
+  }
+
+  .legal-accepted p {
+    font-size: 0.85rem;
+  }
+
+  .btn {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.9rem;
+    min-height: 48px;
+  }
+
+  .legal-loading,
+  .legal-error {
+    padding: 1.5rem 0.875rem;
+  }
+
+  .legal-error h1 {
+    font-size: 1.375rem;
+  }
+
+  .legal-error p {
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .legal-page {
+    padding: 0.5rem 0.375rem;
+  }
+
+  .legal-container {
+    padding: 1rem 0.875rem;
+  }
+
+  .legal-header {
+    padding-top: 4rem;
+  }
+
+  .legal-header h1 {
+    font-size: 1.375rem;
+  }
+
+  .legal-header p {
+    font-size: 0.8rem;
+  }
+
+  .contract-card {
+    padding: 0.875rem;
+  }
+
+  .contract-title {
+    font-size: 1rem;
+  }
+
+  .contract-meta-item {
+    font-size: 0.75rem;
+  }
+
+  .contract-view-btn {
+    font-size: 0.85rem;
+    padding: 0.625rem 1rem;
+  }
+
+  .legal-content {
+    font-size: 0.85rem;
+  }
+
+  .legal-content h1 {
+    font-size: 1.25rem;
+  }
+
+  .legal-content h2 {
+    font-size: 1.125rem;
+  }
+
+  .legal-content h3 {
     font-size: 0.95rem;
+  }
+
+  .legal-content p,
+  .legal-content li {
+    font-size: 0.85rem;
+  }
+
+  .legal-content ul,
+  .legal-content ol {
+    padding-left: 1.25rem;
+  }
+
+  .legal-content table {
+    font-size: 0.8rem;
+  }
+
+  .legal-content table th,
+  .legal-content table td {
+    padding: 0.375rem 0.25rem;
+    font-size: 0.8rem;
   }
 }
 
@@ -137,7 +493,21 @@
   text-align: center;
   margin-bottom: 2rem;
   padding-bottom: 1.5rem;
+  padding-top: 6rem;
   border-bottom: 2px solid var(--border-color);
+}
+
+.legal-header h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #000000;
+  margin-bottom: 0.75rem;
+}
+
+.legal-header p {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  margin: 0;
 }
 
 .legal-version {
@@ -154,15 +524,106 @@
 
 .legal-content {
   line-height: 1.8;
-  color: var(--text-primary);
+  color: #000000;
   margin-bottom: 2rem;
+  font-size: 1rem;
 }
 
 .legal-content h1,
 .legal-content h2,
-.legal-content h3 {
+.legal-content h3,
+.legal-content h4,
+.legal-content h5,
+.legal-content h6 {
   margin-top: 2rem;
   margin-bottom: 1rem;
+  color: #000000;
+  font-weight: 600;
+}
+
+.legal-content h1 {
+  font-size: 1.75rem;
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 0.5rem;
+}
+
+.legal-content h2 {
+  font-size: 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.375rem;
+}
+
+.legal-content h3 {
+  font-size: 1.25rem;
+}
+
+.legal-content p {
+  color: #000000;
+  margin-bottom: 1rem;
+  line-height: 1.8;
+}
+
+.legal-content ul,
+.legal-content ol {
+  color: #000000;
+  margin: 1rem 0;
+  padding-left: 2rem;
+}
+
+.legal-content li {
+  color: #000000;
+  margin-bottom: 0.5rem;
+  line-height: 1.8;
+}
+
+.legal-content strong,
+.legal-content b {
+  color: #000000;
+  font-weight: 600;
+}
+
+.legal-content em,
+.legal-content i {
+  color: #000000;
+}
+
+.legal-content a {
+  color: var(--gold-primary);
+  text-decoration: underline;
+  transition: color 0.3s ease;
+}
+
+.legal-content a:hover {
+  color: var(--gold-hover);
+}
+
+.legal-content blockquote {
+  border-left: 4px solid var(--gold-primary);
+  padding-left: 1.5rem;
+  margin: 1.5rem 0;
+  color: #000000;
+  font-style: italic;
+}
+
+.legal-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  color: #000000;
+}
+
+.legal-content table th,
+.legal-content table td {
+  border: 1px solid var(--border-color);
+  padding: 0.75rem;
+  text-align: left;
+  color: #000000;
+}
+
+.legal-content table th {
+  background: var(--bg-secondary);
+  font-weight: 600;
+  color: #000000;
 }
 
 .legal-actions {
@@ -172,18 +633,124 @@
   border-top: 2px solid var(--border-color);
 }
 
+.legal-actions .btn {
+  min-width: 200px;
+  min-height: 52px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  padding: 1rem 2.5rem;
+}
+
 .legal-accepted {
-  padding: 1rem;
+  padding: 1.25rem 1.5rem;
   background: rgba(16, 185, 129, 0.1);
-  border-radius: 8px;
-  border: 1px solid var(--success);
+  border-radius: 10px;
+  border: 2px solid var(--success);
+  display: inline-block;
+  text-align: center;
+}
+
+.legal-accepted p {
+  margin: 0;
+  color: var(--success);
+  font-weight: 600;
+  font-size: 1rem;
 }
 
 .legal-footer {
   text-align: center;
-  padding-top: 1rem;
+  padding-top: 1.5rem;
   margin-top: 2rem;
   border-top: 1px solid var(--border-color);
+}
+
+/* Contracts List Styles */
+.contracts-empty {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: var(--text-secondary);
+}
+
+.contracts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.contract-card {
+  padding: 1.5rem;
+  border: 1.5px solid var(--border-color);
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  background: var(--bg-card);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.contract-card:hover {
+  border-color: var(--gold-primary);
+  box-shadow: 0 4px 16px rgba(176, 141, 73, 0.15);
+  transform: translateY(-2px);
+  background: var(--bg-secondary);
+}
+
+.contract-title {
+  margin: 0 0 1rem 0;
+  color: #000000;
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.contract-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.contract-meta-item {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.contract-meta-label {
+  font-weight: 600;
+  color: #000000;
+}
+
+.contract-actions {
+  margin-top: 1rem;
+}
+
+.contract-view-btn {
+  width: 100%;
+  min-height: 48px;
+  font-weight: 600;
+}
+
+.legal-loading,
+.legal-error {
+  text-align: center;
+  padding: 3rem 2rem;
+}
+
+.legal-error h1 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: #000000;
+}
+
+.legal-error p {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+}
+
+.legal-error .btn {
+  margin-top: 1rem;
 }
 
 /* Button stilleri */
