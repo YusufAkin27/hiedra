@@ -47,9 +47,9 @@ const Payment3DCallback = () => {
       sessionStorage.removeItem('pendingConversationId')
       sessionStorage.setItem('lastOrderData', JSON.stringify(orderData))
       
-      console.log('Başarılı ödeme - ana sayfaya yönlendiriliyor...')
-      // Hemen yönlendir - sayfada kalmasın
-      window.location.replace('/')
+      console.log('Başarılı ödeme - sipariş onay sayfasına yönlendiriliyor...')
+      // Sipariş onay sayfasına yönlendir
+      window.location.replace('/siparis-onayi')
     } else {
       // Ödeme başarısız - Backend'den gelen hata mesajını kullan
       const errorMessage = data.message || data.error || 'Ödeme işlemi başarısız oldu.'
@@ -226,7 +226,7 @@ const Payment3DCallback = () => {
         }
         sessionStorage.removeItem('checkoutData')
         sessionStorage.setItem('lastOrderData', JSON.stringify(orderData))
-        window.location.replace('/')
+        window.location.replace('/siparis-onayi')
         return
       }
       

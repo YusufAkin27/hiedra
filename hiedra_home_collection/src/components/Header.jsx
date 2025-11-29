@@ -132,10 +132,6 @@ const Header = () => {
 
   return (
     <>
-      {/* Skip to Content Link - Erişilebilirlik için */}
-      <a href="#main-content" className="skip-to-content" aria-label="Ana içeriğe geç">
-        Ana İçeriğe Geç
-      </a>
       
       <header className={`header ${isHeaderVisible ? 'header-visible' : 'header-hidden'} ${isScrolled ? 'scrolled' : ''}`} role="banner">
         <div className="header-main">

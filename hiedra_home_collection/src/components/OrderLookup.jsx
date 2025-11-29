@@ -8,6 +8,7 @@ import './OrderLookup.css'
 const BACKEND_BASE_URL = 'http://localhost:8080'
 const API_BASE_URL = `${BACKEND_BASE_URL}/api/orders`
 const SHIPPING_API_BASE_URL = `${BACKEND_BASE_URL}/api/shipping`
+const REVIEW_API_BASE_URL = `${BACKEND_BASE_URL}/api/reviews`
 
 const OrderLookup = () => {
   const { isAuthenticated } = useAuth()
@@ -34,6 +35,13 @@ const OrderLookup = () => {
   const [isSendingCode, setIsSendingCode] = useState(false)
   const [isVerifying, setIsVerifying] = useState(false)
   const [selectedOrderNumber, setSelectedOrderNumber] = useState(null)
+  const [reviewModal, setReviewModal] = useState(null) // { productId, productName, productImage }
+  const [reviewRating, setReviewRating] = useState(0)
+  const [reviewComment, setReviewComment] = useState('')
+  const [reviewImages, setReviewImages] = useState([])
+  const [reviewImagePreviews, setReviewImagePreviews] = useState([])
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false)
+  const [existingReviews, setExistingReviews] = useState({}) // productId -> boolean mapping
   const captchaRef = useRef(null)
   const authHeaders = () => {
     const headers = { 'Content-Type': 'application/json' }
@@ -319,6 +327,11 @@ const OrderLookup = () => {
       } else {
         setTrackingData(null)
       }
+
+      // TESLİM EDİLDİ durumundaki siparişler için yorum kontrolü yap
+      if ((order.status === 'DELIVERED' || order.status === 'TESLIM_EDILDI') && order.orderItems) {
+        checkExistingReviews(order.orderItems)
+      }
     } catch (err) {
       setError(err.message || 'Sipariş detayları alınırken bir hata oluştu')
     } finally {
@@ -397,6 +410,174 @@ const OrderLookup = () => {
     }
   }
 
+  // Yorum kontrolü - kullanıcının bu ürünlere yorum yapıp yapmadığını kontrol et
+  const checkExistingReviews = async (orderItems) => {
+    if (!orderItems || !orderItems.length) {
+      setExistingReviews({})
+      return
+    }
+
+    const reviewMap = {}
+    const productIds = new Set()
+    
+    // Tüm ürün ID'lerini topla
+    for (const item of orderItems) {
+      if (item.productId) {
+        productIds.add(item.productId)
+      }
+    }
+
+    // Tüm ürünler için paralel kontrol yap
+    const checkPromises = Array.from(productIds).map(async (productId) => {
+      try {
+        // Lookup token ile kontrol yap (misafir kullanıcılar için)
+        const headers = authHeaders()
+        const response = await fetch(`${REVIEW_API_BASE_URL}/product/${productId}/has-reviewed`, {
+          headers
+        })
+        // 401 hatasını görmezden gel (token süresi dolmuş olabilir veya misafir kullanıcı)
+        if (response.ok) {
+          const data = await response.json()
+          if (data.isSuccess && data.data === true) {
+            return { productId, hasReviewed: true }
+          }
+        }
+      } catch (err) {
+        // Hata durumunda devam et
+        console.error(`Yorum kontrolü hatası (productId: ${productId}):`, err)
+      }
+      return { productId, hasReviewed: false }
+    })
+
+    const results = await Promise.all(checkPromises)
+    results.forEach(({ productId, hasReviewed }) => {
+      if (hasReviewed) {
+        reviewMap[productId] = true
+      }
+    })
+
+    setExistingReviews(reviewMap)
+  }
+
+  // Yorum yapma modalını aç
+  const openReviewModal = (productId, productName, productImage) => {
+    // Eğer kullanıcı bu ürüne zaten yorum yaptıysa, modal açma
+    if (existingReviews[productId]) {
+      showToast('Bu ürüne zaten yorum yaptınız. Her ürüne sadece bir kez yorum yapabilirsiniz.', 'error')
+      return
+    }
+    setReviewModal({ productId, productName, productImage })
+    setReviewRating(0)
+    setReviewComment('')
+    setReviewImages([])
+    setReviewImagePreviews([])
+    setError('')
+  }
+
+  // Yorum yapma modalını kapat
+  const closeReviewModal = () => {
+    setReviewModal(null)
+    setReviewRating(0)
+    setReviewComment('')
+    setReviewImages([])
+    setReviewImagePreviews([])
+  }
+
+  // Görsel seç
+  const handleImageSelect = (e) => {
+    const files = Array.from(e.target.files)
+    if (files.length + reviewImages.length > 5) {
+      showToast('En fazla 5 görsel yükleyebilirsiniz', 'error')
+      return
+    }
+
+    const newImages = [...reviewImages, ...files]
+    setReviewImages(newImages)
+
+    // Preview oluştur
+    const newPreviews = []
+    files.forEach((file) => {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        newPreviews.push(e.target.result)
+        if (newPreviews.length === newImages.length) {
+          setReviewImagePreviews(newPreviews)
+        }
+      }
+      reader.readAsDataURL(file)
+    })
+  }
+
+  // Görsel sil
+  const removeImage = (index) => {
+    const newImages = reviewImages.filter((_, i) => i !== index)
+    const newPreviews = reviewImagePreviews.filter((_, i) => i !== index)
+    setReviewImages(newImages)
+    setReviewImagePreviews(newPreviews)
+  }
+
+  // Yorum gönder
+  const submitReview = async () => {
+    if (!reviewModal || !reviewRating || reviewRating < 1 || reviewRating > 5) {
+      showToast('Lütfen 1-5 arası bir puan seçin', 'error')
+      return
+    }
+
+    // Tekrar kontrol: Eğer kullanıcı bu ürüne zaten yorum yaptıysa, gönderme
+    if (existingReviews[reviewModal.productId]) {
+      showToast('Bu ürüne zaten yorum yaptınız. Her ürüne sadece bir kez yorum yapabilirsiniz.', 'error')
+      closeReviewModal()
+      return
+    }
+
+    setIsSubmittingReview(true)
+    setError('')
+
+    try {
+      const formData = new FormData()
+      formData.append('productId', reviewModal.productId.toString())
+      formData.append('rating', reviewRating.toString())
+      if (reviewComment.trim()) {
+        formData.append('comment', reviewComment.trim())
+      }
+      reviewImages.forEach((image) => {
+        formData.append('images', image)
+      })
+
+      // Headers oluştur - Content-Type eklemeyin, FormData için browser otomatik ekler
+      const headers = {}
+      if (lookupToken) {
+        headers['X-Order-Lookup-Token'] = lookupToken
+      }
+
+      const response = await fetch(`${REVIEW_API_BASE_URL}/create`, {
+        method: 'POST',
+        headers,
+        body: formData
+      })
+
+      const data = await response.json()
+
+      if (!response.ok || !(data.success ?? data.isSuccess)) {
+        throw new Error(data.message || 'Yorum gönderilemedi')
+      }
+
+      showToast('Yorumunuz başarıyla gönderildi!', 'success')
+      closeReviewModal()
+      
+      // Yorum yapıldı olarak işaretle
+      setExistingReviews(prev => ({
+        ...prev,
+        [reviewModal.productId]: true
+      }))
+    } catch (err) {
+      console.error('Yorum gönderilirken hata:', err)
+      showToast(err.message || 'Yorum gönderilirken bir hata oluştu', 'error')
+    } finally {
+      setIsSubmittingReview(false)
+    }
+  }
+
   // Yeni sorgulama yap
   const handleNewLookup = () => {
     setEmail('')
@@ -411,6 +592,8 @@ const OrderLookup = () => {
     setLookupToken('')
     setVerificationCode('')
     setSelectedOrderNumber(null)
+    setReviewModal(null)
+    setExistingReviews({})
     setStep('request')
     refreshCaptcha()
   }
@@ -781,7 +964,6 @@ const OrderLookup = () => {
           <div className="order-list-header">
             <div>
               <h3>{email} adresine ait siparişler</h3>
-              <p>Detay görmek istediğiniz siparişi seçin.</p>
             </div>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               <button className="new-lookup-btn" onClick={() => loadOrders()}>
@@ -798,28 +980,55 @@ const OrderLookup = () => {
             </div>
           ) : (
             <div className="order-list">
-              {orders.map((order) => (
-                <div key={order.orderNumber} className="order-card">
-                  <div className="order-card-header">
-                    <h4>Sipariş No: {order.orderNumber}</h4>
-                    <span className={`status-badge ${(order.status || '').toLowerCase().replace(/\s+/g, '-')}`}>
-                      {getStatusText(order.status)}
-                    </span>
-                  </div>
-                  <div className="order-card-body">
-                    <p><strong>Tarih:</strong> {order.createdAt ? new Date(order.createdAt).toLocaleDateString('tr-TR') : '-'}</p>
-                    <p><strong>Toplam:</strong> {order.totalAmount ? parseFloat(order.totalAmount).toFixed(2) : '0.00'} ₺</p>
-                    <p><strong>Ürün:</strong> {(order.orderItems && order.orderItems[0]?.productName) || 'N/A'}</p>
-                  </div>
-                  <button
-                    type="button"
-                    className="new-lookup-btn"
+              {orders.map((order) => {
+                const firstItem = order.orderItems && order.orderItems[0]
+                return (
+                  <div 
+                    key={order.orderNumber} 
+                    className="order-card"
                     onClick={() => handleViewOrder(order.orderNumber)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        handleViewOrder(order.orderNumber)
+                      }
+                    }}
                   >
-                    Detayı Gör
-                  </button>
-                </div>
-              ))}
+                    {firstItem && (
+                      <div className="order-card-image">
+                        <img
+                          src={getProductImage(firstItem)}
+                          alt={firstItem.productName || 'Sipariş ürünü'}
+                          loading="lazy"
+                        />
+                      </div>
+                    )}
+                    <div className="order-card-content">
+                      <div className="order-card-header">
+                        <h4>Sipariş No: {order.orderNumber}</h4>
+                        <span className={`status-badge ${(order.status || '').toLowerCase().replace(/\s+/g, '-')}`}>
+                          {getStatusText(order.status)}
+                        </span>
+                      </div>
+                      <div className="order-card-body">
+                        <p><strong>Tarih:</strong> {order.createdAt ? new Date(order.createdAt).toLocaleDateString('tr-TR') : '-'}</p>
+                        <p><strong>Toplam:</strong> {order.totalAmount ? parseFloat(order.totalAmount).toFixed(2) : '0.00'} ₺</p>
+                        {firstItem && (
+                          <p><strong>Ürün:</strong> {firstItem.productName || 'N/A'}</p>
+                        )}
+                        {order.orderItems && order.orderItems.length > 1 && (
+                          <p className="order-item-count">+{order.orderItems.length - 1} ürün daha</p>
+                        )}
+                      </div>
+                      <div className="order-card-footer">
+                        <span className="order-card-arrow">Detayı Gör →</span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>
@@ -905,10 +1114,109 @@ const OrderLookup = () => {
             </div>
           </div>
 
-          {showAddressForm && canUpdateAddress() && (
-            <div className="order-section address-form-section">
-              <h3>Adres Güncelle</h3>
-              <div className="address-form">
+
+          <div className="order-section">
+            <h3>Sipariş Detayları</h3>
+            <div className="order-items">
+              {orderData.orderItems && orderData.orderItems.length > 0 ? (
+                orderData.orderItems.map((item, index) => {
+                  const canReview = (orderData.status === 'DELIVERED' || orderData.status === 'TESLIM_EDILDI') && item.productId
+                  const hasReviewed = existingReviews[item.productId] || false
+                  return (
+                    <div key={index} className="order-item">
+                      <div className="item-image">
+                        <img
+                          src={getProductImage(item)}
+                          alt={item.productName || 'Sipariş ürünü'}
+                          loading="lazy"
+                        />
+                      </div>
+                      <div className="item-info">
+                        <h4>{item.productName || 'Ürün'}</h4>
+                        <div className="item-customizations">
+                          {item.width && <span>En: {item.width} cm</span>}
+                          {item.height && <span>Boy: {item.height} cm</span>}
+                          {item.pleatType && (
+                            <span>Pile: {item.pleatType === 'pilesiz' ? 'Pilesiz' : item.pleatType}</span>
+                          )}
+                        </div>
+                        <span className="item-quantity">Adet: {item.quantity || 1}</span>
+                        {canReview && (
+                          <div className="item-review-section">
+                            {hasReviewed ? (
+                              <span className="review-status reviewed">✓ Yorumunuz yapıldı</span>
+                            ) : (
+                              <button
+                                type="button"
+                                className="review-btn"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  openReviewModal(item.productId, item.productName, getProductImage(item))
+                                }}
+                              >
+                                Yorum Yap
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })
+              ) : (
+                <p>Sipariş detayı bulunamadı</p>
+              )}
+            </div>
+            {canRefund() && (
+              <button
+                type="button"
+                className="inline-refund-btn"
+                onClick={() => setShowRefundModal(true)}
+              >
+                Bu Ürün İçin İade Talebi Oluştur
+              </button>
+            )}
+            <div className="order-total">
+              <span>Toplam:</span>
+              <span>{orderData.totalAmount ? parseFloat(orderData.totalAmount).toFixed(2) : '0.00'} ₺</span>
+            </div>
+          </div>
+
+          <div className="order-section">
+            <div className="order-section-header">
+              <h3>Teslimat Adresi</h3>
+              {canUpdateAddress() && (
+                <button
+                  type="button"
+                  className="update-address-inline-btn"
+                  onClick={() => setShowAddressForm(!showAddressForm)}
+                >
+                  {showAddressForm ? 'İptal' : 'Adresi Güncelle'}
+                </button>
+              )}
+            </div>
+            {!showAddressForm && (
+              <div className="address-details">
+                {orderData.shippingAddress && (
+                  <>
+                    {orderData.shippingAddress.addressLine && (
+                      <p>{orderData.shippingAddress.addressLine}</p>
+                    )}
+                    {orderData.shippingAddress.addressDetail && (
+                      <p>{orderData.shippingAddress.addressDetail}</p>
+                    )}
+                    {(orderData.shippingAddress.district || orderData.shippingAddress.city) && (
+                      <p>{orderData.shippingAddress.district || ''} {orderData.shippingAddress.district && orderData.shippingAddress.city ? '/' : ''} {orderData.shippingAddress.city || ''}</p>
+                    )}
+                  </>
+                )}
+                {(!orderData.shippingAddress || (!orderData.shippingAddress.addressLine && !orderData.shippingAddress.city)) && (
+                  <p>Adres bilgisi bulunamadı</p>
+                )}
+              </div>
+            )}
+            {showAddressForm && canUpdateAddress() && (
+              <div className="address-form-inline">
                 <div className="form-group">
                   <label>Ad Soyad <span className="required">*</span></label>
                   <input
@@ -956,7 +1264,6 @@ const OrderLookup = () => {
                     value={addressForm.city}
                     onChange={handleAddressChange}
                     required
-                    style={{ width: '100%', padding: '0.5rem' }}
                   />
                 </div>
                 <div className="form-group">
@@ -967,7 +1274,6 @@ const OrderLookup = () => {
                     value={addressForm.district}
                     onChange={handleAddressChange}
                     required
-                    style={{ width: '100%', padding: '0.5rem' }}
                   />
                 </div>
                 <button 
@@ -978,74 +1284,7 @@ const OrderLookup = () => {
                   {isProcessing ? 'Güncelleniyor...' : 'Adresi Güncelle'}
                 </button>
               </div>
-            </div>
-          )}
-
-          <div className="order-section">
-            <h3>Sipariş Detayları</h3>
-            <div className="order-items">
-              {orderData.orderItems && orderData.orderItems.length > 0 ? (
-                orderData.orderItems.map((item, index) => (
-                  <div key={index} className="order-item">
-                    <div className="item-image">
-                      <img
-                        src={getProductImage(item)}
-                        alt={item.productName || 'Sipariş ürünü'}
-                        loading="lazy"
-                      />
-                    </div>
-                    <div className="item-info">
-                      <h4>{item.productName || 'Ürün'}</h4>
-                      <div className="item-customizations">
-                        {item.width && <span>En: {item.width} cm</span>}
-                        {item.height && <span>Boy: {item.height} cm</span>}
-                        {item.pleatType && (
-                          <span>Pile: {item.pleatType === 'pilesiz' ? 'Pilesiz' : item.pleatType}</span>
-                        )}
-                      </div>
-                      <span className="item-quantity">Adet: {item.quantity || 1}</span>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p>Sipariş detayı bulunamadı</p>
-              )}
-            </div>
-            {canRefund() && (
-              <button
-                type="button"
-                className="inline-refund-btn"
-                onClick={() => setShowRefundModal(true)}
-              >
-                Bu Ürün İçin İade Talebi Oluştur
-              </button>
             )}
-            <div className="order-total">
-              <span>Toplam:</span>
-              <span>{orderData.totalAmount ? parseFloat(orderData.totalAmount).toFixed(2) : '0.00'} ₺</span>
-            </div>
-          </div>
-
-          <div className="order-section">
-            <h3>Teslimat Adresi</h3>
-            <div className="address-details">
-              {orderData.shippingAddress && (
-                <>
-                  {orderData.shippingAddress.addressLine && (
-                    <p>{orderData.shippingAddress.addressLine}</p>
-                  )}
-                  {orderData.shippingAddress.addressDetail && (
-                    <p>{orderData.shippingAddress.addressDetail}</p>
-                  )}
-                  {(orderData.shippingAddress.district || orderData.shippingAddress.city) && (
-                    <p>{orderData.shippingAddress.district || ''} {orderData.shippingAddress.district && orderData.shippingAddress.city ? '/' : ''} {orderData.shippingAddress.city || ''}</p>
-                  )}
-                </>
-              )}
-              {(!orderData.shippingAddress || (!orderData.shippingAddress.addressLine && !orderData.shippingAddress.city)) && (
-                <p>Adres bilgisi bulunamadı</p>
-              )}
-            </div>
           </div>
 
           {orderData.cancelReason && (
@@ -1285,6 +1524,334 @@ const OrderLookup = () => {
               <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
           </button>
+        </div>
+      )}
+
+      {/* Yorum Yapma Modalı */}
+      {reviewModal && (
+        <div className="modal-overlay" onClick={closeReviewModal}>
+          <div className="modal-content review-modal" onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '700', color: '#1f2937' }}>
+                Yorum Yap
+              </h3>
+              <button
+                onClick={closeReviewModal}
+                disabled={isSubmittingReview}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '0.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '4px',
+                  transition: 'background 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = '#f3f4f6'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+
+            {error && (
+              <div style={{
+                padding: '0.75rem',
+                background: '#fee',
+                color: '#c33',
+                borderRadius: '6px',
+                marginBottom: '1rem',
+                fontSize: '0.875rem'
+              }}>
+                {error}
+              </div>
+            )}
+
+            {/* Product Info */}
+            <div style={{
+              display: 'flex',
+              gap: '1rem',
+              marginBottom: '2rem',
+              padding: '1rem',
+              background: '#f9fafb',
+              borderRadius: '8px',
+              border: '1px solid #e5e7eb'
+            }}>
+              {reviewModal.productImage && (
+                <img
+                  src={reviewModal.productImage}
+                  alt={reviewModal.productName}
+                  style={{
+                    width: '80px',
+                    height: '80px',
+                    objectFit: 'cover',
+                    borderRadius: '8px',
+                    border: '1px solid #e5e7eb'
+                  }}
+                />
+              )}
+              <div style={{ flex: 1 }}>
+                <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', fontWeight: '600', color: '#1f2937' }}>
+                  {reviewModal.productName}
+                </h4>
+                <p style={{ margin: 0, fontSize: '0.875rem', color: '#6b7280' }}>
+                  Ürün hakkındaki düşüncelerinizi paylaşın
+                </p>
+              </div>
+            </div>
+
+            {/* Rating */}
+            <div style={{ marginBottom: '2rem' }}>
+              <label style={{
+                display: 'block',
+                marginBottom: '1rem',
+                fontWeight: '600',
+                fontSize: '0.9375rem',
+                color: '#374151'
+              }}>
+                Puanınız <span style={{ color: '#ef4444' }}>*</span>
+              </label>
+              <div style={{
+                display: 'flex',
+                gap: '0.5rem',
+                justifyContent: 'flex-start',
+                alignItems: 'center',
+                padding: '1rem',
+                background: '#f9fafb',
+                borderRadius: '8px',
+                border: '1px solid #e5e7eb'
+              }}>
+                {[1, 2, 3, 4, 5].map(star => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setReviewRating(star)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: '0.25rem',
+                      transition: 'transform 0.15s',
+                      lineHeight: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                  >
+                    <svg
+                      width="32"
+                      height="32"
+                      viewBox="0 0 24 24"
+                      fill={star <= reviewRating ? "#fbbf24" : "none"}
+                      stroke={star <= reviewRating ? "#f59e0b" : "#d1d5db"}
+                      strokeWidth="1.5"
+                      style={{ transition: 'all 0.2s' }}
+                    >
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                    </svg>
+                  </button>
+                ))}
+                {reviewRating > 0 && (
+                  <span style={{
+                    marginLeft: '1rem',
+                    fontSize: '0.875rem',
+                    color: '#6b7280',
+                    fontWeight: '500'
+                  }}>
+                    {reviewRating === 5 ? 'Mükemmel' : reviewRating === 4 ? 'Çok İyi' : reviewRating === 3 ? 'İyi' : reviewRating === 2 ? 'Orta' : 'Kötü'}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Comment */}
+            <div style={{ marginBottom: '2rem' }}>
+              <label style={{
+                display: 'block',
+                marginBottom: '0.75rem',
+                fontWeight: '600',
+                fontSize: '0.9375rem',
+                color: '#374151'
+              }}>
+                Yorumunuz
+              </label>
+              <textarea
+                value={reviewComment}
+                onChange={(e) => setReviewComment(e.target.value)}
+                rows="6"
+                style={{
+                  width: '100%',
+                  padding: '0.875rem',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '8px',
+                  fontSize: '0.875rem',
+                  fontFamily: 'inherit',
+                  resize: 'vertical',
+                  transition: 'all 0.2s',
+                  lineHeight: '1.5',
+                  color: '#1f2937',
+                  background: '#ffffff',
+                  boxSizing: 'border-box'
+                }}
+                placeholder="Ürün hakkındaki düşüncelerinizi paylaşın..."
+                maxLength={2000}
+              />
+              <div style={{
+                marginTop: '0.5rem',
+                fontSize: '0.75rem',
+                color: reviewComment.length > 1900 ? '#ef4444' : '#9ca3af',
+                textAlign: 'right',
+                fontWeight: reviewComment.length > 1900 ? '600' : '400'
+              }}>
+                {reviewComment.length}/2000 karakter
+              </div>
+            </div>
+
+            {/* Images */}
+            <div style={{ marginBottom: '2rem' }}>
+              <label style={{
+                display: 'block',
+                marginBottom: '0.75rem',
+                fontWeight: '600',
+                fontSize: '0.9375rem',
+                color: '#374151'
+              }}>
+                Fotoğraflar <span style={{ fontWeight: '400', color: '#9ca3af', fontSize: '0.8125rem' }}>(Opsiyonel, en fazla 5)</span>
+              </label>
+              <div style={{
+                border: '1px dashed #d1d5db',
+                borderRadius: '8px',
+                padding: '1rem',
+                textAlign: 'center',
+                background: '#f9fafb',
+                transition: 'all 0.2s',
+                marginBottom: '1rem'
+              }}>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageSelect}
+                  disabled={reviewImages.length >= 5}
+                  style={{
+                    width: '100%',
+                    padding: '0.625rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    background: reviewImages.length >= 5 ? '#f3f4f6' : 'white',
+                    cursor: reviewImages.length >= 5 ? 'not-allowed' : 'pointer',
+                    fontSize: '0.8125rem',
+                    color: '#374151'
+                  }}
+                />
+                {reviewImages.length >= 5 && (
+                  <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.75rem', color: '#ef4444' }}>
+                    Maksimum 5 fotoğraf yükleyebilirsiniz
+                  </p>
+                )}
+              </div>
+              {reviewImagePreviews.length > 0 && (
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))',
+                  gap: '0.75rem'
+                }}>
+                  {reviewImagePreviews.map((preview, index) => (
+                    <div key={index} style={{
+                      position: 'relative',
+                      borderRadius: '8px',
+                      overflow: 'hidden',
+                      border: '1px solid #e5e7eb'
+                    }}>
+                      <img
+                        src={preview}
+                        alt={`Preview ${index + 1}`}
+                        style={{
+                          width: '100%',
+                          height: '100px',
+                          objectFit: 'cover',
+                          display: 'block'
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        style={{
+                          position: 'absolute',
+                          top: '0.25rem',
+                          right: '0.25rem',
+                          background: '#ef4444',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: '24px',
+                          height: '24px',
+                          cursor: 'pointer',
+                          fontSize: '0.875rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: 'bold'
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div style={{
+              display: 'flex',
+              gap: '0.75rem',
+              justifyContent: 'flex-end',
+              paddingTop: '1.5rem',
+              borderTop: '1px solid #e5e7eb'
+            }}>
+              <button
+                onClick={closeReviewModal}
+                disabled={isSubmittingReview}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: '#f3f4f6',
+                  color: '#374151',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontWeight: '500',
+                  fontSize: '0.875rem'
+                }}
+              >
+                İptal
+              </button>
+              <button
+                onClick={submitReview}
+                disabled={isSubmittingReview || !reviewRating}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: reviewRating ? '#000000' : '#d1d5db',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: reviewRating ? 'pointer' : 'not-allowed',
+                  fontWeight: '600',
+                  fontSize: '0.875rem',
+                  opacity: isSubmittingReview ? 0.6 : 1
+                }}
+              >
+                {isSubmittingReview ? 'Gönderiliyor...' : 'Yorumu Gönder'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
