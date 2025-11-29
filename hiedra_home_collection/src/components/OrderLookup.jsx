@@ -966,9 +966,7 @@ const OrderLookup = () => {
               <h3>{email} adresine ait siparişler</h3>
             </div>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <button className="new-lookup-btn" onClick={() => loadOrders()}>
-                Siparişleri Yenile
-              </button>
+            
               <button className="new-lookup-btn" onClick={handleNewLookup}>
                 ← Yeni E-posta ile Sorgula
               </button>
@@ -1077,14 +1075,6 @@ const OrderLookup = () => {
                   disabled={isProcessing}
                 >
                   İade Talep Et
-                </button>
-              )}
-              {canUpdateAddress() && (
-                <button 
-                  onClick={() => setShowAddressForm(!showAddressForm)} 
-                  className="update-address-btn"
-                >
-                  {showAddressForm ? 'Adres Formunu Kapat' : 'Adresi Güncelle'}
                 </button>
               )}
             </div>

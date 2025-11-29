@@ -411,26 +411,6 @@ const Header = () => {
                 </Link>
               )}
             </div>
-            <div className="mobile-section">
-              <Link 
-                to="/cart" 
-                className="nav-link cart-link mobile-nav-link" 
-                onClick={closeMenu}
-                aria-label={`Sepet, ${cartItemsCount > 0 ? `${cartItemsCount} ürün var` : 'Sepet boş'}`}
-              >
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                  <path d="M9 2L7 6m6-4l2 4M3 8h18l-1 8H4L3 8z" />
-                  <circle cx="7" cy="20" r="2" />
-                  <circle cx="17" cy="20" r="2" />
-                </svg>
-                {cartItemsCount > 0 && (
-                  <span className="cart-count" aria-label={`${cartItemsCount} ürün`}>
-                    {cartItemsCount}
-                  </span>
-                )}
-                <span className="cart-link-text">Sepete Git</span>
-              </Link>
-            </div>
           </nav>
         </div>
       </header>

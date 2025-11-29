@@ -1395,6 +1395,10 @@
     padding: 1rem;
   }
 
+  .cart-link-text {
+    display: none;
+  }
+
   .login-link,
   .user-link,
   .categories-link {

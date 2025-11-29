@@ -324,7 +324,7 @@
 }
 
 .order-card-arrow {
-  color: var(--bg-header);
+  color: #000000;
   font-weight: 600;
   font-size: 0.9rem;
   display: inline-flex;
@@ -387,7 +387,7 @@
 }
 
 .order-card-arrow {
-  color: var(--bg-header);
+  color: #000000;
   font-weight: 600;
   font-size: 0.9rem;
   display: inline-flex;
@@ -621,6 +621,102 @@
   color: #000000;
   margin-bottom: 1rem;
   font-weight: 700;
+}
+
+.order-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.update-address-inline-btn {
+  padding: 0.5rem 1rem;
+  background: #000000;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.update-address-inline-btn:hover {
+  background: #333333;
+}
+
+.update-address-inline-btn:active {
+  transform: translateY(1px);
+}
+
+.address-form-inline {
+  background: var(--bg-primary);
+  padding: 1.25rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  margin-top: 1rem;
+}
+
+.address-form-inline .form-group {
+  margin-bottom: 1rem;
+}
+
+.address-form-inline .form-group:last-of-type {
+  margin-bottom: 1.5rem;
+}
+
+.address-form-inline label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #000000;
+}
+
+.address-form-inline .required {
+  color: #ef4444;
+}
+
+.address-form-inline input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: #000000;
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.address-form-inline input:focus {
+  outline: none;
+  border-color: #000000;
+}
+
+.address-form-inline .lookup-btn {
+  width: 100%;
+  padding: 0.875rem;
+  background: #000000;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.address-form-inline .lookup-btn:hover:not(:disabled) {
+  background: #333333;
+}
+
+.address-form-inline .lookup-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .order-items {
@@ -910,6 +1006,36 @@
   .order-section h3 {
     font-size: 1rem;
     margin-bottom: 0.875rem;
+  }
+
+  .order-section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .update-address-inline-btn {
+    width: 100%;
+    padding: 0.625rem;
+    font-size: 0.8125rem;
+  }
+
+  .address-form-inline {
+    padding: 1rem;
+  }
+
+  .address-form-inline .form-group {
+    margin-bottom: 0.875rem;
+  }
+
+  .address-form-inline input {
+    padding: 0.625rem;
+    font-size: 0.875rem;
+  }
+
+  .address-form-inline .lookup-btn {
+    padding: 0.75rem;
+    font-size: 0.875rem;
   }
 
   .order-items {

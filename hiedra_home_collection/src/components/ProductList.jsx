@@ -998,6 +998,164 @@ const ProductList = () => {
                       </div>
                     )}
                   </div>
+                  
+                  {/* Fiyatlandırma Modal - Ürün fotoğrafının üstüne */}
+                  {isPricingModalOpen[category.name] && selectedProduct && (
+                    <div 
+                      className="pricing-modal-overlay-home"
+                      onClick={() => closePricingModal(category.name)}
+                    >
+                      <div 
+                        className="pricing-modal-content-home"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button 
+                          className="pricing-modal-close-home"
+                          onClick={() => closePricingModal(category.name)}
+                          aria-label="Kapat"
+                        >
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                          </svg>
+                        </button>
+                        
+                        <div className="pricing-modal-header-home">
+                          <h3 className="pricing-modal-title-home">Özel Fiyatlandırma</h3>
+                          <p className="pricing-modal-subtitle-home">{selectedProduct.name}</p>
+                        </div>
+                        
+                        <div className="pricing-modal-form-home">
+                          <div className="measurement-inputs-home">
+                            <div className="measurement-input-group-home">
+                              <label htmlFor={`modal-en-${category.name}`}>
+                                Genişlik (cm) <span className="required">*</span>
+                                <span className="form-hint">Min: 50 cm, Max: 1000 cm</span>
+                              </label>
+                              <input
+                                id={`modal-en-${category.name}`}
+                                type="number"
+                                min="50"
+                                max="1000"
+                                step="0.1"
+                                placeholder="Örn: 200"
+                                value={modalMeasurements[category.name]?.en || ''}
+                                onChange={(e) => {
+                                  const value = e.target.value
+                                  handleModalMeasurementChange(category.name, 'en', value)
+                                }}
+                                className={`measurement-input-home ${modalErrors[category.name]?.en ? 'input-error' : ''}`}
+                                required
+                              />
+                              {modalErrors[category.name]?.en && (
+                                <span className="error-message-home">{modalErrors[category.name].en}</span>
+                              )}
+                            </div>
+                            <div className="measurement-input-group-home">
+                              <label htmlFor={`modal-boy-${category.name}`}>
+                                Yükseklik (cm) <span className="required">*</span>
+                                <span className="form-hint">Min: 30 cm, Max: 270 cm</span>
+                              </label>
+                              <input
+                                id={`modal-boy-${category.name}`}
+                                type="number"
+                                min="30"
+                                max="270"
+                                step="0.1"
+                                placeholder="Örn: 250"
+                                value={modalMeasurements[category.name]?.boy || ''}
+                                onChange={(e) => {
+                                  const value = e.target.value
+                                  handleModalMeasurementChange(category.name, 'boy', value)
+                                }}
+                                className={`measurement-input-home ${modalErrors[category.name]?.boy ? 'input-error' : ''}`}
+                                required
+                              />
+                              {modalErrors[category.name]?.boy && (
+                                <span className="error-message-home">{modalErrors[category.name].boy}</span>
+                              )}
+                            </div>
+                            <div className="measurement-input-group-home">
+                              <label htmlFor={`modal-pile-${category.name}`}>
+                                Pile Sıklığı <span className="required">*</span>
+                              </label>
+                              <div className="custom-dropdown-home">
+                                <button
+                                  type="button"
+                                  className="dropdown-trigger-home"
+                                  onClick={() => setIsModalDropdownOpen(prev => ({
+                                    ...prev,
+                                    [category.name]: !prev[category.name]
+                                  }))}
+                                  onBlur={() => setTimeout(() => setIsModalDropdownOpen(prev => ({
+                                    ...prev,
+                                    [category.name]: false
+                                  })), 200)}
+                                >
+                                  <span className="dropdown-selected-home">
+                                    {pileOptions.find(opt => opt.value === (modalMeasurements[category.name]?.pileSikligi || '1x1'))?.label || pileOptions[0].label}
+                                  </span>
+                                  <svg 
+                                    className={`dropdown-arrow-home ${isModalDropdownOpen[category.name] ? 'open' : ''}`}
+                                    width="20" 
+                                    height="20" 
+                                    viewBox="0 0 24 24" 
+                                    fill="none" 
+                                    stroke="currentColor" 
+                                    strokeWidth="2.5"
+                                  >
+                                    <polyline points="6 9 12 15 18 9" />
+                                  </svg>
+                                </button>
+                                {isModalDropdownOpen[category.name] && (
+                                  <div className="dropdown-menu-home">
+                                    {pileOptions.map((option) => (
+                                      <button
+                                        key={option.value}
+                                        type="button"
+                                        className={`dropdown-option-home ${(modalMeasurements[category.name]?.pileSikligi || '1x1') === option.value ? 'selected' : ''}`}
+                                        onClick={() => {
+                                          handleModalMeasurementChange(category.name, 'pileSikligi', option.value)
+                                          setIsModalDropdownOpen(prev => ({
+                                            ...prev,
+                                            [category.name]: false
+                                          }))
+                                        }}
+                                      >
+                                        <span className="option-label-home">{option.label}</span>
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                              <p className="form-info-home">
+                                Pile sıklığı fiyatlandırmayı etkiler: 1x1 (x1), 1x2 (x2), 1x3 (x3)
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <button
+                            className="add-to-cart-btn-home"
+                            onClick={() => handleModalAddToCart(category.name)}
+                            disabled={
+                              !modalMeasurements[category.name]?.en || 
+                              !modalMeasurements[category.name]?.boy || 
+                              !modalMeasurements[category.name]?.pileSikligi ||
+                              !!modalErrors[category.name]?.en ||
+                              !!modalErrors[category.name]?.boy
+                            }
+                          >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <circle cx="9" cy="21" r="1" />
+                              <circle cx="20" cy="21" r="1" />
+                              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                            </svg>
+                            Sepete Ekle
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Sağ taraf - Ürün detayları ve renk seçenekleri */}
@@ -1178,169 +1336,6 @@ const ProductList = () => {
         })}
       </div>
 
-      {/* Fiyatlandırma Modal'ları */}
-      {categories.map(category => {
-        const selectedProduct = selectedProducts[category.name] || category.products[0]
-        if (!isPricingModalOpen[category.name] || !selectedProduct) return null
-        
-        return (
-          <div 
-            key={`pricing-modal-${category.name}`}
-            className="pricing-modal-overlay-home"
-            onClick={() => closePricingModal(category.name)}
-          >
-            <div 
-              className="pricing-modal-content-home"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button 
-                className="pricing-modal-close-home"
-                onClick={() => closePricingModal(category.name)}
-                aria-label="Kapat"
-              >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
-              
-              <div className="pricing-modal-header-home">
-                <h3 className="pricing-modal-title-home">Özel Fiyatlandırma</h3>
-                <p className="pricing-modal-subtitle-home">{selectedProduct.name}</p>
-              </div>
-              
-              <div className="pricing-modal-form-home">
-                <div className="measurement-inputs-home">
-                  <div className="measurement-input-group-home">
-                    <label htmlFor={`modal-en-${category.name}`}>
-                      Genişlik (cm) <span className="required">*</span>
-                      <span className="form-hint">Min: 50 cm, Max: 1000 cm</span>
-                    </label>
-                    <input
-                      id={`modal-en-${category.name}`}
-                      type="number"
-                      min="50"
-                      max="1000"
-                      step="0.1"
-                      placeholder="Örn: 200"
-                      value={modalMeasurements[category.name]?.en || ''}
-                      onChange={(e) => {
-                        const value = e.target.value
-                        handleModalMeasurementChange(category.name, 'en', value)
-                      }}
-                      className={`measurement-input-home ${modalErrors[category.name]?.en ? 'input-error' : ''}`}
-                      required
-                    />
-                    {modalErrors[category.name]?.en && (
-                      <span className="error-message-home">{modalErrors[category.name].en}</span>
-                    )}
-                  </div>
-                  <div className="measurement-input-group-home">
-                    <label htmlFor={`modal-boy-${category.name}`}>
-                      Yükseklik (cm) <span className="required">*</span>
-                      <span className="form-hint">Min: 30 cm, Max: 270 cm</span>
-                    </label>
-                    <input
-                      id={`modal-boy-${category.name}`}
-                      type="number"
-                      min="30"
-                      max="270"
-                      step="0.1"
-                      placeholder="Örn: 250"
-                      value={modalMeasurements[category.name]?.boy || ''}
-                      onChange={(e) => {
-                        const value = e.target.value
-                        handleModalMeasurementChange(category.name, 'boy', value)
-                      }}
-                      className={`measurement-input-home ${modalErrors[category.name]?.boy ? 'input-error' : ''}`}
-                      required
-                    />
-                    {modalErrors[category.name]?.boy && (
-                      <span className="error-message-home">{modalErrors[category.name].boy}</span>
-                    )}
-                  </div>
-                  <div className="measurement-input-group-home">
-                    <label htmlFor={`modal-pile-${category.name}`}>
-                      Pile Sıklığı <span className="required">*</span>
-                    </label>
-                    <div className="custom-dropdown-home">
-                      <button
-                        type="button"
-                        className="dropdown-trigger-home"
-                        onClick={() => setIsModalDropdownOpen(prev => ({
-                          ...prev,
-                          [category.name]: !prev[category.name]
-                        }))}
-                        onBlur={() => setTimeout(() => setIsModalDropdownOpen(prev => ({
-                          ...prev,
-                          [category.name]: false
-                        })), 200)}
-                      >
-                        <span className="dropdown-selected-home">
-                          {pileOptions.find(opt => opt.value === (modalMeasurements[category.name]?.pileSikligi || '1x1'))?.label || pileOptions[0].label}
-                        </span>
-                        <svg 
-                          className={`dropdown-arrow-home ${isModalDropdownOpen[category.name] ? 'open' : ''}`}
-                          width="20" 
-                          height="20" 
-                          viewBox="0 0 24 24" 
-                          fill="none" 
-                          stroke="currentColor" 
-                          strokeWidth="2.5"
-                        >
-                          <polyline points="6 9 12 15 18 9" />
-                        </svg>
-                      </button>
-                      {isModalDropdownOpen[category.name] && (
-                        <div className="dropdown-menu-home">
-                          {pileOptions.map((option) => (
-                            <button
-                              key={option.value}
-                              type="button"
-                              className={`dropdown-option-home ${(modalMeasurements[category.name]?.pileSikligi || '1x1') === option.value ? 'selected' : ''}`}
-                              onClick={() => {
-                                handleModalMeasurementChange(category.name, 'pileSikligi', option.value)
-                                setIsModalDropdownOpen(prev => ({
-                                  ...prev,
-                                  [category.name]: false
-                                }))
-                              }}
-                            >
-                              <span className="option-label-home">{option.label}</span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <p className="form-info-home">
-                      Pile sıklığı fiyatlandırmayı etkiler: 1x1 (x1), 1x2 (x2), 1x3 (x3)
-                    </p>
-                  </div>
-                </div>
-                
-                <button
-                  className="add-to-cart-btn-home"
-                  onClick={() => handleModalAddToCart(category.name)}
-                  disabled={
-                    !modalMeasurements[category.name]?.en || 
-                    !modalMeasurements[category.name]?.boy || 
-                    !modalMeasurements[category.name]?.pileSikligi ||
-                    !!modalErrors[category.name]?.en ||
-                    !!modalErrors[category.name]?.boy
-                  }
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="9" cy="21" r="1" />
-                    <circle cx="20" cy="21" r="1" />
-                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-                  </svg>
-                  Sepete Ekle
-                </button>
-              </div>
-            </div>
-          </div>
-        )
-      })}
 
       {/* Detay Fotoğraf Modal */}
       {isDetailModalOpen && selectedDetailImage && (
