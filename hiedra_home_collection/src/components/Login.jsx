@@ -398,13 +398,9 @@ const Login = () => {
                     required
                     maxLength={6}
                     autoComplete="off"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     disabled={isLoading}
-                    style={{
-                      textAlign: 'center',
-                      letterSpacing: '0.5rem',
-                      fontSize: '1.5rem',
-                      fontWeight: 'bold',
-                    }}
                   />
                   <p className="login-code-hint">
                     6 haneli doğrulama kodunu girin

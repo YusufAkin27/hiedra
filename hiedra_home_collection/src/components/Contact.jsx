@@ -597,6 +597,26 @@ const Contact = () => {
             )}
           </div>
         </div>
+
+        {/* Google Maps */}
+        <div className="contact-map-section">
+          <h2 className="map-title">Konumumuz</h2>
+          <div className="map-container">
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3009.5!2d29.1546251!3d40.9995962!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x14cacf4719923ea7%3A0xf31830d5eb35d63!2z0L7Rh9C40LvQsNC40Lgg0YHRgtCw0L3QutCwLCDQodGC0Lgg0YHRgtCw0L3QutCwINCa0L7QvzoxMSwg0L7RgtC00LvRjNC40Lsg0L7RgtCw0L3QutCwLCDQkdCw0L3RgtCw0L3QutCwIDM0Nzc1INCi0LXRgNCw0L3QuNCw!5e0!3m2!1str!2str!4v1700000000000!5m2!1str!2str&q=Şerifali+Mahallesi,+Şehit+Sokak+No:51,+Dudullu+OSB,+Ümraniye,+İstanbul,+34775"
+              width="100%"
+              height="450"
+              style={{ border: 0 }}
+              allowFullScreen={true}
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              title="Hiedra Home Collection Konum"
+            ></iframe>
+          </div>
+          <p className="map-address">
+            <strong>Adres:</strong> Şerifali Mahallesi, Şehit Sokak No:51, Dudullu OSB, Ümraniye / İstanbul, 34775 Türkiye
+          </p>
+        </div>
       </div>
     </div>
   )
