@@ -45,7 +45,7 @@ const SEO = ({
     image: `${siteUrl}/logo.png`,
     logo: `${siteUrl}/logo.png`,
     description: 'Bingöl ve Türkiye genelinde perde satış ve tül perde fiyatları sunan güvenilir firma. Zebra perde, Klasik perde, Stor perde, Jaluzi perde ve tül perde modelleri. Uygun perde fiyatı ile kaliteli perde satış.',
-    telephone: '+905336360079',
+    telephone: '+905113233289',
     email: 'ysufakin23@gmail.com',
     priceRange: '₺₺',
     address: {
@@ -106,7 +106,7 @@ const SEO = ({
     contactPoint: {
       '@type': 'ContactPoint',
       contactType: 'Müşteri Hizmetleri',
-      telephone: '+905336360079',
+      telephone: '+905113233289',
       email: 'ysufakin23@gmail.com',
       areaServed: 'TR',
       availableLanguage: 'Turkish'

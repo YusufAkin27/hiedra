@@ -7,7 +7,6 @@ import LazyImage from './LazyImage'
 import Loading from './Loading'
 import SEO from './SEO'
 import CategoryHeader from './CategoryHeader'
-import PromotionBanner from './PromotionBanner'
 import './ProductList.css'
 
 // Ürün Özellikleri Accordion Component - React.memo ile optimize et
@@ -926,9 +925,6 @@ const ProductList = () => {
           </div>
         </div>
       </section>
-      
-      {/* Promotion Banner - Soldan sağa kayan şerit */}
-      <PromotionBanner />
       
       {/* Premium Section Header */}
       <header className="product-list-header-premium">

@@ -27,6 +27,21 @@ const OrderDetail = () => {
   const [reviewImagePreviews, setReviewImagePreviews] = useState([])
   const [isSubmittingReview, setIsSubmittingReview] = useState(false)
   const [existingReviews, setExistingReviews] = useState({}) // productId -> reviewId mapping
+  const [showAddressForm, setShowAddressForm] = useState(false)
+  const [showCustomerForm, setShowCustomerForm] = useState(false)
+  const [isUpdatingAddress, setIsUpdatingAddress] = useState(false)
+  const [addressForm, setAddressForm] = useState({
+    fullName: '',
+    phone: '',
+    addressLine: '',
+    addressDetail: '',
+    city: '',
+    district: ''
+  })
+  const [customerForm, setCustomerForm] = useState({
+    customerName: '',
+    customerPhone: ''
+  })
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -46,21 +61,33 @@ const OrderDetail = () => {
       return
     }
 
+    // Authentication kontrolü - Token yoksa giriş sayfasına yönlendir
+    if (!accessToken || !isAuthenticated) {
+      setError('Sipariş detaylarını görüntülemek için giriş yapmanız gerekiyor.')
+      setIsLoading(false)
+      setTimeout(() => {
+        navigate('/giris', { state: { returnTo: `/siparis/${orderNumber}` } })
+      }, 1500)
+      return
+    }
+
     try {
       setIsLoading(true)
       setError('')
       setSuccess('')
 
       // Backend'den sipariş detaylarını getir
+      // NOT: customerEmail body'de gönderiliyor ama backend token'dan email alacak (güvenlik için)
+      // Body'deki email sadece guest kullanıcılar için kullanılır
       const response = await fetch(`${API_BASE_URL}/orders/query`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(accessToken && { 'Authorization': `Bearer ${accessToken}` })
+          'Authorization': `Bearer ${accessToken}` // Zorunlu - Authentication gerektirir
         },
         body: JSON.stringify({
           orderNumber: orderNumber,
-          customerEmail: user.email
+          customerEmail: user.email // Backend token'dan email alacak, bu sadece fallback
         })
       })
 
@@ -84,11 +111,27 @@ const OrderDetail = () => {
       const data = await response.json()
       if (data.isSuccess || data.success) {
         const orderData = data.data || data
-        setOrder({
+        const orderDataWithAddress = {
           ...orderData,
           shippingAddress: orderData.addresses && orderData.addresses.length > 0 
             ? orderData.addresses[0] 
             : {}
+        }
+        setOrder(orderDataWithAddress)
+        
+        // Form verilerini doldur
+        const address = orderDataWithAddress.shippingAddress || {}
+        setAddressForm({
+          fullName: address.fullName || orderDataWithAddress.customerName || '',
+          phone: address.phone || orderDataWithAddress.customerPhone || '',
+          addressLine: address.addressLine || '',
+          addressDetail: address.addressDetail || '',
+          city: address.city || '',
+          district: address.district || ''
+        })
+        setCustomerForm({
+          customerName: orderDataWithAddress.customerName || '',
+          customerPhone: orderDataWithAddress.customerPhone || ''
         })
         
         // Eğer kargo takip numarası varsa, kargo bilgisini de çek
@@ -398,6 +441,92 @@ const OrderDetail = () => {
     setReviewImagePreviews(newPreviews)
   }
 
+  // Adres güncelleme kontrolü - sadece belirli durumlarda güncellenebilir
+  const canUpdateAddress = () => {
+    if (!order || !order.status) return false
+    const status = order.status.toUpperCase()
+    // Kargoya verilmiş, teslim edilmiş veya iptal edilmiş siparişlerde güncellenemez
+    return status !== 'SHIPPED' && status !== 'KARGOYA_VERILDI' && 
+           status !== 'DELIVERED' && status !== 'TESLIM_EDILDI' &&
+           status !== 'CANCELLED' && status !== 'IPTAL_EDILDI'
+  }
+
+  // Adres form değişiklikleri
+  const handleAddressChange = (e) => {
+    setAddressForm({
+      ...addressForm,
+      [e.target.name]: e.target.value
+    })
+  }
+
+  // Müşteri bilgisi form değişiklikleri
+  const handleCustomerChange = (e) => {
+    setCustomerForm({
+      ...customerForm,
+      [e.target.name]: e.target.value
+    })
+  }
+
+  // Adres güncelle
+  const handleUpdateAddress = async () => {
+    if (!addressForm.fullName || !addressForm.phone || !addressForm.addressLine || 
+        !addressForm.city || !addressForm.district) {
+      setError('Lütfen tüm zorunlu alanları doldurunuz.')
+      return
+    }
+
+    setIsUpdatingAddress(true)
+    setError('')
+    setSuccess('')
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/orders/${orderNumber}/address?email=${encodeURIComponent(user.email)}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(accessToken && { 'Authorization': `Bearer ${accessToken}` })
+        },
+        body: JSON.stringify({
+          orderNumber: orderNumber,
+          fullName: addressForm.fullName,
+          phone: addressForm.phone,
+          addressLine: addressForm.addressLine,
+          addressDetail: addressForm.addressDetail || '',
+          city: addressForm.city,
+          district: addressForm.district,
+        })
+      })
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          logout()
+          setError('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.')
+          setTimeout(() => {
+            navigate('/giris', { state: { returnTo: `/siparis/${orderNumber}` } })
+          }, 1500)
+          return
+        }
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || 'Adres güncellenemedi')
+      }
+
+      const data = await response.json()
+      if (data.success || data.isSuccess) {
+        setSuccess('Adres başarıyla güncellendi!')
+        setShowAddressForm(false)
+        // Siparişi yeniden yükle
+        await fetchOrderDetails()
+      } else {
+        throw new Error(data.message || 'Adres güncellenemedi')
+      }
+    } catch (err) {
+      console.error('Adres güncellenirken hata:', err)
+      setError(err.message || 'Adres güncellenirken bir hata oluştu')
+    } finally {
+      setIsUpdatingAddress(false)
+    }
+  }
+
   // Yorum gönder
   const submitReview = async () => {
     if (!reviewModal || !reviewRating || reviewRating < 1 || reviewRating > 5) {
@@ -655,55 +784,164 @@ const OrderDetail = () => {
                   <p>Sipariş detayı bulunamadı</p>
                 )}
               </div>
-              <div className="order-total-section">
-                {order.discountAmount && parseFloat(order.discountAmount) > 0 && order.couponCode && (
-                  <div className="total-row discount-row">
-                    <span>Kupon İndirimi ({order.couponCode}):</span>
-                    <span className="discount-amount">
-                      -{typeof order.discountAmount === 'string' 
-                        ? parseFloat(order.discountAmount).toFixed(2) 
-                        : parseFloat(order.discountAmount.toString()).toFixed(2)} ₺
-                    </span>
-                  </div>
-                )}
-                <div className="total-row final">
-                  <span>Toplam:</span>
-                  <span className="total-amount">
-                    {order.totalAmount ? (
-                      typeof order.totalAmount === 'string' 
-                        ? parseFloat(order.totalAmount).toFixed(2) 
-                        : parseFloat(order.totalAmount.toString()).toFixed(2)
-                    ) : '0.00'} ₺
-                  </span>
-                </div>
-              </div>
             </div>
 
             {/* Teslimat Adresi */}
             <div className="order-section">
-              <h3>Teslimat Adresi</h3>
-              <div className="address-details">
-                {order.shippingAddress && (
-                  <>
-                    {order.shippingAddress.addressLine && (
-                      <p><strong>Adres:</strong> {order.shippingAddress.addressLine}</p>
-                    )}
-                    {order.shippingAddress.addressDetail && (
-                      <p><strong>Adres Detayı:</strong> {order.shippingAddress.addressDetail}</p>
-                    )}
-                    {(order.shippingAddress.district || order.shippingAddress.city) && (
-                      <p>
-                        <strong>İlçe/Şehir:</strong> {order.shippingAddress.district || ''} 
-                        {order.shippingAddress.district && order.shippingAddress.city ? ' / ' : ''} 
-                        {order.shippingAddress.city || ''}
-                      </p>
-                    )}
-                  </>
-                )}
-                {(!order.shippingAddress || (!order.shippingAddress.addressLine && !order.shippingAddress.city)) && (
-                  <p>Adres bilgisi bulunamadı</p>
+              <div className="section-header-with-action">
+                <h3>Teslimat Adresi</h3>
+                {canUpdateAddress() && !showAddressForm && (
+                  <button
+                    onClick={() => setShowAddressForm(true)}
+                    className="edit-btn"
+                    type="button"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                    </svg>
+                    Düzenle
+                  </button>
                 )}
               </div>
+              {!showAddressForm ? (
+                <div className="address-details">
+                  {order.shippingAddress && (
+                    <>
+                      {(order.shippingAddress.fullName || order.customerName) && (
+                        <p><strong>Ad Soyad:</strong> {order.shippingAddress.fullName || order.customerName}</p>
+                      )}
+                      {(order.shippingAddress.phone || order.customerPhone) && (
+                        <p><strong>Telefon:</strong> {order.shippingAddress.phone || order.customerPhone}</p>
+                      )}
+                      {order.shippingAddress.addressLine && (
+                        <p><strong>Adres:</strong> {order.shippingAddress.addressLine}</p>
+                      )}
+                      {order.shippingAddress.addressDetail && (
+                        <p><strong>Adres Detayı:</strong> {order.shippingAddress.addressDetail}</p>
+                      )}
+                      {(order.shippingAddress.district || order.shippingAddress.city) && (
+                        <p>
+                          <strong>İlçe/Şehir:</strong> {order.shippingAddress.district || ''} 
+                          {order.shippingAddress.district && order.shippingAddress.city ? ' / ' : ''} 
+                          {order.shippingAddress.city || ''}
+                        </p>
+                      )}
+                    </>
+                  )}
+                  {(!order.shippingAddress || (!order.shippingAddress.addressLine && !order.shippingAddress.city)) && (
+                    <p>Adres bilgisi bulunamadı</p>
+                  )}
+                </div>
+              ) : (
+                <div className="address-form-container">
+                  <div className="form-group">
+                    <label htmlFor="address-fullName">Ad Soyad <span className="required">*</span></label>
+                    <input
+                      id="address-fullName"
+                      type="text"
+                      name="fullName"
+                      value={addressForm.fullName}
+                      onChange={handleAddressChange}
+                      required
+                      className="form-input"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="address-phone">Telefon <span className="required">*</span></label>
+                    <input
+                      id="address-phone"
+                      type="text"
+                      name="phone"
+                      value={addressForm.phone}
+                      onChange={handleAddressChange}
+                      required
+                      className="form-input"
+                      placeholder="Örn: +905551234567"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="address-line">Adres Satırı <span className="required">*</span></label>
+                    <input
+                      id="address-line"
+                      type="text"
+                      name="addressLine"
+                      value={addressForm.addressLine}
+                      onChange={handleAddressChange}
+                      required
+                      className="form-input"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="address-detail">Adres Detayı</label>
+                    <input
+                      id="address-detail"
+                      type="text"
+                      name="addressDetail"
+                      value={addressForm.addressDetail}
+                      onChange={handleAddressChange}
+                      className="form-input"
+                      placeholder="Daire, Kat, Bina No vb."
+                    />
+                  </div>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label htmlFor="address-district">İlçe <span className="required">*</span></label>
+                      <input
+                        id="address-district"
+                        type="text"
+                        name="district"
+                        value={addressForm.district}
+                        onChange={handleAddressChange}
+                        required
+                        className="form-input"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="address-city">Şehir <span className="required">*</span></label>
+                      <input
+                        id="address-city"
+                        type="text"
+                        name="city"
+                        value={addressForm.city}
+                        onChange={handleAddressChange}
+                        required
+                        className="form-input"
+                      />
+                    </div>
+                  </div>
+                  <div className="form-actions">
+                    <button
+                      onClick={() => {
+                        setShowAddressForm(false)
+                        // Form verilerini sıfırla
+                        const address = order.shippingAddress || {}
+                        setAddressForm({
+                          fullName: address.fullName || order.customerName || '',
+                          phone: address.phone || order.customerPhone || '',
+                          addressLine: address.addressLine || '',
+                          addressDetail: address.addressDetail || '',
+                          city: address.city || '',
+                          district: address.district || ''
+                        })
+                      }}
+                      className="cancel-btn"
+                      type="button"
+                      disabled={isUpdatingAddress}
+                    >
+                      İptal
+                    </button>
+                    <button
+                      onClick={handleUpdateAddress}
+                      className="save-btn"
+                      type="button"
+                      disabled={isUpdatingAddress}
+                    >
+                      {isUpdatingAddress ? 'Kaydediliyor...' : 'Kaydet'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Kargo Takip Bilgileri */}
@@ -824,18 +1062,141 @@ const OrderDetail = () => {
 
             {/* Müşteri Bilgileri */}
             <div className="order-section">
-              <h3>Müşteri Bilgileri</h3>
-              <div className="customer-details">
-                {order.customerName && (
-                  <p><strong>Ad Soyad:</strong> {order.customerName}</p>
-                )}
-                {order.customerEmail && (
-                  <p><strong>E-posta:</strong> {order.customerEmail}</p>
-                )}
-                {order.customerPhone && (
-                  <p><strong>Telefon:</strong> {order.customerPhone}</p>
+              <div className="section-header-with-action">
+                <h3>Müşteri Bilgileri</h3>
+                {canUpdateAddress() && !showCustomerForm && (
+                  <button
+                    onClick={() => setShowCustomerForm(true)}
+                    className="edit-btn"
+                    type="button"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                    </svg>
+                    Düzenle
+                  </button>
                 )}
               </div>
+              {!showCustomerForm ? (
+                <div className="customer-details">
+                  {order.customerName && (
+                    <p><strong>Ad Soyad:</strong> {order.customerName}</p>
+                  )}
+                  {order.customerEmail && (
+                    <p><strong>E-posta:</strong> {order.customerEmail}</p>
+                  )}
+                  {order.customerPhone && (
+                    <p><strong>Telefon:</strong> {order.customerPhone}</p>
+                  )}
+                </div>
+              ) : (
+                <div className="customer-form-container">
+                  <div className="form-group">
+                    <label htmlFor="customer-name">Ad Soyad <span className="required">*</span></label>
+                    <input
+                      id="customer-name"
+                      type="text"
+                      name="customerName"
+                      value={customerForm.customerName}
+                      onChange={handleCustomerChange}
+                      required
+                      className="form-input"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="customer-phone">Telefon <span className="required">*</span></label>
+                    <input
+                      id="customer-phone"
+                      type="text"
+                      name="customerPhone"
+                      value={customerForm.customerPhone}
+                      onChange={handleCustomerChange}
+                      required
+                      className="form-input"
+                      placeholder="Örn: +905551234567"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="customer-email">E-posta</label>
+                    <input
+                      id="customer-email"
+                      type="email"
+                      value={order.customerEmail || ''}
+                      disabled
+                      className="form-input disabled"
+                    />
+                    <small className="form-hint">E-posta adresi değiştirilemez</small>
+                  </div>
+                  <div className="form-actions">
+                    <button
+                      onClick={() => {
+                        setShowCustomerForm(false)
+                        setCustomerForm({
+                          customerName: order.customerName || '',
+                          customerPhone: order.customerPhone || ''
+                        })
+                      }}
+                      className="cancel-btn"
+                      type="button"
+                      disabled={isUpdatingAddress}
+                    >
+                      İptal
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (!customerForm.customerName || !customerForm.customerPhone) {
+                          setError('Lütfen tüm zorunlu alanları doldurunuz.')
+                          return
+                        }
+                        setIsUpdatingAddress(true)
+                        setError('')
+                        try {
+                          // Adres güncelleme API'sini kullan (müşteri bilgileri de adresle birlikte güncellenir)
+                          const response = await fetch(`${API_BASE_URL}/orders/${orderNumber}/address?email=${encodeURIComponent(user.email)}`, {
+                            method: 'PUT',
+                            headers: {
+                              'Content-Type': 'application/json',
+                              ...(accessToken && { 'Authorization': `Bearer ${accessToken}` })
+                            },
+                            body: JSON.stringify({
+                              orderNumber: orderNumber,
+                              fullName: customerForm.customerName,
+                              phone: customerForm.customerPhone,
+                              addressLine: addressForm.addressLine || order.shippingAddress?.addressLine || '',
+                              addressDetail: addressForm.addressDetail || order.shippingAddress?.addressDetail || '',
+                              city: addressForm.city || order.shippingAddress?.city || '',
+                              district: addressForm.district || order.shippingAddress?.district || '',
+                            })
+                          })
+                          if (response.ok) {
+                            const data = await response.json()
+                            if (data.success || data.isSuccess) {
+                              setSuccess('Bilgiler başarıyla güncellendi!')
+                              setShowCustomerForm(false)
+                              await fetchOrderDetails()
+                            } else {
+                              throw new Error(data.message || 'Bilgiler güncellenemedi')
+                            }
+                          } else {
+                            const errorData = await response.json().catch(() => ({}))
+                            throw new Error(errorData.message || 'Bilgiler güncellenemedi')
+                          }
+                        } catch (err) {
+                          setError(err.message || 'Bilgiler güncellenirken bir hata oluştu')
+                        } finally {
+                          setIsUpdatingAddress(false)
+                        }
+                      }}
+                      className="save-btn"
+                      type="button"
+                      disabled={isUpdatingAddress}
+                    >
+                      {isUpdatingAddress ? 'Kaydediliyor...' : 'Kaydet'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* İptal/İade Bilgileri */}

@@ -38,6 +38,7 @@ const CookiePolicy = lazy(() => import('./components/CookiePolicy'))
 const Contract = lazy(() => import('./components/Contract'))
 const ContractsList = lazy(() => import('./components/ContractsList'))
 const MyContracts = lazy(() => import('./components/MyContracts'))
+const PromotionDetail = lazy(() => import('./components/PromotionDetail'))
 const NotFound = lazy(() => import('./components/NotFound'))
 import { CartProvider } from './context/CartContext'
 import { ThemeProvider } from './context/ThemeContext'
@@ -45,6 +46,7 @@ import { AuthProvider } from './context/AuthContext'
 import { ToastProvider } from './components/Toast'
 import VisitorHeartbeat from './components/VisitorHeartbeat'
 import ScrollToTop from './components/ScrollToTop'
+import PromotionBanner from './components/PromotionBanner'
 import './App.css'
 
 // Loading fallback component
@@ -70,6 +72,7 @@ function App() {
           <VisitorHeartbeat />
           <div className="app">
             <Header />
+            <PromotionBanner />
             <main id="main-content" className="main-content" role="main" tabIndex="-1">
               <Suspense fallback={<PageLoader />}>
                 <Routes>
@@ -104,6 +107,8 @@ function App() {
                 {/* Sözleşmeler */}
                 <Route path="/sozlesmeler" element={<ContractsList />} />
                 <Route path="/sozlesme/:id" element={<Contract />} />
+                {/* Kampanya Detay Sayfaları */}
+                <Route path="/kampanya/:slug" element={<PromotionDetail />} />
                 {/* Backend redirect route'ları */}
                 <Route path="/payment-success" element={<OrderConfirmation />} />
                 <Route path="/payment-failed" element={<PaymentFailed />} />

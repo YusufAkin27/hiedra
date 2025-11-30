@@ -218,25 +218,25 @@ const Cart = () => {
     <div className="cart-page">
       <div className="cart-wrapper">
         {/* Header */}
-        <div className="cart-header">
-          <h1>Sepetim</h1>
+      <div className="cart-header">
+        <h1>Sepetim</h1>
           <span className="cart-count">{cartItems.length} ürün</span>
-        </div>
-
+          </div>
+          
         {/* Main Content */}
         <div className="cart-main">
           {/* Left Column - Items */}
           <div className="cart-left-column">
             <div className="cart-items-wrapper">
               <div className="cart-items-list">
-                {cartItems.map((item, index) => (
+            {cartItems.map((item, index) => (
                   <div key={item.itemKey || `${item.id}_${index}`} className="cart-item-card">
                     <Link to={`/product/${item.id}`} className="cart-item-image-link">
-                      <div className="cart-item-image">
-                        <img src={item.image} alt={item.name} />
-                      </div>
-                    </Link>
-
+                  <div className="cart-item-image">
+                    <img src={item.image} alt={item.name} />
+                  </div>
+                </Link>
+                
                     <div className="cart-item-info">
                       <Link to={`/product/${item.id}`} className="cart-item-name">
                         {truncateProductName(item.name, 60)}
@@ -291,8 +291,8 @@ const Cart = () => {
                     </button>
                   </div>
                 ))}
-              </div>
-            </div>
+                      </div>
+                    </div>
 
             {/* Coupon Section - Mobil için */}
             <div className="cart-coupon-section cart-coupon-mobile">
@@ -300,13 +300,13 @@ const Cart = () => {
                 <div className="cart-coupon-applied">
                   <span className="cart-coupon-code-text">{couponCode}</span>
                   <span className="cart-coupon-discount-text">-{discountAmount.toFixed(2)} ₺</span>
-                  <button
+                        <button 
                     className="cart-coupon-remove-btn"
                     onClick={handleRemoveCoupon}
                     disabled={isRemovingCoupon}
                   >
                     {isRemovingCoupon ? '...' : 'Kaldır'}
-                  </button>
+                        </button>
                 </div>
               ) : (
                 <div className="cart-coupon-input-wrapper">
@@ -327,13 +327,13 @@ const Cart = () => {
                     className="cart-coupon-input-simple"
                     disabled={isApplyingCoupon || !isAuthenticated}
                   />
-                  <button
+                        <button 
                     className="cart-coupon-apply-btn"
                     onClick={handleApplyCoupon}
                     disabled={isApplyingCoupon || !isAuthenticated || !couponInput.trim()}
                   >
                     {isApplyingCoupon ? '...' : 'Uygula'}
-                  </button>
+                        </button>
                 </div>
               )}
               {couponError && (
@@ -342,87 +342,87 @@ const Cart = () => {
               {couponSuccess && (
                 <div className="cart-coupon-message-success">{couponSuccess}</div>
               )}
-            </div>
           </div>
+        </div>
 
           {/* Right Column - Summary (PC için) */}
           <div className="cart-right-column">
             <div className="cart-summary-card">
               <h3 className="cart-summary-title">Sipariş Özeti</h3>
-
+          
               {/* Coupon Section - PC için */}
               <div className="cart-coupon-section cart-coupon-desktop">
-                {couponCode ? (
+            {couponCode ? (
                   <div className="cart-coupon-applied">
                     <span className="cart-coupon-code-text">{couponCode}</span>
                     <span className="cart-coupon-discount-text">-{discountAmount.toFixed(2)} ₺</span>
-                    <button
+                <button
                       className="cart-coupon-remove-btn"
-                      onClick={handleRemoveCoupon}
-                      disabled={isRemovingCoupon}
-                    >
+                  onClick={handleRemoveCoupon}
+                  disabled={isRemovingCoupon}
+                >
                       {isRemovingCoupon ? '...' : 'Kaldır'}
-                    </button>
-                  </div>
-                ) : (
-                  <div className="cart-coupon-input-wrapper">
-                    <input
-                      type="text"
-                      placeholder="İndirim Kodu Giriniz"
-                      value={couponInput}
-                      onChange={(e) => {
-                        setCouponInput(e.target.value.toUpperCase())
-                        setCouponError('')
-                        setCouponSuccess('')
-                      }}
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                          handleApplyCoupon()
-                        }
-                      }}
-                      className="cart-coupon-input-simple"
-                      disabled={isApplyingCoupon || !isAuthenticated}
-                    />
-                    <button
-                      className="cart-coupon-apply-btn"
-                      onClick={handleApplyCoupon}
-                      disabled={isApplyingCoupon || !isAuthenticated || !couponInput.trim()}
-                    >
-                      {isApplyingCoupon ? '...' : 'Uygula'}
-                    </button>
-                  </div>
-                )}
-                {couponError && (
-                  <div className="cart-coupon-message-error">{couponError}</div>
-                )}
-                {couponSuccess && (
-                  <div className="cart-coupon-message-success">{couponSuccess}</div>
-                )}
+                </button>
               </div>
-
+            ) : (
+                  <div className="cart-coupon-input-wrapper">
+                <input
+                  type="text"
+                      placeholder="İndirim Kodu Giriniz"
+                  value={couponInput}
+                  onChange={(e) => {
+                    setCouponInput(e.target.value.toUpperCase())
+                    setCouponError('')
+                    setCouponSuccess('')
+                  }}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      handleApplyCoupon()
+                    }
+                  }}
+                      className="cart-coupon-input-simple"
+                  disabled={isApplyingCoupon || !isAuthenticated}
+                />
+                <button
+                      className="cart-coupon-apply-btn"
+                  onClick={handleApplyCoupon}
+                  disabled={isApplyingCoupon || !isAuthenticated || !couponInput.trim()}
+                >
+                  {isApplyingCoupon ? '...' : 'Uygula'}
+                </button>
+              </div>
+            )}
+            {couponError && (
+                  <div className="cart-coupon-message-error">{couponError}</div>
+            )}
+            {couponSuccess && (
+                  <div className="cart-coupon-message-success">{couponSuccess}</div>
+            )}
+          </div>
+          
               {/* Summary Details */}
               <div className="cart-summary-details">
                 <div className="cart-summary-row">
-                  <span>Ara Toplam</span>
-                  <span>{getCartSubtotal().toFixed(2)} ₺</span>
-                </div>
-                {discountAmount > 0 && (
+              <span>Ara Toplam</span>
+              <span>{getCartSubtotal().toFixed(2)} ₺</span>
+            </div>
+            {discountAmount > 0 && (
                   <div className="cart-summary-row cart-summary-discount">
-                    <span>İndirim ({couponCode})</span>
+                <span>İndirim ({couponCode})</span>
                     <span>-{discountAmount.toFixed(2)} ₺</span>
-                  </div>
-                )}
-                <div className="cart-summary-row">
-                  <span>Kargo</span>
-                  <span className="cart-shipping-free">Ücretsiz</span>
-                </div>
               </div>
+            )}
+                <div className="cart-summary-row">
+              <span>Kargo</span>
+                  <span className="cart-shipping-free">Ücretsiz</span>
+            </div>
+          </div>
 
               {/* Total */}
               <div className="cart-summary-total">
-                <span>Toplam</span>
-                <span>{getCartTotal().toFixed(2)} ₺</span>
-              </div>
+            <span>Toplam</span>
+            <span>{getCartTotal().toFixed(2)} ₺</span>
+          </div>
 
               {/* Actions */}
               <button className="cart-checkout-btn" onClick={() => navigate('/checkout')}>
@@ -431,10 +431,10 @@ const Cart = () => {
                   <line x1="5" y1="12" x2="19" y2="12"></line>
                   <polyline points="12 5 19 12 12 19"></polyline>
                 </svg>
-              </button>
+          </button>
               <Link to="/" className="cart-continue-link">
-                Alışverişe Devam Et
-              </Link>
+            Alışverişe Devam Et
+          </Link>
             </div>
           </div>
 

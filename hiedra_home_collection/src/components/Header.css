@@ -1315,6 +1315,7 @@
 
   .user-link {
     padding: 0.5rem;
+    display: none !important; /* Mobil görünümde gizle */
   }
 
   .user-link svg {

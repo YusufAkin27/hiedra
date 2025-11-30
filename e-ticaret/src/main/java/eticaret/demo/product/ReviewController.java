@@ -407,6 +407,45 @@ public class ReviewController {
     }
 
     /**
+     * Birden fazla ürün için kullanıcının yorum yapıp yapmadığını toplu kontrol et
+     * POST /api/reviews/check-multiple
+     * Body: List<Long> productIds
+     * Response: Map<Long, Boolean> (productId -> hasReviewed)
+     */
+    @PostMapping("/check-multiple")
+    public ResponseEntity<DataResponseMessage<Map<Long, Boolean>>> checkMultipleProductsReviewed(
+            @RequestBody List<Long> productIds,
+            Authentication authentication
+    ) {
+        try {
+            AppUser user = getAppUserFromAuthentication(authentication);
+            if (user == null || !user.isActive()) {
+                return ResponseEntity.status(401).body(DataResponseMessage.error("Giriş yapmanız gerekiyor."));
+            }
+
+            if (productIds == null || productIds.isEmpty()) {
+                return ResponseEntity.ok(DataResponseMessage.success("Kontrol tamamlandı.", new HashMap<>()));
+            }
+
+            Map<Long, Boolean> resultMap = new HashMap<>();
+            
+            // Her ürün için kontrol yap
+            for (Long productId : productIds) {
+                if (productId != null) {
+                    Optional<ProductReview> reviewOpt = reviewRepository.findByProductIdAndUserIdAndActiveTrue(productId, user.getId());
+                    resultMap.put(productId, reviewOpt.isPresent());
+                }
+            }
+            
+            return ResponseEntity.ok(DataResponseMessage.success("Kontrol tamamlandı.", resultMap));
+        } catch (Exception e) {
+            log.error("Toplu yorum kontrolü hatası", e);
+            return ResponseEntity.badRequest()
+                    .body(DataResponseMessage.error("Yorum kontrol edilirken hata oluştu: " + e.getMessage()));
+        }
+    }
+
+    /**
      * Kullanıcının kendi yorumlarını getir
      * GET /api/reviews/my-reviews
      */

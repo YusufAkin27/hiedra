@@ -77,42 +77,42 @@ const OrderConfirmation = () => {
             }
             setOrderData(formattedData)
             setLoading(false)
-            return
-          }
+      return
+    }
         }
       }
-
+    
       // Backend'den çekilemediyse veya kullanıcı giriş yapmamışsa, sessionStorage'dan al
-      let data = location.state?.orderData || null
-      
-      if (!data) {
-        try {
-          const lastOrderData = sessionStorage.getItem('lastOrderData')
-          if (lastOrderData) {
-            data = JSON.parse(lastOrderData)
-            sessionStorage.removeItem('lastOrderData')
-          }
-        } catch (e) {
-          console.error('SessionStorage parse hatası:', e)
+    let data = location.state?.orderData || null
+    
+    if (!data) {
+      try {
+        const lastOrderData = sessionStorage.getItem('lastOrderData')
+        if (lastOrderData) {
+          data = JSON.parse(lastOrderData)
+          sessionStorage.removeItem('lastOrderData')
         }
+      } catch (e) {
+        console.error('SessionStorage parse hatası:', e)
       }
-
+    }
+    
       // Eğer hala data yoksa, checkout data'dan oluştur
       if (!data && orderNumber) {
-        try {
-          const checkoutData = sessionStorage.getItem('checkoutData')
-          if (checkoutData) {
-            const parsedCheckout = JSON.parse(checkoutData)
-            data = {
+      try {
+        const checkoutData = sessionStorage.getItem('checkoutData')
+        if (checkoutData) {
+          const parsedCheckout = JSON.parse(checkoutData)
+          data = {
               orderNumber: orderNumber,
-              contactInfo: parsedCheckout.contactInfo || {},
-              addressInfo: parsedCheckout.addressInfo || {},
-              cardInfo: parsedCheckout.cardInfo || {},
-              items: parsedCheckout.items || [],
+            contactInfo: parsedCheckout.contactInfo || {},
+            addressInfo: parsedCheckout.addressInfo || {},
+            cardInfo: parsedCheckout.cardInfo || {},
+            items: parsedCheckout.items || [],
               totalPrice: parsedCheckout.totalPrice || 0,
               orderDate: new Date().toISOString()
             }
-            sessionStorage.removeItem('checkoutData')
+          sessionStorage.removeItem('checkoutData')
           } else {
             data = {
               orderNumber: orderNumber,
@@ -144,7 +144,7 @@ const OrderConfirmation = () => {
       } else {
         setError('Sipariş bilgileri bulunamadı')
         setLoading(false)
-      }
+        }
     } catch (err) {
       console.error('Sipariş detayları yüklenirken hata:', err)
       setError('Sipariş detayları yüklenirken bir hata oluştu')
@@ -181,15 +181,15 @@ const OrderConfirmation = () => {
         } catch (e) {
           console.error('SessionStorage parse hatası:', e)
         }
-      }
-
-      if (data) {
-        setOrderData(data)
-        setLoading(false)
-      } else {
-        console.warn('Order data bulunamadı, ana sayfaya yönlendiriliyor')
-        navigate('/', { replace: true })
-      }
+    }
+    
+    if (data) {
+      setOrderData(data)
+      setLoading(false)
+    } else {
+      console.warn('Order data bulunamadı, ana sayfaya yönlendiriliyor')
+      navigate('/', { replace: true })
+    }
     }
   }, [searchParams, location, navigate, isAuthenticated, user, accessToken])
   
@@ -362,13 +362,13 @@ const OrderConfirmation = () => {
                         {item.customizations && (
                           <div className="item-customizations">
                             {item.customizations.en && (
-                              <span>En: {item.customizations.en} cm</span>
+                            <span>En: {item.customizations.en} cm</span>
                             )}
                             {item.customizations.boy && (
-                              <span>Boy: {item.customizations.boy} cm</span>
+                            <span>Boy: {item.customizations.boy} cm</span>
                             )}
                             {item.customizations.pileSikligi && (
-                              <span>Pile: {item.customizations.pileSikligi === 'pilesiz' ? 'Pilesiz' : item.customizations.pileSikligi}</span>
+                            <span>Pile: {item.customizations.pileSikligi === 'pilesiz' ? 'Pilesiz' : item.customizations.pileSikligi}</span>
                             )}
                           </div>
                         )}

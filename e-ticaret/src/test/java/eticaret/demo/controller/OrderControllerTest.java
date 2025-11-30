@@ -90,8 +90,8 @@ class OrderControllerTest {
             .thenReturn(new ResponseMessage("Başarılı", true));
         when(guestUserService.getGuestUserIdFromCookie(any())).thenReturn(null);
 
-        // Act
-        ResponseMessage response = orderController.queryOrder(queryRequest, null, request);
+        // Act - Authentication null olarak gönder (guest kullanıcı senaryosu)
+        ResponseMessage response = orderController.queryOrder(queryRequest, null, null, request);
 
         // Assert
         assertNotNull(response);

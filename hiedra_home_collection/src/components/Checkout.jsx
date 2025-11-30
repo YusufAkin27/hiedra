@@ -320,7 +320,7 @@ const Checkout = () => {
         toast.error(errorMsg)
         setAgreements({ preInformation: false, distanceSelling: false })
         setContractAccepted(false)
-      }
+    }
     } catch (err) {
       console.error('Sözleşme onaylanırken hata:', err)
       toast.error('Sözleşme onaylanırken bir hata oluştu')
@@ -328,7 +328,7 @@ const Checkout = () => {
       setContractAccepted(false)
     } finally {
       setIsAcceptingContract(false)
-    }
+  }
   }
 
   // Ödeme işlemi
@@ -592,7 +592,7 @@ const Checkout = () => {
             <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
           </svg>
           <span>SSL secured</span>
-        </div>
+          </div>
       </header>
 
       <div className="checkout-content-mobile">
@@ -607,7 +607,7 @@ const Checkout = () => {
               >
                 <polyline points="6 9 12 15 18 9"></polyline>
               </svg>
-            </div>
+          </div>
             {cartExpanded && (
               <div className="cart-summary-items">
                 {cartItems.map((item) => (
@@ -622,7 +622,7 @@ const Checkout = () => {
                           <span>En: {item.customizations.en} cm</span>
                           <span>Boy: {item.customizations.boy} cm</span>
                           <span>Pile: {item.customizations.pileSikligi === 'pilesiz' ? 'Pilesiz' : item.customizations.pileSikligi}</span>
-                        </div>
+        </div>
                       )}
                       <div className="item-meta">
                         <span className="item-quantity">{item.quantity}x</span>
@@ -647,70 +647,70 @@ const Checkout = () => {
               <button type="button" className="edit-address-btn" onClick={() => navigate('/adresler')}>
                 Ekle / Düzenle
               </button>
-            </div>
-            
+                  </div>
+                  
             {/* İletişim Bilgileri */}
             <div className="contact-info-fields">
-              <div className="form-row">
-                <div className="form-group">
+                  <div className="form-row">
+                    <div className="form-group">
                   <label htmlFor="firstName">Ad <span className="required">*</span></label>
-                  <input
-                    type="text"
-                    id="firstName"
-                    value={contactInfo.firstName}
-                    onChange={(e) => setContactInfo({ ...contactInfo, firstName: e.target.value })}
-                    placeholder="Adınız"
-                    className="form-input"
-                    required
-                  />
-                </div>
-                <div className="form-group">
+                      <input
+                        type="text"
+                        id="firstName"
+                        value={contactInfo.firstName}
+                        onChange={(e) => setContactInfo({ ...contactInfo, firstName: e.target.value })}
+                        placeholder="Adınız"
+                        className="form-input"
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
                   <label htmlFor="lastName">Soyad <span className="required">*</span></label>
-                  <input
-                    type="text"
-                    id="lastName"
-                    value={contactInfo.lastName}
-                    onChange={(e) => setContactInfo({ ...contactInfo, lastName: e.target.value })}
-                    placeholder="Soyadınız"
-                    className="form-input"
-                    required
-                  />
-                </div>
-              </div>
-              
-              <div className="form-group">
+                      <input
+                        type="text"
+                        id="lastName"
+                        value={contactInfo.lastName}
+                        onChange={(e) => setContactInfo({ ...contactInfo, lastName: e.target.value })}
+                        placeholder="Soyadınız"
+                        className="form-input"
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="form-group">
                 <label htmlFor="email">E-posta <span className="required">*</span></label>
-                <input
-                  type="email"
-                  id="email"
-                  value={contactInfo.email}
-                  onChange={(e) => setContactInfo({ ...contactInfo, email: e.target.value })}
-                  placeholder="ornek@email.com"
-                  className="form-input"
-                  required
-                />
-              </div>
-              
-              <div className="form-group">
+                    <input
+                      type="email"
+                      id="email"
+                      value={contactInfo.email}
+                      onChange={(e) => setContactInfo({ ...contactInfo, email: e.target.value })}
+                      placeholder="ornek@email.com"
+                      className="form-input"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="form-group">
                 <label htmlFor="phone">Telefon <span className="required">*</span></label>
-                <input
-                  type="tel"
-                  id="phone"
-                  value={contactInfo.phone}
-                  onChange={(e) => {
-                    let value = e.target.value.replace(/\D/g, '')
+                    <input
+                      type="tel"
+                      id="phone"
+                      value={contactInfo.phone}
+                      onChange={(e) => {
+                        let value = e.target.value.replace(/\D/g, '')
                     if (value.startsWith('90') && value.length > 10) value = value.substring(2)
                     if (value.startsWith('0')) value = value.substring(1)
-                    if (value.length <= 10) {
-                      setContactInfo({ ...contactInfo, phone: value })
-                    }
-                  }}
-                  placeholder="5336360079"
-                  maxLength={10}
-                  className="form-input"
-                  required
-                />
-              </div>
+                        if (value.length <= 10) {
+                          setContactInfo({ ...contactInfo, phone: value })
+                        }
+                      }}
+                      placeholder="5336360079"
+                      maxLength={10}
+                      className="form-input"
+                      required
+                    />
+                  </div>
             </div>
 
             {/* Adres Seçimi */}
@@ -725,29 +725,29 @@ const Checkout = () => {
                     >
                       <polyline points="6 9 12 15 18 9"></polyline>
                     </svg>
-                  </div>
+                        </div>
                   {deliveryAddressExpanded && (
                     <div className="address-dropdown-list">
-                      {userAddresses.map((address) => (
-                        <div
-                          key={address.id}
+                          {userAddresses.map((address) => (
+                            <div
+                              key={address.id}
                           className={`address-dropdown-item ${selectedAddressId === address.id ? 'selected' : ''}`}
                           onClick={() => {
                             handleAddressSelect(address.id)
                             setDeliveryAddressExpanded(false)
                           }}
-                        >
+                            >
                           <div className="address-dropdown-content">
                             <div className="address-dropdown-name">{address.fullName}</div>
                             <div className="address-dropdown-line">{address.addressLine}</div>
                             <div className="address-dropdown-location">{address.district}, {address.city}</div>
-                          </div>
+                                </div>
                           {address.isDefault && <span className="default-badge-small">Varsayılan</span>}
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      )}
                     </div>
-                  )}
-                </div>
               ) : (
                 <div className="address-manual-fields">
                   <div className="form-group">
@@ -791,9 +791,9 @@ const Checkout = () => {
                 </div>
               )}
             </div>
-          </section>
+            </section>
 
-          {/* Fatura Adresi */}
+            {/* Fatura Adresi */}
           <section className="address-section">
             <div className="address-section-header">
               <h2>Fatura Adresi</h2>
@@ -801,17 +801,17 @@ const Checkout = () => {
                 Ekle / Düzenle
               </button>
             </div>
-            
-            <div className="form-group">
+              
+              <div className="form-group">
               <label className="same-address-checkbox">
-                <input
-                  type="checkbox"
-                  checked={useSameAddressForInvoice}
-                  onChange={(e) => {
-                    setUseSameAddressForInvoice(e.target.checked)
-                    if (e.target.checked) {
+                  <input
+                    type="checkbox"
+                    checked={useSameAddressForInvoice}
+                    onChange={(e) => {
+                      setUseSameAddressForInvoice(e.target.checked)
+                      if (e.target.checked) {
                       setSelectedInvoiceAddressId(selectedAddressId)
-                      setInvoiceAddressInfo({
+                        setInvoiceAddressInfo({
                         address: addressInfo.address,
                         city: addressInfo.city,
                         district: addressInfo.district
@@ -819,15 +819,15 @@ const Checkout = () => {
                     } else {
                       setSelectedInvoiceAddressId(null)
                       setInvoiceAddressInfo({ address: '', city: '', district: '' })
-                    }
-                  }}
+                      }
+                    }}
                 />
                 <span className="checkbox-custom"></span>
                 <span>Faturamı aynı adrese gönder.</span>
-              </label>
-            </div>
+                </label>
+              </div>
 
-            {!useSameAddressForInvoice && (
+              {!useSameAddressForInvoice && (
               <div className="address-select-wrapper">
                 {isAuthenticated && userAddresses.length > 0 ? (
                   <div className="address-dropdown">
@@ -864,49 +864,49 @@ const Checkout = () => {
                   </div>
                 ) : (
                   <div className="address-manual-fields">
-                    <div className="form-group">
+                  <div className="form-group">
                       <label htmlFor="invoiceAddress">Fatura Adresi <span className="required">*</span></label>
+                    <input
+                      type="text"
+                      id="invoiceAddress"
+                      value={invoiceAddressInfo.address}
+                      onChange={(e) => setInvoiceAddressInfo({ ...invoiceAddressInfo, address: e.target.value })}
+                      placeholder="Mahalle, Sokak, Cadde"
+                        className="form-input"
+                      required={!useSameAddressForInvoice}
+                    />
+                  </div>
+                  <div className="form-row">
+                    <div className="form-group">
+                        <label htmlFor="invoiceCity">Şehir <span className="required">*</span></label>
                       <input
                         type="text"
-                        id="invoiceAddress"
-                        value={invoiceAddressInfo.address}
-                        onChange={(e) => setInvoiceAddressInfo({ ...invoiceAddressInfo, address: e.target.value })}
-                        placeholder="Mahalle, Sokak, Cadde"
-                        className="form-input"
-                        required={!useSameAddressForInvoice}
+                        id="invoiceCity"
+                        value={invoiceAddressInfo.city}
+                        onChange={(e) => setInvoiceAddressInfo({ ...invoiceAddressInfo, city: e.target.value })}
+                        placeholder="Şehir adı"
+                          className="form-input"
+                          required={!useSameAddressForInvoice}
                       />
                     </div>
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label htmlFor="invoiceCity">Şehir <span className="required">*</span></label>
-                        <input
-                          type="text"
-                          id="invoiceCity"
-                          value={invoiceAddressInfo.city}
-                          onChange={(e) => setInvoiceAddressInfo({ ...invoiceAddressInfo, city: e.target.value })}
-                          placeholder="Şehir adı"
-                          className="form-input"
-                          required={!useSameAddressForInvoice}
-                        />
-                      </div>
-                      <div className="form-group">
+                    <div className="form-group">
                         <label htmlFor="invoiceDistrict">İlçe <span className="required">*</span></label>
-                        <input
-                          type="text"
-                          id="invoiceDistrict"
-                          value={invoiceAddressInfo.district}
-                          onChange={(e) => setInvoiceAddressInfo({ ...invoiceAddressInfo, district: e.target.value })}
-                          placeholder="İlçe adı"
+                      <input
+                        type="text"
+                        id="invoiceDistrict"
+                        value={invoiceAddressInfo.district}
+                        onChange={(e) => setInvoiceAddressInfo({ ...invoiceAddressInfo, district: e.target.value })}
+                        placeholder="İlçe adı"
                           className="form-input"
                           required={!useSameAddressForInvoice}
-                        />
-                      </div>
+                      />
                     </div>
+                  </div>
                   </div>
                 )}
               </div>
-            )}
-          </section>
+              )}
+            </section>
 
           {/* Ödeme Seçenekleri */}
           <section className="payment-options-section">
@@ -917,7 +917,7 @@ const Checkout = () => {
                 <span className="radio-custom"></span>
                 <span className="payment-option-label">Banka & Kredi Kartı ile Öde</span>
               </label>
-            </div>
+                </div>
           </section>
 
           {/* Kart Bilgileri */}
@@ -933,70 +933,70 @@ const Checkout = () => {
                   </svg>
                 </button>
               )}
-            </div>
+                  </div>
 
-            <div className="form-group">
+                  <div className="form-group">
               <label htmlFor="cardNumber">Kart Numarası <span className="required">*</span></label>
-              <div className="card-input-wrapper">
-                <input
-                  type="tel"
-                  id="cardNumber"
-                  value={cardInfo.cardNumber}
-                  onChange={(e) => {
-                    const formatted = formatCardNumber(e.target.value)
-                    setCardInfo({ ...cardInfo, cardNumber: formatted })
-                  }}
-                  placeholder="1234 5678 9012 3456"
-                  maxLength="19"
-                  className="form-input card-number-input"
-                  required
-                />
-                {detectedCardType && (
-                  <div className="detected-card-icon">
+                    <div className="card-input-wrapper">
+                      <input
+                        type="tel"
+                        id="cardNumber"
+                        value={cardInfo.cardNumber}
+                        onChange={(e) => {
+                          const formatted = formatCardNumber(e.target.value)
+                          setCardInfo({ ...cardInfo, cardNumber: formatted })
+                        }}
+                        placeholder="1234 5678 9012 3456"
+                        maxLength="19"
+                        className="form-input card-number-input"
+                        required
+                      />
+                      {detectedCardType && (
+                        <div className="detected-card-icon">
                     {detectedCardType === 'visa' && <img src="/images/visa.png" alt="Visa" className="detected-card-logo" />}
                     {detectedCardType === 'mastercard' && <img src="/images/master.png" alt="Mastercard" className="detected-card-logo" />}
                     {detectedCardType === 'troy' && <img src="/images/troy.png" alt="Troy" className="detected-card-logo" />}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                )}
-              </div>
-            </div>
-            
-            <div className="form-row">
-              <div className="form-group">
+                  
+                  <div className="form-row">
+                    <div className="form-group">
                 <label htmlFor="expiry">Son Kullanma Tarihi <span className="required">*</span></label>
-                <input
-                  type="text"
-                  id="expiry"
-                  value={cardInfo.expiry}
-                  onChange={(e) => {
-                    const formatted = formatExpiry(e.target.value)
-                    setCardInfo({ ...cardInfo, expiry: formatted })
-                  }}
-                  placeholder="MM/YY"
-                  maxLength="5"
-                  className="form-input"
-                  required
-                />
-              </div>
-              <div className="form-group">
+                      <input
+                        type="text"
+                        id="expiry"
+                        value={cardInfo.expiry}
+                        onChange={(e) => {
+                          const formatted = formatExpiry(e.target.value)
+                          setCardInfo({ ...cardInfo, expiry: formatted })
+                        }}
+                        placeholder="MM/YY"
+                        maxLength="5"
+                        className="form-input"
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
                 <label htmlFor="cvv">CVV <span className="required">*</span></label>
-                <input
-                  type="tel"
-                  id="cvv"
-                  value={cardInfo.cvv}
-                  onChange={(e) => {
-                    const value = e.target.value.replace(/\D/g, '')
-                    if (value.length <= 3) {
-                      setCardInfo({ ...cardInfo, cvv: value })
-                    }
-                  }}
-                  placeholder="123"
-                  maxLength="3"
-                  className="form-input"
-                  required
-                />
-              </div>
-            </div>
+                      <input
+                        type="tel"
+                        id="cvv"
+                        value={cardInfo.cvv}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\D/g, '')
+                          if (value.length <= 3) {
+                            setCardInfo({ ...cardInfo, cvv: value })
+                          }
+                        }}
+                        placeholder="123"
+                        maxLength="3"
+                        className="form-input"
+                        required
+                      />
+                    </div>
+                  </div>
 
             {/* Sözleşme Onayları */}
             <div className="agreements-section">
@@ -1019,13 +1019,13 @@ const Checkout = () => {
                       Mesafeli Satış Sözleşmesi
                     </Link>
                     'ni okudum, onaylıyorum. <span className="required">*</span>
-                  </span>
+                      </span>
                 </label>
-              </div>
+                    </div>
             </div>
           </section>
         </form>
-      </div>
+                  </div>
 
       {/* Alt Sabit Bar */}
       <div className="checkout-bottom-bar">
@@ -1033,18 +1033,18 @@ const Checkout = () => {
           <div className="checkout-total-amount">{getCartTotal().toFixed(2)} ₺</div>
           <div className="checkout-shipping-text">Kargo Bedava</div>
         </div>
-        <button 
-          type="button"
+                    <button 
+                      type="button"
           onClick={handleCompleteOrder}
           className="checkout-confirm-btn"
-          disabled={isProcessing}
-        >
+                      disabled={isProcessing}
+                    >
           {isProcessing ? 'İşleniyor...' : 'Onayla ve Bitir'}
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <line x1="5" y1="12" x2="19" y2="12"></line>
             <polyline points="12 5 19 12 12 19"></polyline>
           </svg>
-        </button>
+                    </button>
       </div>
     </div>
   )

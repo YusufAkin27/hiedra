@@ -163,7 +163,7 @@ const Profile = () => {
     
     // 05 ile başlamalı kontrolü
     if (!phone.startsWith('05')) {
-      setError('Telefon numarası 05 ile başlamalıdır (örn: 05336360079)')
+      setError('Telefon numarası 05 ile başlamalıdır (örn: 05113233289)')
       setSaving(false)
       return
     }
@@ -171,7 +171,7 @@ const Profile = () => {
     // 0 ile başlıyorsa 11 karakter, değilse 10 karakter olmalı
     if (phone.startsWith('0')) {
       if (phone.length !== 11) {
-        setError('Telefon numarası 11 haneli olmalıdır (örn: 05336360079)')
+        setError('Telefon numarası 11 haneli olmalıdır (örn: 05113233289)')
         setSaving(false)
         return
       }
@@ -349,14 +349,14 @@ const Profile = () => {
                 id="phone"
                 value={profileForm.phone}
                 onChange={handlePhoneChange}
-                placeholder="05336360079"
+                placeholder="05113233289"
                 className="profile-form-input"
                 required
                 minLength={11}
                 maxLength={11}
                 pattern="05[0-9]{9}"
               />
-              <span className="profile-form-hint">05 ile başlayan 11 haneli telefon numarası giriniz (örn: 05336360079). +90 girişi yapılamaz.</span>
+              <span className="profile-form-hint">05 ile başlayan 11 haneli telefon numarası giriniz (örn: 05113233289). +90 girişi yapılamaz.</span>
             </div>
 
             {/* Form Actions */}

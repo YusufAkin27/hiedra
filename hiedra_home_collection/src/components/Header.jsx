@@ -57,6 +57,18 @@ const Header = () => {
     }
   }, [showUserMenu])
 
+  // Mobil menü açıldığında body'ye class ekle
+  useEffect(() => {
+    if (isMenuOpen) {
+      document.body.classList.add('menu-open')
+    } else {
+      document.body.classList.remove('menu-open')
+    }
+    return () => {
+      document.body.classList.remove('menu-open')
+    }
+  }, [isMenuOpen])
+
   // Scroll ile header'ı gizle/göster - sadece ana sayfada aktif
   useEffect(() => {
     // Sadece ana sayfada scroll davranışını aktif et

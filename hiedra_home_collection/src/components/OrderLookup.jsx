@@ -75,6 +75,11 @@ const OrderLookup = () => {
     city: '',
     district: ''
   })
+  const [showCustomerForm, setShowCustomerForm] = useState(false)
+  const [customerForm, setCustomerForm] = useState({
+    customerName: '',
+    customerPhone: ''
+  })
 
   // Basit captcha oluştur
   const generateCaptcha = () => {
@@ -314,6 +319,10 @@ const OrderLookup = () => {
         addressDetail: address.addressDetail || '',
         city: address.city || '',
         district: address.district || '',
+      })
+      setCustomerForm({
+        customerName: order.customerName || '',
+        customerPhone: order.customerPhone || ''
       })
 
       setSelectedOrderNumber(order.orderNumber)
@@ -1297,6 +1306,142 @@ const OrderLookup = () => {
               </div>
             </div>
           )}
+
+          {/* Müşteri Bilgileri */}
+          <div className="order-section">
+            <div className="section-header-with-action">
+              <h3>Müşteri Bilgileri</h3>
+              {canUpdateAddress() && !showCustomerForm && (
+                <button
+                  onClick={() => setShowCustomerForm(true)}
+                  className="edit-btn"
+                  type="button"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                  Düzenle
+                </button>
+              )}
+            </div>
+            {!showCustomerForm ? (
+              <div className="customer-details">
+                {orderData.customerName && (
+                  <p><strong>Ad Soyad:</strong> {orderData.customerName}</p>
+                )}
+                {orderData.customerEmail && (
+                  <p><strong>E-posta:</strong> {orderData.customerEmail}</p>
+                )}
+                {orderData.customerPhone && (
+                  <p><strong>Telefon:</strong> {orderData.customerPhone}</p>
+                )}
+              </div>
+            ) : (
+              <div className="customer-form-container">
+                <div className="form-group">
+                  <label htmlFor="customer-name-lookup">Ad Soyad <span className="required">*</span></label>
+                  <input
+                    id="customer-name-lookup"
+                    type="text"
+                    name="customerName"
+                    value={customerForm.customerName}
+                    onChange={handleCustomerChange}
+                    required
+                    className="form-input"
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="customer-phone-lookup">Telefon <span className="required">*</span></label>
+                  <input
+                    id="customer-phone-lookup"
+                    type="text"
+                    name="customerPhone"
+                    value={customerForm.customerPhone}
+                    onChange={handleCustomerChange}
+                    required
+                    className="form-input"
+                    placeholder="Örn: +905551234567"
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="customer-email-lookup">E-posta</label>
+                  <input
+                    id="customer-email-lookup"
+                    type="email"
+                    value={orderData.customerEmail || ''}
+                    disabled
+                    className="form-input disabled"
+                  />
+                  <small className="form-hint">E-posta adresi değiştirilemez</small>
+                </div>
+                <div className="form-actions">
+                  <button
+                    onClick={() => {
+                      setShowCustomerForm(false)
+                      setCustomerForm({
+                        customerName: orderData.customerName || '',
+                        customerPhone: orderData.customerPhone || ''
+                      })
+                    }}
+                    className="cancel-btn"
+                    type="button"
+                    disabled={isProcessing}
+                  >
+                    İptal
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!customerForm.customerName || !customerForm.customerPhone) {
+                        showToast('Lütfen tüm zorunlu alanları doldurunuz.', 'error')
+                        return
+                      }
+                      setIsProcessing(true)
+                      setError('')
+                      try {
+                        const response = await fetch(`${API_BASE_URL}/${orderData.orderNumber}/address?email=${encodeURIComponent(email)}`, {
+                          method: 'PUT',
+                          headers: authHeaders(),
+                          body: JSON.stringify({
+                            orderNumber: orderData.orderNumber,
+                            fullName: customerForm.customerName,
+                            phone: customerForm.customerPhone,
+                            addressLine: addressForm.addressLine || orderData.shippingAddress?.addressLine || '',
+                            addressDetail: addressForm.addressDetail || orderData.shippingAddress?.addressDetail || '',
+                            city: addressForm.city || orderData.shippingAddress?.city || '',
+                            district: addressForm.district || orderData.shippingAddress?.district || '',
+                          })
+                        })
+                        if (response.ok) {
+                          const data = await response.json()
+                          if (data.success || data.isSuccess) {
+                            showToast('Bilgiler başarıyla güncellendi!', 'success')
+                            setShowCustomerForm(false)
+                            await fetchOrderDetail(orderData.orderNumber)
+                          } else {
+                            throw new Error(data.message || 'Bilgiler güncellenemedi')
+                          }
+                        } else {
+                          const errorData = await response.json().catch(() => ({}))
+                          throw new Error(errorData.message || 'Bilgiler güncellenemedi')
+                        }
+                      } catch (err) {
+                        setError(err.message || 'Bilgiler güncellenirken bir hata oluştu')
+                        showToast(err.message || 'Bilgiler güncellenirken bir hata oluştu', 'error')
+                      } finally {
+                        setIsProcessing(false)
+                      }
+                    }}
+                    className="save-btn"
+                    type="button"
+                    disabled={isProcessing}
+                  >
+                    {isProcessing ? 'Kaydediliyor...' : 'Kaydet'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Kargo Takip Bilgileri */}
           {orderData.trackingNumber && (

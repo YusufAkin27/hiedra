@@ -358,7 +358,7 @@ const MyOrders = () => {
     }
   }
 
-  // Kullanıcının bu ürüne yorum yapıp yapmadığını kontrol et
+  // Kullanıcının bu ürüne yorum yapıp yapmadığını kontrol et - Toplu kontrol API kullanarak
   useEffect(() => {
     const checkExistingReviews = async () => {
       if (!orders.length || !accessToken) {
@@ -366,7 +366,6 @@ const MyOrders = () => {
         return
       }
 
-      const reviewMap = {}
       const productIds = new Set()
       
       // Tüm teslim edilmiş siparişlerdeki ürün ID'lerini topla
@@ -380,35 +379,48 @@ const MyOrders = () => {
         }
       }
 
-      // Tüm ürünler için paralel kontrol yap
-      const checkPromises = Array.from(productIds).map(async (productId) => {
-        try {
-          const response = await fetch(`${API_BASE_URL}/reviews/product/${productId}/has-reviewed`, {
-            headers: {
-              'Authorization': `Bearer ${accessToken}`
-            }
-          })
-          if (response.ok) {
-            const data = await response.json()
-            if (data.isSuccess && data.data === true) {
-              return { productId, hasReviewed: true }
-            }
+      // Eğer kontrol edilecek ürün yoksa
+      if (productIds.size === 0) {
+        setExistingReviews({})
+        return
+      }
+
+      try {
+        // Toplu kontrol API'sini kullan
+        const response = await fetch(`${API_BASE_URL}/reviews/check-multiple`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
+          },
+          body: JSON.stringify(Array.from(productIds))
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          if (data.isSuccess && data.data) {
+            // Backend'den gelen Map'i existingReviews formatına çevir
+            // Hem string hem number key olarak sakla (tip uyumsuzluğu için)
+            const reviewMap = {}
+            Object.keys(data.data).forEach(productId => {
+              if (data.data[productId] === true) {
+                const id = Number(productId)
+                reviewMap[id] = true
+                reviewMap[String(id)] = true // String key de ekle
+              }
+            })
+            setExistingReviews(reviewMap)
+          } else {
+            setExistingReviews({})
           }
-        } catch (err) {
-          // Hata durumunda devam et
-          console.error(`Yorum kontrolü hatası (productId: ${productId}):`, err)
+        } else {
+          console.error('Yorum kontrolü başarısız:', response.status)
+          setExistingReviews({})
         }
-        return { productId, hasReviewed: false }
-      })
-
-      const results = await Promise.all(checkPromises)
-      results.forEach(({ productId, hasReviewed }) => {
-        if (hasReviewed) {
-          reviewMap[productId] = true
-        }
-      })
-
-      setExistingReviews(reviewMap)
+      } catch (err) {
+        console.error('Yorum kontrolü hatası:', err)
+        setExistingReviews({})
+      }
     }
 
     checkExistingReviews()
@@ -471,7 +483,20 @@ const MyOrders = () => {
       ) : (
         <div className="orders-list">
           {orders.map((order) => (
-            <div key={order.id || order.orderNumber} className="order-card">
+            <div 
+              key={order.id || order.orderNumber} 
+              className="order-card"
+              onClick={() => navigate(`/siparis/${order.orderNumber}`)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  navigate(`/siparis/${order.orderNumber}`)
+                }
+              }}
+              aria-label={`Sipariş ${order.orderNumber} detaylarını görüntüle`}
+            >
               <div className="order-card-header">
                 <div className="order-info">
                   <h3>Sipariş No: {order.orderNumber}</h3>
@@ -510,7 +535,8 @@ const MyOrders = () => {
                       }
                       // TESLIM_EDILDI veya DELIVERED durumunda yorum yapılabilir
                       const canReview = (order.status === 'DELIVERED' || order.status === 'TESLIM_EDILDI') && item.productId
-                      const hasReviewed = existingReviews[item.productId]
+                      // productId'yi hem number hem string olarak kontrol et
+                      const hasReviewed = existingReviews[item.productId] || existingReviews[String(item.productId)] || existingReviews[Number(item.productId)]
 
                       return (
                         <div key={item.id || index} className="order-item-preview">
@@ -526,26 +552,29 @@ const MyOrders = () => {
                             {item.quantity > 1 && (
                               <span className="item-quantity">Adet: {item.quantity}</span>
                             )}
-                            {canReview && !hasReviewed && (
-                              <button
-                                onClick={() => openReviewModal(item.productId, item.productName, productImage)}
-                                className="review-btn"
-                                style={{
-                                  marginTop: '0.5rem',
-                                  padding: '0.5rem 1rem',
-                                  background: '#667eea',
-                                  color: 'white',
-                                  border: 'none',
-                                  borderRadius: '6px',
-                                  cursor: 'pointer',
-                                  fontSize: '0.875rem',
-                                  fontWeight: '600',
-                                  transition: 'all 0.2s'
-                                }}
-                                title="Bu ürüne yorum yap"
-                              >
-                                Yorum Yap
-                              </button>
+                            {canReview && (
+                              hasReviewed ? (
+                                <div className="review-btn review-btn-completed">
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M20 6L9 17l-5-5" />
+                                  </svg>
+                                  <span>Yorum Yapıldı</span>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    openReviewModal(item.productId, item.productName, productImage)
+                                  }}
+                                  className="review-btn review-btn-active"
+                                  title="Bu ürüne yorum yap"
+                                >
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                                  </svg>
+                                  <span>Yorum Yap</span>
+                                </button>
+                              )
                             )}
                           </div>
                         </div>
@@ -559,20 +588,27 @@ const MyOrders = () => {
 
               {/* Kargo Takip Bilgisi */}
               {order.trackingNumber && (
-                <div className="order-tracking-section" style={{
-                  padding: '1rem',
-                  marginTop: '1rem',
-                  backgroundColor: '#f8f9fa',
-                  borderRadius: '8px',
-                  border: '1px solid #e0e0e0'
-                }}>
+                <div 
+                  className="order-tracking-section" 
+                  onClick={(e) => e.stopPropagation()}
+                  style={{
+                    padding: '1rem',
+                    marginTop: '1rem',
+                    backgroundColor: '#f8f9fa',
+                    borderRadius: '8px',
+                    border: '1px solid #e0e0e0'
+                  }}
+                >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                     <div>
                       <strong>Kargo Takip:</strong> {order.trackingNumber}
                       {order.carrier && <span style={{ marginLeft: '0.5rem', color: '#64748b' }}>({order.carrier})</span>}
                     </div>
                     <button
-                      onClick={() => fetchTrackingInfo(order)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        fetchTrackingInfo(order)
+                      }}
                       disabled={loadingTracking[order.orderNumber]}
                       style={{
                         padding: '0.25rem 0.75rem',
@@ -621,6 +657,7 @@ const MyOrders = () => {
                       )}
                       <Link 
                         to={`/kargo-takip?trackingNumber=${order.trackingNumber}&orderNumber=${order.orderNumber}`}
+                        onClick={(e) => e.stopPropagation()}
                         style={{
                           display: 'inline-block',
                           marginTop: '0.75rem',
@@ -636,6 +673,7 @@ const MyOrders = () => {
                   ) : (
                     <Link 
                       to={`/kargo-takip?trackingNumber=${order.trackingNumber}&orderNumber=${order.orderNumber}`}
+                      onClick={(e) => e.stopPropagation()}
                       style={{
                         display: 'inline-block',
                         marginTop: '0.5rem',
@@ -738,14 +776,6 @@ const MyOrders = () => {
                       return '0.00'
                     })()} ₺
                   </span>
-                </div>
-                <div className="order-actions">
-                  <Link 
-                    to={`/siparis/${order.orderNumber}`}
-                    className="view-order-btn"
-                  >
-                    Detayları Gör
-                  </Link>
                 </div>
               </div>
             </div>
