@@ -789,7 +789,7 @@ const OrderDetail = () => {
             {/* Teslimat Adresi */}
             <div className="order-section">
               <div className="section-header-with-action">
-                <h3>Teslimat Adresi</h3>
+              <h3>Teslimat Adresi</h3>
                 {canUpdateAddress() && !showAddressForm && (
                   <button
                     onClick={() => setShowAddressForm(true)}
@@ -805,34 +805,34 @@ const OrderDetail = () => {
                 )}
               </div>
               {!showAddressForm ? (
-                <div className="address-details">
-                  {order.shippingAddress && (
-                    <>
+              <div className="address-details">
+                {order.shippingAddress && (
+                  <>
                       {(order.shippingAddress.fullName || order.customerName) && (
                         <p><strong>Ad Soyad:</strong> {order.shippingAddress.fullName || order.customerName}</p>
                       )}
                       {(order.shippingAddress.phone || order.customerPhone) && (
                         <p><strong>Telefon:</strong> {order.shippingAddress.phone || order.customerPhone}</p>
                       )}
-                      {order.shippingAddress.addressLine && (
-                        <p><strong>Adres:</strong> {order.shippingAddress.addressLine}</p>
-                      )}
-                      {order.shippingAddress.addressDetail && (
-                        <p><strong>Adres Detayı:</strong> {order.shippingAddress.addressDetail}</p>
-                      )}
-                      {(order.shippingAddress.district || order.shippingAddress.city) && (
-                        <p>
-                          <strong>İlçe/Şehir:</strong> {order.shippingAddress.district || ''} 
-                          {order.shippingAddress.district && order.shippingAddress.city ? ' / ' : ''} 
-                          {order.shippingAddress.city || ''}
-                        </p>
-                      )}
-                    </>
-                  )}
-                  {(!order.shippingAddress || (!order.shippingAddress.addressLine && !order.shippingAddress.city)) && (
-                    <p>Adres bilgisi bulunamadı</p>
-                  )}
-                </div>
+                    {order.shippingAddress.addressLine && (
+                      <p><strong>Adres:</strong> {order.shippingAddress.addressLine}</p>
+                    )}
+                    {order.shippingAddress.addressDetail && (
+                      <p><strong>Adres Detayı:</strong> {order.shippingAddress.addressDetail}</p>
+                    )}
+                    {(order.shippingAddress.district || order.shippingAddress.city) && (
+                      <p>
+                        <strong>İlçe/Şehir:</strong> {order.shippingAddress.district || ''} 
+                        {order.shippingAddress.district && order.shippingAddress.city ? ' / ' : ''} 
+                        {order.shippingAddress.city || ''}
+                      </p>
+                    )}
+                  </>
+                )}
+                {(!order.shippingAddress || (!order.shippingAddress.addressLine && !order.shippingAddress.city)) && (
+                  <p>Adres bilgisi bulunamadı</p>
+                )}
+              </div>
               ) : (
                 <div className="address-form-container">
                   <div className="form-group">
@@ -1063,7 +1063,7 @@ const OrderDetail = () => {
             {/* Müşteri Bilgileri */}
             <div className="order-section">
               <div className="section-header-with-action">
-                <h3>Müşteri Bilgileri</h3>
+              <h3>Müşteri Bilgileri</h3>
                 {canUpdateAddress() && !showCustomerForm && (
                   <button
                     onClick={() => setShowCustomerForm(true)}
@@ -1079,17 +1079,17 @@ const OrderDetail = () => {
                 )}
               </div>
               {!showCustomerForm ? (
-                <div className="customer-details">
-                  {order.customerName && (
-                    <p><strong>Ad Soyad:</strong> {order.customerName}</p>
-                  )}
-                  {order.customerEmail && (
-                    <p><strong>E-posta:</strong> {order.customerEmail}</p>
-                  )}
-                  {order.customerPhone && (
-                    <p><strong>Telefon:</strong> {order.customerPhone}</p>
-                  )}
-                </div>
+              <div className="customer-details">
+                {order.customerName && (
+                  <p><strong>Ad Soyad:</strong> {order.customerName}</p>
+                )}
+                {order.customerEmail && (
+                  <p><strong>E-posta:</strong> {order.customerEmail}</p>
+                )}
+                {order.customerPhone && (
+                  <p><strong>Telefon:</strong> {order.customerPhone}</p>
+                )}
+              </div>
               ) : (
                 <div className="customer-form-container">
                   <div className="form-group">

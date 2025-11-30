@@ -177,7 +177,7 @@ const Checkout = () => {
           city: address.city,
           district: address.district
         })
-      }
+  }
       // Seçili adresten iletişim bilgilerini doldur
       if (address.fullName) {
         const nameParts = address.fullName.trim().split(/\s+/)
@@ -670,7 +670,7 @@ const Checkout = () => {
                   Ekle / Düzenle
                 </button>
               )}
-            </div>
+                  </div>
                   
             {/* İletişim Bilgileri */}
             {(!isAuthenticated || isEditingContactInfo || (isAuthenticated && userAddresses.length === 0)) ? (
@@ -687,67 +687,67 @@ const Checkout = () => {
                     </button>
                   </div>
                 )}
-                <div className="form-row">
-                  <div className="form-group">
+                  <div className="form-row">
+                    <div className="form-group">
                     <label htmlFor="firstName">Ad <span className="required">*</span></label>
-                    <input
-                      type="text"
-                      id="firstName"
-                      value={contactInfo.firstName}
-                      onChange={(e) => setContactInfo({ ...contactInfo, firstName: e.target.value })}
-                      placeholder="Adınız"
-                      className="form-input"
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
+                      <input
+                        type="text"
+                        id="firstName"
+                        value={contactInfo.firstName}
+                        onChange={(e) => setContactInfo({ ...contactInfo, firstName: e.target.value })}
+                        placeholder="Adınız"
+                        className="form-input"
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
                     <label htmlFor="lastName">Soyad <span className="required">*</span></label>
+                      <input
+                        type="text"
+                        id="lastName"
+                        value={contactInfo.lastName}
+                        onChange={(e) => setContactInfo({ ...contactInfo, lastName: e.target.value })}
+                        placeholder="Soyadınız"
+                        className="form-input"
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="form-group">
+                  <label htmlFor="email">E-posta <span className="required">*</span></label>
                     <input
-                      type="text"
-                      id="lastName"
-                      value={contactInfo.lastName}
-                      onChange={(e) => setContactInfo({ ...contactInfo, lastName: e.target.value })}
-                      placeholder="Soyadınız"
+                      type="email"
+                      id="email"
+                      value={contactInfo.email}
+                      onChange={(e) => setContactInfo({ ...contactInfo, email: e.target.value })}
+                      placeholder="ornek@email.com"
                       className="form-input"
                       required
                     />
                   </div>
-                </div>
-                
-                <div className="form-group">
-                  <label htmlFor="email">E-posta <span className="required">*</span></label>
-                  <input
-                    type="email"
-                    id="email"
-                    value={contactInfo.email}
-                    onChange={(e) => setContactInfo({ ...contactInfo, email: e.target.value })}
-                    placeholder="ornek@email.com"
-                    className="form-input"
-                    required
-                  />
-                </div>
-                
-                <div className="form-group">
+                  
+                  <div className="form-group">
                   <label htmlFor="phone">Telefon <span className="required">*</span></label>
-                  <input
-                    type="tel"
-                    id="phone"
-                    value={contactInfo.phone}
-                    onChange={(e) => {
-                      let value = e.target.value.replace(/\D/g, '')
+                    <input
+                      type="tel"
+                      id="phone"
+                      value={contactInfo.phone}
+                      onChange={(e) => {
+                        let value = e.target.value.replace(/\D/g, '')
                       if (value.startsWith('90') && value.length > 10) value = value.substring(2)
                       if (value.startsWith('0')) value = value.substring(1)
-                      if (value.length <= 10) {
-                        setContactInfo({ ...contactInfo, phone: value })
-                      }
-                    }}
-                    placeholder="5336360079"
-                    maxLength={10}
-                    className="form-input"
-                    required
-                  />
-                </div>
-                {isAuthenticated && userAddresses.length > 0 && (
+                        if (value.length <= 10) {
+                          setContactInfo({ ...contactInfo, phone: value })
+                        }
+                      }}
+                      placeholder="5336360079"
+                      maxLength={10}
+                      className="form-input"
+                      required
+                    />
+                  </div>
+              {isAuthenticated && userAddresses.length > 0 && (
                   <button 
                     type="button" 
                     className="save-contact-btn"
@@ -756,7 +756,7 @@ const Checkout = () => {
                     Kaydet
                   </button>
                 )}
-              </div>
+                        </div>
             ) : isAuthenticated && userAddresses.length > 0 && selectedAddressId ? (
               <div className="contact-info-display">
                 <div className="contact-info-display-header">
@@ -768,20 +768,20 @@ const Checkout = () => {
                   >
                     Düzenle
                   </button>
-                </div>
+                                </div>
                 <div className="contact-info-display-content">
                   <div className="contact-info-item">
                     <span className="contact-info-label">Ad Soyad:</span>
                     <span className="contact-info-value">{contactInfo.firstName} {contactInfo.lastName}</span>
-                  </div>
+                              </div>
                   <div className="contact-info-item">
                     <span className="contact-info-label">E-posta:</span>
                     <span className="contact-info-value">{contactInfo.email}</span>
-                  </div>
+                                </div>
                   <div className="contact-info-item">
                     <span className="contact-info-label">Telefon:</span>
                     <span className="contact-info-value">{contactInfo.phone}</span>
-                  </div>
+                                </div>
                 </div>
               </div>
             ) : null}
@@ -797,8 +797,8 @@ const Checkout = () => {
                       width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
                     >
                       <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-                        </div>
+                                  </svg>
+                                </div>
                   {deliveryAddressExpanded && (
                     <div className="address-dropdown-list">
                           {userAddresses.map((address) => (
@@ -814,7 +814,7 @@ const Checkout = () => {
                             <div className="address-dropdown-name">{address.fullName}</div>
                             <div className="address-dropdown-line">{address.addressLine}</div>
                             <div className="address-dropdown-location">{address.district}, {address.city}</div>
-                                </div>
+                              </div>
                           {address.isDefault && <span className="default-badge-small">Varsayılan</span>}
                             </div>
                           ))}
@@ -977,17 +977,17 @@ const Checkout = () => {
                       />
                     </div>
                   </div>
-                  </div>
+                </div>
                 )}
               </div>
-              )}
+            )}
             </section>
 
           {/* Kart Bilgileri */}
           <section className="card-info-section">
             <div className="card-info-header">
               <h2>Kart Bilgileri</h2>
-            </div>
+                  </div>
 
                   <div className="form-group">
               <label htmlFor="cardNumber">Kart Numarası <span className="required">*</span></label>

@@ -225,7 +225,7 @@ public class OrderController {
      */
     @PostMapping("/query")
     public ResponseMessage queryOrder(
-            @Valid @RequestBody OrderQueryRequest request,
+            @Valid @RequestBody OrderQueryRequest request, 
             Authentication authentication,
             @RequestParam(value = "guestUserId", required = false) String guestUserId,
             HttpServletRequest httpRequest) {

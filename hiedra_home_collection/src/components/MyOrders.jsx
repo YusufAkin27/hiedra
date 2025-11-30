@@ -385,19 +385,19 @@ const MyOrders = () => {
         return
       }
 
-      try {
+        try {
         // Toplu kontrol API'sini kullan
         const response = await fetch(`${API_BASE_URL}/reviews/check-multiple`, {
           method: 'POST',
-          headers: {
+            headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${accessToken}`
+              'Authorization': `Bearer ${accessToken}`
           },
           body: JSON.stringify(Array.from(productIds))
-        })
+          })
 
-        if (response.ok) {
-          const data = await response.json()
+          if (response.ok) {
+            const data = await response.json()
           if (data.isSuccess && data.data) {
             // Backend'den gelen Map'i existingReviews formatına çevir
             // Hem string hem number key olarak sakla (tip uyumsuzluğu için)
@@ -416,8 +416,8 @@ const MyOrders = () => {
         } else {
           console.error('Yorum kontrolü başarısız:', response.status)
           setExistingReviews({})
-        }
-      } catch (err) {
+          }
+        } catch (err) {
         console.error('Yorum kontrolü hatası:', err)
         setExistingReviews({})
       }
@@ -561,19 +561,19 @@ const MyOrders = () => {
                                   <span>Yorum Yapıldı</span>
                                 </div>
                               ) : (
-                                <button
+                              <button
                                   onClick={(e) => {
                                     e.stopPropagation()
                                     openReviewModal(item.productId, item.productName, productImage)
                                   }}
                                   className="review-btn review-btn-active"
-                                  title="Bu ürüne yorum yap"
-                                >
+                                title="Bu ürüne yorum yap"
+                              >
                                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                                   </svg>
                                   <span>Yorum Yap</span>
-                                </button>
+                              </button>
                               )
                             )}
                           </div>
@@ -592,11 +592,11 @@ const MyOrders = () => {
                   className="order-tracking-section" 
                   onClick={(e) => e.stopPropagation()}
                   style={{
-                    padding: '1rem',
-                    marginTop: '1rem',
-                    backgroundColor: '#f8f9fa',
-                    borderRadius: '8px',
-                    border: '1px solid #e0e0e0'
+                  padding: '1rem',
+                  marginTop: '1rem',
+                  backgroundColor: '#f8f9fa',
+                  borderRadius: '8px',
+                  border: '1px solid #e0e0e0'
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>

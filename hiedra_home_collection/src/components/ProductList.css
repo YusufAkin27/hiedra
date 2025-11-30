@@ -399,39 +399,39 @@
 @media (max-width: 480px) {
   .hero-section-modern {
     padding: 0 0.5rem;
-  }
+}
 
   .hero-content-modern {
     padding: 1.25rem 0.5rem;
     gap: 1.25rem;
-  }
+}
 
   .hero-title-modern {
     font-size: 2rem;
     line-height: 1.15;
-  }
-  
+}
+
   .hero-subtitle-modern {
     font-size: 1rem;
-  }
-  
+}
+
   .hero-search-form {
     height: 52px;
     border-radius: 26px;
-  }
+}
 
   .hero-search-input {
     padding: 0 1rem;
     font-size: 0.9rem;
-  }
+}
 
   .hero-search-btn {
     padding: 0 1rem;
-  }
-  
+}
+
   .stat-number {
     font-size: 3rem;
-  }
+}
 
   .stat-label {
     font-size: 0.75rem;
@@ -441,38 +441,38 @@
 @media (max-width: 360px) {
   .hero-section-modern {
     padding: 0 0.375rem;
-  }
+}
 
   .hero-content-modern {
     padding: 1rem 0.375rem;
-    gap: 1rem;
+  gap: 1rem;
   }
 
   .hero-title-modern {
     font-size: 1.75rem;
-  }
-  
+}
+
   .hero-subtitle-modern {
-    font-size: 0.95rem;
+  font-size: 0.95rem;
   }
   
   .hero-search-form {
     height: 48px;
-    border-radius: 24px;
-  }
+  border-radius: 24px;
+}
 
   .hero-search-input {
     padding: 0 0.875rem;
     font-size: 0.875rem;
-  }
+}
 
   .hero-search-btn {
     padding: 0 0.875rem;
-  }
-  
+}
+
   .stat-number {
     font-size: 2.5rem;
-  }
+}
 
   .stat-label {
     font-size: 0.7rem;
@@ -2245,8 +2245,8 @@
     min-height: 48px;
     font-weight: 700;
     letter-spacing: 0.01em;
-  }
-  
+}
+
   .pricing-modal-content-home .add-to-cart-btn-home svg {
     width: 18px;
     height: 18px;

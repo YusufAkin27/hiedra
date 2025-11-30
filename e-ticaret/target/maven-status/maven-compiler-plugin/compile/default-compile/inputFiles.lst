@@ -133,9 +133,6 @@ C:\Users\ysufa\Desktop\hiedra\e-ticaret\src\main\java\eticaret\demo\exception\Pr
 C:\Users\ysufa\Desktop\hiedra\e-ticaret\src\main\java\eticaret\demo\exception\ResourceNotFoundException.java
 C:\Users\ysufa\Desktop\hiedra\e-ticaret\src\main\java\eticaret\demo\exception\UnauthorizedException.java
 C:\Users\ysufa\Desktop\hiedra\e-ticaret\src\main\java\eticaret\demo\exception\ValidationException.java
-C:\Users\ysufa\Desktop\hiedra\e-ticaret\src\main\java\eticaret\demo\geocoding\GeocodingController.java
-C:\Users\ysufa\Desktop\hiedra\e-ticaret\src\main\java\eticaret\demo\geocoding\GeocodingResponse.java
-C:\Users\ysufa\Desktop\hiedra\e-ticaret\src\main\java\eticaret\demo\geocoding\GeocodingService.java
 C:\Users\ysufa\Desktop\hiedra\e-ticaret\src\main\java\eticaret\demo\guest\GuestUser.java
 C:\Users\ysufa\Desktop\hiedra\e-ticaret\src\main\java\eticaret\demo\guest\GuestUserRepository.java
 C:\Users\ysufa\Desktop\hiedra\e-ticaret\src\main\java\eticaret\demo\guest\GuestUserService.java

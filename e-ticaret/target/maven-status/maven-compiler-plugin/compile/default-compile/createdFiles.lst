@@ -219,7 +219,6 @@ eticaret\demo\admin\AdminShippingController.class
 eticaret\demo\cloudinary\CloudinaryAsyncConfig.class
 eticaret\demo\product\Product$ProductBuilder.class
 eticaret\demo\auth\UserRole.class
-eticaret\demo\geocoding\GeocodingService.class
 eticaret\demo\order\OrderLookupVerifyResponse.class
 eticaret\demo\admin\AdminPreference.class
 eticaret\demo\payment\PaymentRecord$PaymentRecordBuilder.class
@@ -232,7 +231,6 @@ eticaret\demo\admin\analytics\UserBehavior.class
 eticaret\demo\admin\AdminAddressController.class
 eticaret\demo\admin\AdminPaymentController$PaymentStats$PaymentStatsBuilder.class
 eticaret\demo\coupon\CouponUsage$CouponUsageBuilder.class
-eticaret\demo\geocoding\GeocodingController.class
 eticaret\demo\admin\AdminOrderController$ApproveCancelledRequest.class
 eticaret\demo\admin\AdminShippingController$ShippingInfo.class
 eticaret\demo\contact_us\ContactUsInitializer.class
@@ -244,7 +242,6 @@ eticaret\demo\user\UserProfileController$UpdateProfileRequest.class
 eticaret\demo\audit\AuditLog.class
 eticaret\demo\admin\AdminSystemController$AddBlockedIpRequest.class
 eticaret\demo\admin\analytics\UserAnalyticsService.class
-eticaret\demo\geocoding\GeocodingResponse$GeocodingResponseBuilder.class
 eticaret\demo\admin\AdminIpService.class
 eticaret\demo\mail\MailController.class
 eticaret\demo\admin\AdminUserController$CouponUsageSummary.class
@@ -343,7 +340,6 @@ eticaret\demo\exception\UnauthorizedException.class
 eticaret\demo\user\UserProfileController$UserProfileResponse.class
 eticaret\demo\admin\AdminSystemController$AddIpRequest.class
 eticaret\demo\security\RateLimitingService$RequestCounter.class
-eticaret\demo\geocoding\GeocodingResponse.class
 eticaret\demo\security\GlobalCorsConfig.class
 eticaret\demo\order\OrderServiceImpl$1.class
 eticaret\demo\cart\CartController$AddItemRequest.class

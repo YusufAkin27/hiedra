@@ -377,13 +377,13 @@
   .contact-info-item {
     flex-direction: row;
     align-items: center;
-    justify-content: space-between;
+  justify-content: space-between;
   }
   
   .contact-info-label {
     font-size: 0.85rem;
-  }
-  
+}
+
   .contact-info-value {
     font-size: 1rem;
   }
@@ -473,13 +473,13 @@
   
   .card-info-section .form-group {
     margin-bottom: 0.625rem;
-  }
-  
+}
+
   .card-info-section .form-group label {
     font-size: 0.75rem;
     margin-bottom: 0.25rem;
-  }
-  
+}
+
   .card-info-section .form-input {
     padding: 0.5rem 0.625rem;
     font-size: 0.85rem;
@@ -692,8 +692,8 @@
     border-width: 1.5px;
     line-height: 1.4;
     flex-wrap: nowrap;
-  }
-  
+}
+
   .same-address-checkbox .checkbox-custom {
     width: 20px;
     height: 20px;
@@ -702,8 +702,8 @@
     border-radius: 5px;
     border-width: 2px;
     flex-shrink: 0;
-  }
-  
+}
+
   .same-address-checkbox > span:not(.checkbox-custom) {
     flex: 1;
     min-width: 0;
@@ -727,7 +727,7 @@
     line-height: 1.4;
     flex-wrap: nowrap;
   }
-  
+
   .same-address-checkbox .checkbox-custom {
     width: 18px;
     height: 18px;
@@ -737,14 +737,14 @@
     border-width: 1.5px;
     flex-shrink: 0;
   }
-  
+
   .same-address-checkbox > span:not(.checkbox-custom) {
     flex: 1;
     min-width: 0;
     font-size: 0.8rem;
     line-height: 1.4;
   }
-  
+
   .same-address-checkbox input[type="checkbox"]:checked + .checkbox-custom::after {
     width: 4px;
     height: 7px;
@@ -757,8 +757,8 @@
   background: var(--bg-card);
   border-radius: 12px;
   border: 1px solid var(--border-color);
-  padding: 1rem;
-}
+    padding: 1rem;
+  }
 
 .payment-options-section h2 {
   font-size: 1rem;
@@ -769,23 +769,23 @@
 
 .payment-option {
   margin-bottom: 0.5rem;
-}
+  }
 
 .payment-option-radio {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+    gap: 0.75rem;
   cursor: pointer;
   font-size: 0.9375rem;
   color: var(--text-on-dark);
-}
+  }
 
 .payment-option-radio input[type="radio"] {
   position: absolute;
   opacity: 0;
   width: 0;
   height: 0;
-}
+  }
 
 .payment-option-radio .radio-custom {
   width: 20px;
@@ -797,12 +797,12 @@
   background: var(--bg-primary);
   position: relative;
   transition: all 0.2s ease;
-}
+  }
 
 .payment-option-radio input[type="radio"]:checked + .radio-custom {
   border-color: var(--gold-primary);
   background: var(--gold-primary);
-}
+  }
 
 .payment-option-radio input[type="radio"]:checked + .radio-custom::after {
   content: '';
@@ -814,7 +814,7 @@
   height: 8px;
   background: #fff;
   border-radius: 50%;
-}
+  }
 
 .payment-option-label {
   flex: 1;
@@ -827,20 +827,20 @@
   border-radius: 12px;
   border: 1px solid var(--border-color);
   padding: 1rem;
-}
+  }
 
 @media (max-width: 480px) {
   .card-info-section {
     padding: 0.875rem;
   }
-}
+  }
 
 .card-info-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0.875rem;
-}
+  }
 
 .card-info-header h2 {
   font-size: 0.95rem;
@@ -853,7 +853,7 @@
   .card-info-header {
     margin-bottom: 0.75rem;
   }
-  
+
   .card-info-header h2 {
     font-size: 0.9rem;
   }
@@ -976,8 +976,8 @@
     min-height: 20px;
     border-radius: 5px;
     margin-top: 0.1rem;
-  }
-  
+}
+
   .agreement-checkbox input[type="checkbox"]:checked + .checkbox-custom::after {
     width: 4px;
     height: 8px;
@@ -1082,7 +1082,7 @@
   font-size: 1.5rem;
   color: var(--text-on-dark);
   margin-bottom: 1rem;
-}
+  }
 
 .empty-checkout p {
   font-size: 1rem;
@@ -1136,13 +1136,13 @@
   .payment-options-section,
   .card-info-section {
     padding: 0.875rem;
-  }
+}
 
   .form-row {
     grid-template-columns: 1fr;
     gap: 0.625rem;
-  }
-  
+}
+
   /* Kart bilgileri için mobilde de yan yana */
   .card-info-section .form-row {
     grid-template-columns: 1.5fr 1fr;
