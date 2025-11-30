@@ -113,6 +113,7 @@ export const CartProvider = ({ children }) => {
             image: item.product?.coverImageUrl || item.product?.image || '/images/perde1kapak.jpg',
             quantity: item.quantity || 1,
             category: item.product?.category?.name || item.product?.category || 'Genel',
+            subtotal: subtotal > 0 ? subtotal : (unitPrice > 0 ? unitPrice * (item.quantity || 1) : (productPrice > 0 ? productPrice * (item.quantity || 1) : 0)),
             customizations: (item.width || item.height || item.pleatType) ? {
               en: item.width,
               boy: item.height,
@@ -268,6 +269,10 @@ export const CartProvider = ({ children }) => {
   // Memoize edilmiş sepet toplamı - performans için
   const getCartTotal = useCallback(() => {
     const subtotal = cartItems.reduce((total, item) => {
+      // Backend'den gelen subtotal varsa onu kullan, yoksa hesapla
+      if (item.subtotal) {
+        return total + item.subtotal
+      }
       const itemPrice = item.customizations?.calculatedPrice || item.price
       return total + itemPrice * item.quantity
     }, 0)
@@ -278,6 +283,10 @@ export const CartProvider = ({ children }) => {
   // Ara toplam (kupon indirimi öncesi)
   const getCartSubtotal = useCallback(() => {
     return cartItems.reduce((total, item) => {
+      // Backend'den gelen subtotal varsa onu kullan, yoksa hesapla
+      if (item.subtotal) {
+        return total + item.subtotal
+      }
       const itemPrice = item.customizations?.calculatedPrice || item.price
       return total + itemPrice * item.quantity
     }, 0)

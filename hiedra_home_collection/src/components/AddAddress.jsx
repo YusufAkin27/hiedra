@@ -24,7 +24,6 @@ const AddAddress = () => {
   
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [loadingLocation, setLoadingLocation] = useState(false)
   const [profileLoaded, setProfileLoaded] = useState(false)
 
   // Guest kullanıcıları yönlendir
@@ -54,7 +53,6 @@ const AddAddress = () => {
         const data = await response.json()
         if (data.success && data.data) {
           const profile = data.data
-          // Eğer profil bilgilerinde fullName ve phone varsa, form alanlarına doldur
           if (profile.fullName || profile.phone) {
             setFormData(prev => ({
               ...prev,
@@ -67,175 +65,7 @@ const AddAddress = () => {
       }
     } catch (err) {
       console.error('Profil bilgileri yüklenirken hata:', err)
-      // Hata olsa bile devam et, kullanıcı manuel girebilir
       setProfileLoaded(true)
-    }
-  }
-
-  // Konumdan adres bilgilerini al
-  const getAddressFromLocation = async () => {
-    if (!navigator.geolocation) {
-      toast.error('Tarayıcınız konum özelliğini desteklemiyor.')
-      return
-    }
-
-    setLoadingLocation(true)
-    setError('')
-
-    try {
-      // Kullanıcıdan konum izni iste
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude, accuracy } = position.coords
-          
-          // Koordinat hassasiyetini logla
-          console.log(`Konum alındı - Enlem: ${latitude}, Boylam: ${longitude}, Hassasiyet: ±${accuracy ? Math.round(accuracy) : 'bilinmiyor'} metre`)
-          
-          // Hassasiyet kontrolü (eğer çok düşükse uyar)
-          if (accuracy && accuracy > 100) {
-            toast.warning(`Konum hassasiyeti düşük (±${Math.round(accuracy)}m). Daha doğru sonuç için açık alanda tekrar deneyin.`)
-          }
-          
-          try {
-            // Backend'den adres bilgilerini al (koordinatları yüksek hassasiyetle gönder)
-            const response = await fetch(
-              `${API_BASE_URL}/geocoding/reverse?latitude=${latitude}&longitude=${longitude}`
-            )
-            
-            const data = await response.json()
-            
-            if (response.ok && data.success && data.data) {
-              const addressData = data.data
-              
-              // Form alanlarını doldur
-              setFormData(prev => {
-                // Display name'den bilgileri parse et
-                let parsedCity = addressData.city || prev.city
-                let parsedDistrict = addressData.district || prev.district
-                
-                // Eğer displayName varsa, displayName'den parse et (en güvenilir kaynak)
-                if (addressData.displayName) {
-                  const displayParts = addressData.displayName.split(',').map(p => p.trim())
-                  
-                  // Display name formatı genellikle: Mahalle, İlçe, İl, Bölge, Posta Kodu, Ülke
-                  
-                  if (displayParts.length >= 3) {
-                    // İl bilgisini her zaman display name'den al (üçüncü kısım) - bu en güvenilir kaynak
-                    // Çünkü API'den gelen city değeri "Bingöl Merkez" gibi yanlış olabilir
-                    if (displayParts[2]) {
-                      parsedCity = displayParts[2]
-                    }
-                    
-                    // İkinci kısım genellikle ilçe (örn: "Bingöl Merkez")
-                    if (!parsedDistrict && displayParts[1]) {
-                      let districtPart = displayParts[1]
-                      // Eğer ilçe "İl Merkez" formatındaysa (örn: "Bingöl Merkez"), il adını çıkar
-                      if (parsedCity && districtPart.includes(parsedCity)) {
-                        districtPart = districtPart.replace(parsedCity, '').trim()
-                        // Eğer sadece boşluk kaldıysa veya "Merkez" gibi bir şey varsa, onu al
-                        if (districtPart === '' || districtPart.toLowerCase() === 'merkez') {
-                          districtPart = 'Merkez'
-                        }
-                      }
-                      parsedDistrict = districtPart
-                    }
-                  }
-                }
-                
-                // İl alanını temizle: Eğer il içinde "Merkez" varsa, sadece il adını al
-                if (parsedCity) {
-                  // Eğer il "İl Merkez" formatındaysa (örn: "Bingöl Merkez"), sadece il adını al
-                  if (parsedCity.toLowerCase().includes('merkez')) {
-                    // "Merkez" kelimesini ve öncesindeki boşluğu çıkar
-                    parsedCity = parsedCity.replace(/\s*merkez\s*/i, '').trim()
-                  }
-                  // Eğer il içinde ilçe adı varsa (örneğin API'den yanlış gelmişse), temizle
-                  if (parsedDistrict && parsedCity.includes(parsedDistrict)) {
-                    parsedCity = parsedCity.replace(parsedDistrict, '').trim()
-                  }
-                }
-                
-                // İlçe alanını temizle: Eğer ilçe "İl Merkez" formatındaysa, sadece "Merkez" yap
-                if (parsedDistrict && parsedCity) {
-                  // İlçe içinde il adı varsa, il adını çıkar
-                  if (parsedDistrict.includes(parsedCity)) {
-                    const cleanedDistrict = parsedDistrict.replace(parsedCity, '').trim()
-                    if (cleanedDistrict === '' || cleanedDistrict.toLowerCase() === 'merkez') {
-                      parsedDistrict = 'Merkez'
-                    } else {
-                      parsedDistrict = cleanedDistrict
-                    }
-                  }
-                }
-                
-                // Adres satırını oluştur (sokak, cadde, bina no)
-                const addressParts = []
-                if (addressData.road) {
-                  addressParts.push(addressData.road)
-                }
-                if (addressData.houseNumber) {
-                  addressParts.push(`No: ${addressData.houseNumber}`)
-                }
-                
-                let addressLine = prev.addressLine
-                if (addressParts.length > 0) {
-                  addressLine = addressParts.join(', ')
-                } else if (addressData.displayName) {
-                  // Eğer detaylı adres yoksa, display name'den ilk kısmı al
-                  const displayParts = addressData.displayName.split(',')
-                  if (displayParts.length > 1) {
-                    addressLine = displayParts[0].trim()
-                  }
-                }
-                
-                return {
-                  ...prev,
-                  city: parsedCity,
-                  district: parsedDistrict,
-                  addressLine: addressLine
-                }
-              })
-              
-              toast.success('Konumunuzdan adres bilgileri alındı. Lütfen kontrol edin ve gerekirse düzenleyin.')
-            } else {
-              throw new Error(data.message || 'Adres bilgisi alınamadı')
-            }
-          } catch (err) {
-            console.error('Adres bilgisi alınırken hata:', err)
-            toast.error('Adres bilgisi alınırken bir hata oluştu. Lütfen manuel olarak girin.')
-          } finally {
-            setLoadingLocation(false)
-          }
-        },
-        (error) => {
-          console.error('Konum alınırken hata:', error)
-          let errorMessage = 'Konum alınamadı.'
-          
-          switch (error.code) {
-            case error.PERMISSION_DENIED:
-              errorMessage = 'Konum izni reddedildi. Lütfen tarayıcı ayarlarından konum iznini açın.'
-              break
-            case error.POSITION_UNAVAILABLE:
-              errorMessage = 'Konum bilgisi alınamadı.'
-              break
-            case error.TIMEOUT:
-              errorMessage = 'Konum alınırken zaman aşımı oluştu.'
-              break
-          }
-          
-          toast.error(errorMessage)
-          setLoadingLocation(false)
-        },
-        {
-          enableHighAccuracy: true, // GPS kullan, daha yüksek hassasiyet
-          timeout: 15000, // 15 saniye timeout
-          maximumAge: 0 // Cache kullanma, her zaman yeni konum al
-        }
-      )
-    } catch (err) {
-      console.error('Konum servisi hatası:', err)
-      toast.error('Konum servisi kullanılamıyor.')
-      setLoadingLocation(false)
     }
   }
 
@@ -301,32 +131,6 @@ const AddAddress = () => {
           </Link>
           <h1>Yeni Adres Ekle</h1>
           <p className="page-subtitle">Teslimat için yeni bir adres ekleyin</p>
-          
-          {/* Konum Butonu - Üst Kısımda */}
-          <div className="location-button-container">
-            <button
-              type="button"
-              onClick={getAddressFromLocation}
-              disabled={loadingLocation}
-              className="location-button-primary"
-            >
-              {loadingLocation ? (
-                <>
-                  <span className="loading-spinner"></span>
-                  Konumunuz alınıyor...
-                </>
-              ) : (
-                <>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                    <circle cx="12" cy="10" r="3"></circle>
-                  </svg>
-                  Konumumdan Adres Bilgilerini Al
-                </>
-              )}
-            </button>
-            <p className="location-hint">Konum izni vererek adres bilgilerinizi otomatik doldurabilirsiniz</p>
-          </div>
         </div>
 
         {error && (
@@ -454,4 +258,3 @@ const AddAddress = () => {
 }
 
 export default AddAddress
-

@@ -274,7 +274,7 @@ const Cart = () => {
                           </button>
                         </div>
                         <div className="cart-item-price">
-                          {((item.customizations?.calculatedPrice || item.price) * item.quantity).toFixed(2)} ₺
+                          {item.subtotal ? item.subtotal.toFixed(2) : ((item.customizations?.calculatedPrice || item.price) * item.quantity).toFixed(2)} ₺
                         </div>
                       </div>
                     </div>
@@ -442,7 +442,13 @@ const Cart = () => {
           <div className="cart-bottom-bar">
             <div className="cart-total-info">
               <div className="cart-total-amount">{getCartTotal().toFixed(2)} ₺</div>
-              <div className="cart-shipping-text">Kargo Bedava</div>
+              <div className="cart-shipping-text">
+                {discountAmount > 0 ? (
+                  <>Kargo Bedava • Kupon ile <strong>{discountAmount.toFixed(2)} ₺</strong> kazandınız</>
+                ) : (
+                  <>Kargo Bedava</>
+                )}
+              </div>
             </div>
             <button className="cart-confirm-btn" onClick={() => navigate('/checkout')}>
               Sepeti Onayla
