@@ -30,6 +30,7 @@ const Checkout = () => {
   const [cartExpanded, setCartExpanded] = useState(false)
   const [deliveryAddressExpanded, setDeliveryAddressExpanded] = useState(false)
   const [invoiceAddressExpanded, setInvoiceAddressExpanded] = useState(false)
+  const [isEditingContactInfo, setIsEditingContactInfo] = useState(false)
 
   // İletişim bilgileri
   const [contactInfo, setContactInfo] = useState({
@@ -134,6 +135,16 @@ const Checkout = () => {
             if (useSameAddressForInvoice) {
               setSelectedInvoiceAddressId(defaultAddress.id)
             }
+            // Seçili adresten iletişim bilgilerini doldur
+            if (defaultAddress.fullName) {
+              const nameParts = defaultAddress.fullName.trim().split(/\s+/)
+              setContactInfo(prev => ({
+                ...prev,
+                firstName: nameParts[0] || prev.firstName,
+                lastName: nameParts.slice(1).join(' ') || prev.lastName,
+                phone: defaultAddress.phone || prev.phone
+              }))
+            }
           }
         }
       }
@@ -166,6 +177,16 @@ const Checkout = () => {
           city: address.city,
           district: address.district
         })
+      }
+      // Seçili adresten iletişim bilgilerini doldur
+      if (address.fullName) {
+        const nameParts = address.fullName.trim().split(/\s+/)
+        setContactInfo(prev => ({
+          ...prev,
+          firstName: nameParts[0] || prev.firstName,
+          lastName: nameParts.slice(1).join(' ') || prev.lastName,
+          phone: address.phone || prev.phone
+        }))
       }
     }
   }
@@ -626,7 +647,7 @@ const Checkout = () => {
                       )}
                       <div className="item-meta">
                         <span className="item-quantity">{item.quantity}x</span>
-                        <span className="item-price">{((item.customizations?.calculatedPrice || item.price) * item.quantity).toFixed(2)} ₺</span>
+                        <span className="item-price">{item.subtotal ? item.subtotal.toFixed(2) : ((item.customizations?.calculatedPrice || item.price) * item.quantity).toFixed(2)} ₺</span>
                       </div>
                     </div>
                   </div>
@@ -644,74 +665,126 @@ const Checkout = () => {
           <section className="address-section">
             <div className="address-section-header">
               <h2>Teslimat Adresi</h2>
-              <button type="button" className="edit-address-btn" onClick={() => navigate('/adresler')}>
-                Ekle / Düzenle
-              </button>
-                  </div>
+              {isAuthenticated && (
+                <button type="button" className="edit-address-btn" onClick={() => navigate('/adresler')}>
+                  Ekle / Düzenle
+                </button>
+              )}
+            </div>
                   
             {/* İletişim Bilgileri */}
-            <div className="contact-info-fields">
-                  <div className="form-row">
-                    <div className="form-group">
-                  <label htmlFor="firstName">Ad <span className="required">*</span></label>
-                      <input
-                        type="text"
-                        id="firstName"
-                        value={contactInfo.firstName}
-                        onChange={(e) => setContactInfo({ ...contactInfo, firstName: e.target.value })}
-                        placeholder="Adınız"
-                        className="form-input"
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                  <label htmlFor="lastName">Soyad <span className="required">*</span></label>
-                      <input
-                        type="text"
-                        id="lastName"
-                        value={contactInfo.lastName}
-                        onChange={(e) => setContactInfo({ ...contactInfo, lastName: e.target.value })}
-                        placeholder="Soyadınız"
-                        className="form-input"
-                        required
-                      />
-                    </div>
+            {(!isAuthenticated || isEditingContactInfo || (isAuthenticated && userAddresses.length === 0)) ? (
+              <div className="contact-info-fields">
+                {isAuthenticated && userAddresses.length > 0 && (
+                  <div className="contact-info-header">
+                    <h3>İletişim Bilgileri</h3>
+                    <button 
+                      type="button" 
+                      className="cancel-edit-btn"
+                      onClick={() => setIsEditingContactInfo(false)}
+                    >
+                      İptal
+                    </button>
                   </div>
-                  
+                )}
+                <div className="form-row">
                   <div className="form-group">
-                <label htmlFor="email">E-posta <span className="required">*</span></label>
+                    <label htmlFor="firstName">Ad <span className="required">*</span></label>
                     <input
-                      type="email"
-                      id="email"
-                      value={contactInfo.email}
-                      onChange={(e) => setContactInfo({ ...contactInfo, email: e.target.value })}
-                      placeholder="ornek@email.com"
+                      type="text"
+                      id="firstName"
+                      value={contactInfo.firstName}
+                      onChange={(e) => setContactInfo({ ...contactInfo, firstName: e.target.value })}
+                      placeholder="Adınız"
                       className="form-input"
                       required
                     />
                   </div>
-                  
                   <div className="form-group">
-                <label htmlFor="phone">Telefon <span className="required">*</span></label>
+                    <label htmlFor="lastName">Soyad <span className="required">*</span></label>
                     <input
-                      type="tel"
-                      id="phone"
-                      value={contactInfo.phone}
-                      onChange={(e) => {
-                        let value = e.target.value.replace(/\D/g, '')
-                    if (value.startsWith('90') && value.length > 10) value = value.substring(2)
-                    if (value.startsWith('0')) value = value.substring(1)
-                        if (value.length <= 10) {
-                          setContactInfo({ ...contactInfo, phone: value })
-                        }
-                      }}
-                      placeholder="5336360079"
-                      maxLength={10}
+                      type="text"
+                      id="lastName"
+                      value={contactInfo.lastName}
+                      onChange={(e) => setContactInfo({ ...contactInfo, lastName: e.target.value })}
+                      placeholder="Soyadınız"
                       className="form-input"
                       required
                     />
                   </div>
-            </div>
+                </div>
+                
+                <div className="form-group">
+                  <label htmlFor="email">E-posta <span className="required">*</span></label>
+                  <input
+                    type="email"
+                    id="email"
+                    value={contactInfo.email}
+                    onChange={(e) => setContactInfo({ ...contactInfo, email: e.target.value })}
+                    placeholder="ornek@email.com"
+                    className="form-input"
+                    required
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label htmlFor="phone">Telefon <span className="required">*</span></label>
+                  <input
+                    type="tel"
+                    id="phone"
+                    value={contactInfo.phone}
+                    onChange={(e) => {
+                      let value = e.target.value.replace(/\D/g, '')
+                      if (value.startsWith('90') && value.length > 10) value = value.substring(2)
+                      if (value.startsWith('0')) value = value.substring(1)
+                      if (value.length <= 10) {
+                        setContactInfo({ ...contactInfo, phone: value })
+                      }
+                    }}
+                    placeholder="5336360079"
+                    maxLength={10}
+                    className="form-input"
+                    required
+                  />
+                </div>
+                {isAuthenticated && userAddresses.length > 0 && (
+                  <button 
+                    type="button" 
+                    className="save-contact-btn"
+                    onClick={() => setIsEditingContactInfo(false)}
+                  >
+                    Kaydet
+                  </button>
+                )}
+              </div>
+            ) : isAuthenticated && userAddresses.length > 0 && selectedAddressId ? (
+              <div className="contact-info-display">
+                <div className="contact-info-display-header">
+                  <h3>İletişim Bilgileri</h3>
+                  <button 
+                    type="button" 
+                    className="edit-contact-btn"
+                    onClick={() => setIsEditingContactInfo(true)}
+                  >
+                    Düzenle
+                  </button>
+                </div>
+                <div className="contact-info-display-content">
+                  <div className="contact-info-item">
+                    <span className="contact-info-label">Ad Soyad:</span>
+                    <span className="contact-info-value">{contactInfo.firstName} {contactInfo.lastName}</span>
+                  </div>
+                  <div className="contact-info-item">
+                    <span className="contact-info-label">E-posta:</span>
+                    <span className="contact-info-value">{contactInfo.email}</span>
+                  </div>
+                  <div className="contact-info-item">
+                    <span className="contact-info-label">Telefon:</span>
+                    <span className="contact-info-value">{contactInfo.phone}</span>
+                  </div>
+                </div>
+              </div>
+            ) : null}
 
             {/* Adres Seçimi */}
             <div className="address-select-wrapper">
@@ -797,9 +870,11 @@ const Checkout = () => {
           <section className="address-section">
             <div className="address-section-header">
               <h2>Fatura Adresi</h2>
-              <button type="button" className="edit-address-btn" onClick={() => navigate('/adresler')}>
-                Ekle / Düzenle
-              </button>
+              {isAuthenticated && (
+                <button type="button" className="edit-address-btn" onClick={() => navigate('/adresler')}>
+                  Ekle / Düzenle
+                </button>
+              )}
             </div>
               
               <div className="form-group">
@@ -908,32 +983,11 @@ const Checkout = () => {
               )}
             </section>
 
-          {/* Ödeme Seçenekleri */}
-          <section className="payment-options-section">
-            <h2>Ödeme Seçenekleri</h2>
-            <div className="payment-option">
-              <label className="payment-option-radio">
-                <input type="radio" name="paymentMethod" value="card" defaultChecked />
-                <span className="radio-custom"></span>
-                <span className="payment-option-label">Banka & Kredi Kartı ile Öde</span>
-              </label>
-                </div>
-          </section>
-
           {/* Kart Bilgileri */}
           <section className="card-info-section">
             <div className="card-info-header">
               <h2>Kart Bilgileri</h2>
-              {isAuthenticated && (
-                <button type="button" className="saved-card-btn">
-                  Kayıtlı Kartımla Öde
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-                    <line x1="1" y1="10" x2="23" y2="10"></line>
-                  </svg>
-                </button>
-              )}
-                  </div>
+            </div>
 
                   <div className="form-group">
               <label htmlFor="cardNumber">Kart Numarası <span className="required">*</span></label>

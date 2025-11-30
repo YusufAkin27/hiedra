@@ -256,6 +256,139 @@
 }
 
 /* İletişim Bilgileri */
+.contact-info-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.contact-info-header h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.cancel-edit-btn {
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancel-edit-btn:hover {
+  background: var(--bg-secondary);
+  border-color: var(--text-secondary);
+}
+
+.save-contact-btn {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: var(--gold-primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 0.5rem;
+}
+
+.save-contact-btn:hover {
+  background: var(--gold-hover);
+  transform: translateY(-1px);
+}
+
+.contact-info-display {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.contact-info-display-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.contact-info-display-header h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.edit-contact-btn {
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: 1px solid var(--gold-primary);
+  border-radius: 6px;
+  color: var(--gold-primary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.edit-contact-btn:hover {
+  background: var(--gold-primary);
+  color: white;
+}
+
+.contact-info-display-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.contact-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.contact-info-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.contact-info-value {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+@media (min-width: 640px) {
+  .contact-info-item {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  .contact-info-label {
+    font-size: 0.85rem;
+  }
+  
+  .contact-info-value {
+    font-size: 1rem;
+  }
+}
+
 .contact-info-fields {
   margin-bottom: 1rem;
   padding-bottom: 1rem;
@@ -311,6 +444,46 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.75rem;
+}
+
+/* Kart bilgileri için özel form-row - daha kompakt */
+.card-info-section .form-row {
+  gap: 0.5rem;
+}
+
+.card-info-section .form-group {
+  margin-bottom: 0.75rem;
+}
+
+.card-info-section .form-group label {
+  font-size: 0.8rem;
+  margin-bottom: 0.375rem;
+}
+
+.card-info-section .form-input {
+  padding: 0.625rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 480px) {
+  .card-info-section .form-row {
+    grid-template-columns: 1.5fr 1fr;
+    gap: 0.5rem;
+  }
+  
+  .card-info-section .form-group {
+    margin-bottom: 0.625rem;
+  }
+  
+  .card-info-section .form-group label {
+    font-size: 0.75rem;
+    margin-bottom: 0.25rem;
+  }
+  
+  .card-info-section .form-input {
+    padding: 0.5rem 0.625rem;
+    font-size: 0.85rem;
+  }
 }
 
 /* Adres Dropdown */
@@ -435,6 +608,38 @@
   cursor: pointer;
   font-size: 0.9375rem;
   color: var(--text-on-dark);
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: 10px;
+  border: 1.5px solid var(--border-color);
+  transition: all 0.2s ease;
+  line-height: 1.4;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  flex-wrap: nowrap;
+  width: 100%;
+}
+
+.same-address-checkbox .checkbox-custom {
+  flex-shrink: 0;
+}
+
+.same-address-checkbox > span:not(.checkbox-custom) {
+  flex: 1;
+  min-width: 0;
+  word-wrap: break-word;
+  line-height: 1.5;
+  display: inline-block;
+  white-space: normal;
+}
+
+.same-address-checkbox:hover {
+  background: var(--bg-primary);
+  border-color: var(--gold-primary);
+}
+
+.same-address-checkbox:active {
+  transform: scale(0.98);
 }
 
 .same-address-checkbox input[type="checkbox"] {
@@ -445,15 +650,19 @@
 }
 
 .same-address-checkbox .checkbox-custom {
-  width: 20px;
-  height: 20px;
-  min-width: 20px;
-  min-height: 20px;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
   border: 2px solid var(--border-color);
-  border-radius: 4px;
+  border-radius: 6px;
   background: var(--bg-primary);
   position: relative;
   transition: all 0.2s ease;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .same-address-checkbox input[type="checkbox"]:checked + .checkbox-custom {
@@ -466,12 +675,81 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) rotate(45deg);
   width: 6px;
   height: 10px;
   border: solid #fff;
-  border-width: 0 2px 2px 0;
-  transform: translate(-50%, -60%) rotate(45deg);
+  border-width: 0 2.5px 2.5px 0;
+}
+
+@media (max-width: 768px) {
+  .same-address-checkbox {
+    gap: 0.625rem;
+    padding: 0.75rem;
+    font-size: 0.875rem;
+    align-items: center;
+    border-radius: 8px;
+    border-width: 1.5px;
+    line-height: 1.4;
+    flex-wrap: nowrap;
+  }
+  
+  .same-address-checkbox .checkbox-custom {
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    min-height: 20px;
+    border-radius: 5px;
+    border-width: 2px;
+    flex-shrink: 0;
+  }
+  
+  .same-address-checkbox > span:not(.checkbox-custom) {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .same-address-checkbox input[type="checkbox"]:checked + .checkbox-custom::after {
+    width: 5px;
+    height: 8px;
+    border-width: 0 2px 2px 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .same-address-checkbox {
+    gap: 0.5rem;
+    padding: 0.625rem;
+    font-size: 0.8rem;
+    align-items: center;
+    border-radius: 8px;
+    border-width: 1.5px;
+    line-height: 1.4;
+    flex-wrap: nowrap;
+  }
+  
+  .same-address-checkbox .checkbox-custom {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    min-height: 18px;
+    border-radius: 4px;
+    border-width: 1.5px;
+    flex-shrink: 0;
+  }
+  
+  .same-address-checkbox > span:not(.checkbox-custom) {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.8rem;
+    line-height: 1.4;
+  }
+  
+  .same-address-checkbox input[type="checkbox"]:checked + .checkbox-custom::after {
+    width: 4px;
+    height: 7px;
+    border-width: 0 1.5px 1.5px 0;
+  }
 }
 
 /* Ödeme Seçenekleri */
@@ -551,18 +829,34 @@
   padding: 1rem;
 }
 
+@media (max-width: 480px) {
+  .card-info-section {
+    padding: 0.875rem;
+  }
+}
+
 .card-info-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 0.875rem;
 }
 
 .card-info-header h2 {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: var(--text-on-dark);
   margin: 0;
+}
+
+@media (max-width: 480px) {
+  .card-info-header {
+    margin-bottom: 0.75rem;
+  }
+  
+  .card-info-header h2 {
+    font-size: 0.9rem;
+  }
 }
 
 .saved-card-btn {
@@ -644,16 +938,17 @@
 }
 
 .agreement-checkbox .checkbox-custom {
-  width: 18px;
-  height: 18px;
-  min-width: 18px;
-  min-height: 18px;
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  min-height: 22px;
   border: 2px solid var(--border-color);
-  border-radius: 4px;
+  border-radius: 6px;
   background: var(--bg-primary);
   position: relative;
   transition: all 0.2s ease;
   margin-top: 0.125rem;
+  flex-shrink: 0;
 }
 
 .agreement-checkbox input[type="checkbox"]:checked + .checkbox-custom {
@@ -666,12 +961,27 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
-  width: 6px;
-  height: 10px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  width: 5px;
+  height: 9px;
   border: solid #fff;
   border-width: 0 2px 2px 0;
-  transform: translate(-50%, -60%) rotate(45deg);
+}
+
+@media (max-width: 480px) {
+  .agreement-checkbox .checkbox-custom {
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    min-height: 20px;
+    border-radius: 5px;
+    margin-top: 0.1rem;
+  }
+  
+  .agreement-checkbox input[type="checkbox"]:checked + .checkbox-custom::after {
+    width: 4px;
+    height: 8px;
+  }
 }
 
 .agreement-text {
@@ -831,6 +1141,12 @@
   .form-row {
     grid-template-columns: 1fr;
     gap: 0.625rem;
+  }
+  
+  /* Kart bilgileri için mobilde de yan yana */
+  .card-info-section .form-row {
+    grid-template-columns: 1.5fr 1fr;
+    gap: 0.5rem;
   }
 
   .checkout-bottom-bar {

@@ -444,9 +444,12 @@ const Cart = () => {
               <div className="cart-total-amount">{getCartTotal().toFixed(2)} ₺</div>
               <div className="cart-shipping-text">
                 {discountAmount > 0 ? (
-                  <>Kargo Bedava • Kupon ile <strong>{discountAmount.toFixed(2)} ₺</strong> kazandınız</>
+                  <>
+                    <span className="cart-shipping-free">Kargo Bedava</span>
+                    <span className="cart-discount-badge">Kupon İndirimi: <strong>{discountAmount.toFixed(2)} ₺</strong></span>
+                  </>
                 ) : (
-                  <>Kargo Bedava</>
+                  <span className="cart-shipping-free">Kargo Bedava</span>
                 )}
               </div>
             </div>
