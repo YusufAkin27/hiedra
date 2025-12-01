@@ -50,10 +50,6 @@ public class PaymentRequest {
     private String email;
 
     @NotBlank(message = "Telefon numarası boş olamaz.")
-    @Pattern(
-            regexp = "^(\\+90[0-9]{10}|0[0-9]{10}|[0-9]{10})$",
-            message = "Telefon numarası geçerli formatta olmalıdır. Örnek: +905113233289, 05113233289 veya 5336360079"
-    )
     private String phone;
 
     // Adres bilgileri: addressId yoksa zorunlu, addressId varsa opsiyonel

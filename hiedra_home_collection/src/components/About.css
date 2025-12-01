@@ -540,7 +540,7 @@
 
 [data-theme='dark'] .about-section:hover .section-number {
   opacity: 0.5;
-}
+  }
 
 [data-theme='dark'] .about-section h2 {
   color: var(--text-primary);

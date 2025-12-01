@@ -31,6 +31,7 @@ export type AdminPage =
   | 'categories'
   | 'adminManagement'
   | 'payments'
+  | 'invoices'
   | 'ipAccess'
   | 'storePreview'
 

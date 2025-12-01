@@ -160,6 +160,19 @@ function Sidebar({ user, currentPage, onNavigate, isOpen, onToggle, notification
             <span className="sidebar__nav-text">Ödemeler</span>
           </button>
 
+          {/* Faturalar - Doğrudan erişim */}
+          <button
+            type="button"
+            className={`sidebar__nav-item ${isActive('invoices') ? 'sidebar__nav-item--active' : ''}`}
+            onClick={() => {
+              onNavigate('invoices')
+              if (!isOpen) onToggle()
+            }}
+          >
+            <FaFileAlt className="sidebar__nav-icon" />
+            <span className="sidebar__nav-text">Faturalar</span>
+          </button>
+
           {/* Ürünler - Doğrudan erişim */}
           <button
             type="button"

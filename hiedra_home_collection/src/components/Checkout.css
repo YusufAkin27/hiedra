@@ -28,7 +28,7 @@
   justify-content: center;
   background: transparent;
   border: none;
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   cursor: pointer;
   border-radius: 8px;
   transition: all 0.2s ease;
@@ -42,7 +42,7 @@
 .checkout-header-mobile h1 {
   font-size: 1.125rem;
   font-weight: 700;
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   margin: 0;
   flex: 1;
   text-align: center;
@@ -97,14 +97,14 @@
 .cart-summary-header h2 {
   font-size: 1rem;
   font-weight: 700;
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   margin: 0;
 }
 
 .expand-icon {
   transition: transform 0.2s ease;
-  color: var(--text-on-dark);
-  opacity: 0.6;
+  color: var(--text-secondary);
+  opacity: 0.8;
 }
 
 .expand-icon.expanded {
@@ -159,7 +159,7 @@
 .item-name {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   text-decoration: none;
   line-height: 1.4;
   display: -webkit-box;
@@ -178,8 +178,7 @@
   flex-wrap: wrap;
   gap: 0.5rem;
   font-size: 0.75rem;
-  color: var(--text-on-dark);
-  opacity: 0.7;
+  color: var(--text-secondary);
 }
 
 .item-specs span {
@@ -195,14 +194,13 @@
 
 .item-quantity {
   font-weight: 600;
-  color: var(--text-on-dark);
-  opacity: 0.7;
+  color: var(--text-secondary);
   font-size: 0.8125rem;
 }
 
 .item-price {
   font-weight: 700;
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   font-size: 0.9375rem;
 }
 
@@ -236,7 +234,7 @@
 .address-section-header h2 {
   font-size: 1rem;
   font-weight: 700;
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -408,7 +406,7 @@
   display: block;
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
 }
 
@@ -423,7 +421,7 @@
   border: 1px solid var(--border-color);
   border-radius: 8px;
   background: var(--bg-primary);
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   font-size: 0.9375rem;
   transition: all 0.2s ease;
   font-family: inherit;
@@ -436,8 +434,7 @@
 }
 
 .form-input::placeholder {
-  color: var(--text-on-dark);
-  opacity: 0.4;
+  color: var(--text-tertiary);
 }
 
 .form-row {
@@ -506,7 +503,7 @@
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 0.9375rem;
-  color: var(--text-on-dark);
+  color: var(--text-primary);
 }
 
 .address-display:active {
@@ -515,8 +512,7 @@
 
 .dropdown-icon {
   transition: transform 0.2s ease;
-  color: var(--text-on-dark);
-  opacity: 0.6;
+  color: var(--text-secondary);
   flex-shrink: 0;
 }
 
@@ -569,21 +565,19 @@
 .address-dropdown-name {
   font-weight: 700;
   font-size: 0.9375rem;
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   margin-bottom: 0.25rem;
 }
 
 .address-dropdown-line {
   font-size: 0.875rem;
-  color: var(--text-on-dark);
-  opacity: 0.8;
+  color: var(--text-secondary);
   margin-bottom: 0.25rem;
 }
 
 .address-dropdown-location {
   font-size: 0.8125rem;
-  color: var(--text-on-dark);
-  opacity: 0.6;
+  color: var(--text-tertiary);
 }
 
 .default-badge-small {
@@ -607,7 +601,7 @@
   gap: 0.75rem;
   cursor: pointer;
   font-size: 0.9375rem;
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   padding: 1rem;
   background: var(--bg-secondary);
   border-radius: 10px;
@@ -763,7 +757,7 @@
 .payment-options-section h2 {
   font-size: 1rem;
   font-weight: 700;
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   margin: 0 0 1rem 0;
 }
 
@@ -777,7 +771,7 @@
     gap: 0.75rem;
   cursor: pointer;
   font-size: 0.9375rem;
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   }
 
 .payment-option-radio input[type="radio"] {
@@ -845,7 +839,7 @@
 .card-info-header h2 {
   font-size: 0.95rem;
   font-weight: 700;
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -927,7 +921,7 @@
   cursor: pointer;
   font-size: 0.875rem;
   line-height: 1.5;
-  color: var(--text-on-dark);
+  color: var(--text-primary);
 }
 
 .agreement-checkbox input[type="checkbox"] {
@@ -1025,14 +1019,13 @@
 .checkout-total-amount {
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   line-height: 1.2;
 }
 
 .checkout-shipping-text {
   font-size: 0.8125rem;
-  color: var(--text-on-dark);
-  opacity: 0.7;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
@@ -1080,14 +1073,13 @@
 
 .empty-checkout h2 {
   font-size: 1.5rem;
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   margin-bottom: 1rem;
   }
 
 .empty-checkout p {
   font-size: 1rem;
-  color: var(--text-on-dark);
-  opacity: 0.7;
+  color: var(--text-secondary);
   margin-bottom: 2rem;
 }
 

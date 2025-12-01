@@ -42,6 +42,7 @@ const ContractAcceptancesPage = lazy(() => import('./pages/ContractAcceptances')
 const CategoriesPage = lazy(() => import('./pages/Categories'))
 const AdminManagementPage = lazy(() => import('./pages/AdminManagement'))
 const PaymentsPage = lazy(() => import('./pages/Payments'))
+const InvoicesPage = lazy(() => import('./pages/Invoices'))
 const IpAccessControlPage = lazy(() => import('./pages/IpAccessControl'))
 const StorePreviewPage = lazy(() => import('./pages/StorePreview'))
 
@@ -512,9 +513,10 @@ function App() {
         {currentPage === 'categories' && <CategoriesPage session={session} toast={toast} />}
         {currentPage === 'adminManagement' && <AdminManagementPage session={session} />}
         {currentPage === 'payments' && <PaymentsPage session={session} />}
+        {currentPage === 'invoices' && <InvoicesPage session={session} />}
         {currentPage === 'ipAccess' && <IpAccessControlPage session={session} />}
         {currentPage === 'storePreview' && <StorePreviewPage />}
-        {!['home', 'profile', 'system', 'users', 'userDetail', 'userLogs', 'orders', 'orderDetail', 'products', 'productDetail', 'productEdit', 'productAdd', 'shipping', 'messages', 'bulkMail', 'carts', 'reviews', 'productViews', 'guests', 'visitors', 'addresses', 'auditLogs', 'coupons', 'couponAdd', 'cookiePreferences', 'settings', 'userAnalytics', 'contracts', 'contractAcceptances', 'categories', 'adminManagement', 'payments', 'ipAccess', 'storePreview'].includes(currentPage) && (
+        {!['home', 'profile', 'system', 'users', 'userDetail', 'userLogs', 'orders', 'orderDetail', 'products', 'productDetail', 'productEdit', 'productAdd', 'shipping', 'messages', 'bulkMail', 'carts', 'reviews', 'productViews', 'guests', 'visitors', 'addresses', 'auditLogs', 'coupons', 'couponAdd', 'cookiePreferences', 'settings', 'userAnalytics', 'contracts', 'contractAcceptances', 'categories', 'adminManagement', 'payments', 'invoices', 'ipAccess', 'storePreview'].includes(currentPage) && (
           <NotFoundPage onNavigate={handleNavigate} />
         )}
       </Suspense>
