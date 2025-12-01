@@ -439,3 +439,35 @@
   }
 }
 
+/* ===========================================
+   DARK MODE - PaymentFailed
+   =========================================== */
+[data-theme='dark'] .payment-failed-container {
+  background: var(--bg-primary);
+}
+
+[data-theme='dark'] .error-details-card {
+  background: var(--bg-card);
+  box-shadow: var(--shadow-dark);
+}
+
+[data-theme='dark'] .error-item {
+  background: var(--bg-secondary);
+}
+
+[data-theme='dark'] .possible-causes {
+  border-top-color: var(--border-color);
+}
+
+[data-theme='dark'] .help-text {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .btn-primary {
+  background: var(--gold-primary);
+  color: var(--text-on-gold);
+}
+
+[data-theme='dark'] .btn-primary:hover {
+  background: var(--gold-hover);
+}

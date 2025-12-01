@@ -97,3 +97,23 @@
   }
 }
 
+/* ===========================================
+   DARK MODE - Payment3DCallback
+   =========================================== */
+[data-theme='dark'] .payment-3d-callback-container {
+  background: var(--bg-primary);
+}
+
+[data-theme='dark'] .spinner {
+  border-color: var(--border-color);
+  border-top-color: var(--gold-primary);
+}
+
+[data-theme='dark'] .btn-retry {
+  background: var(--gold-primary);
+  color: var(--text-on-gold);
+}
+
+[data-theme='dark'] .btn-retry:hover {
+  background: var(--gold-hover);
+}

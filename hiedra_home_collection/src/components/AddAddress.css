@@ -19,7 +19,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  color: var(--text-light);
+  color: var(--text-secondary);
   text-decoration: none;
   font-size: 0.95rem;
   margin-bottom: 1.5rem;
@@ -27,13 +27,13 @@
 }
 
 .back-link:hover {
-  color: var(--gold-primary);
+  color: var(--text-primary);
 }
 
 .add-address-header h1 {
   font-family: 'Playfair Display', 'DM Serif Display', serif;
   font-size: 2.5rem;
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   margin: 0 0 0.5rem 0;
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -42,7 +42,7 @@
 
 .page-subtitle {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  color: var(--text-light);
+  color: var(--text-secondary);
   font-size: 1rem;
   margin: 0;
   font-weight: 400;
@@ -88,7 +88,7 @@
   font-family: 'Playfair Display', serif;
   font-size: 1.5rem;
   font-weight: 600;
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   margin: 0;
   letter-spacing: -0.01em;
 }
@@ -105,7 +105,7 @@
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 500;
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   font-size: 0.95rem;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
@@ -117,7 +117,7 @@
   border: 1px solid var(--border-color);
   border-radius: 8px;
   font-size: 1rem;
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   background: var(--bg-secondary);
   transition: all 0.3s ease;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -126,19 +126,19 @@
 
 .form-group input:focus {
   outline: none;
-  border-color: var(--gold-primary);
-  box-shadow: 0 0 0 3px var(--gold-light);
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--primary-light);
   background: var(--bg-card);
 }
 
 .form-group input::placeholder {
-  color: var(--text-light);
+  color: var(--text-muted);
 }
 
 .form-hint {
   margin-top: 0.5rem;
   font-size: 0.875rem;
-  color: var(--text-light);
+  color: var(--text-tertiary);
   font-style: italic;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
@@ -162,7 +162,7 @@
   width: 20px;
   height: 20px;
   cursor: pointer;
-  accent-color: var(--gold-primary);
+  accent-color: var(--text-primary);
 }
 
 .form-actions {
@@ -191,26 +191,26 @@
 
 .btn-cancel {
   background: transparent;
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   border: 2px solid var(--border-color);
 }
 
 .btn-cancel:hover {
   background: var(--bg-secondary);
-  border-color: var(--gold-primary);
-  color: var(--gold-primary);
+  border-color: var(--text-primary);
+  color: var(--text-primary);
 }
 
 .btn-submit {
-  background: var(--gold-primary);
-  color: var(--text-on-gold);
-  box-shadow: 0 2px 8px var(--shadow-gold);
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  box-shadow: 0 2px 8px var(--shadow);
 }
 
 .btn-submit:hover:not(:disabled) {
-  background: var(--gold-hover);
+  background: var(--btn-primary-hover);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px var(--shadow-gold);
+  box-shadow: 0 4px 12px var(--shadow);
 }
 
 .btn-submit:disabled {
@@ -425,3 +425,93 @@
   }
 }
 
+/* ===========================================
+   DARK MODE - AddAddress
+   =========================================== */
+[data-theme='dark'] .add-address-page {
+  background: var(--bg-primary);
+}
+
+[data-theme='dark'] .add-address-header h1 {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .page-subtitle {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .back-link {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .back-link:hover {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .add-address-form-wrapper {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+  box-shadow: var(--shadow-dark);
+}
+
+[data-theme='dark'] .form-section {
+  border-bottom-color: var(--border-color);
+}
+
+[data-theme='dark'] .form-section-title {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .form-group label {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .form-group input[type="text"],
+[data-theme='dark'] .form-group input[type="tel"] {
+  border-color: var(--border-color);
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+}
+
+[data-theme='dark'] .form-group input:focus {
+  border-color: var(--gold-primary);
+  box-shadow: 0 0 0 3px var(--gold-light);
+  background: var(--bg-card);
+}
+
+[data-theme='dark'] .form-group input::placeholder {
+  color: var(--text-tertiary);
+}
+
+[data-theme='dark'] .form-hint {
+  color: var(--text-tertiary);
+}
+
+[data-theme='dark'] .checkbox-group label {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .checkbox-group input[type="checkbox"] {
+  accent-color: var(--gold-primary);
+}
+
+[data-theme='dark'] .form-actions {
+  border-top-color: var(--border-color);
+}
+
+[data-theme='dark'] .btn-cancel {
+  background: transparent;
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .btn-cancel:hover {
+  background: var(--bg-secondary);
+  border-color: var(--text-primary);
+}
+
+[data-theme='dark'] .alert-error {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border-color: var(--danger-border);
+}

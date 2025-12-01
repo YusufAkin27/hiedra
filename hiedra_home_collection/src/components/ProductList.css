@@ -563,11 +563,33 @@
 /* ===========================================
    DARK MODE
    =========================================== */
+[data-theme='dark'] .product-list-container {
+  background: var(--bg-primary);
+}
+
+[data-theme='dark'] .product-list-header-premium,
+[data-theme='dark'] .promotion-banner-wrapper {
+  background: var(--bg-primary);
+}
+
 [data-theme='dark'] .section-header-premium {
   background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
 }
 
 [data-theme='dark'] .section-header-premium::before {
   background: linear-gradient(90deg, transparent, var(--border-color), transparent);
+}
+
+[data-theme='dark'] .section-header-badge-premium {
+  background: rgba(193, 164, 102, 0.15);
+  color: var(--gold-primary);
+}
+
+[data-theme='dark'] .section-header-title-premium {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .section-header-subtitle-premium {
+  color: var(--text-secondary);
 }
 

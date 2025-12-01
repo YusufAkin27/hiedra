@@ -654,3 +654,67 @@
   }
 }
 
+/* ===========================================
+   DARK MODE - OrderConfirmation
+   =========================================== */
+[data-theme='dark'] .order-confirmation-container {
+  background: var(--bg-primary);
+}
+
+[data-theme='dark'] .order-details-card {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .order-number-section {
+  border-bottom-color: var(--border-color);
+}
+
+[data-theme='dark'] .order-number {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .info-section {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .confirmation-item {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .item-image {
+  background: var(--bg-tertiary);
+}
+
+[data-theme='dark'] .item-customizations span {
+  background: var(--bg-tertiary);
+}
+
+[data-theme='dark'] .order-summary {
+  border-top-color: var(--border-color);
+}
+
+[data-theme='dark'] .summary-row.total {
+  border-top-color: var(--border-color);
+}
+
+[data-theme='dark'] .info-text {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .info-text a {
+  color: var(--gold-primary);
+}
+
+[data-theme='dark'] .btn-primary {
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  border-color: var(--btn-primary-bg);
+}
+
+[data-theme='dark'] .btn-primary:hover {
+  background: var(--btn-primary-hover);
+  border-color: var(--btn-primary-hover);
+}

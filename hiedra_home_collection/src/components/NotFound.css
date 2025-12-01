@@ -278,3 +278,30 @@
   }
 }
 
+/* ===========================================
+   DARK MODE - NotFound
+   =========================================== */
+[data-theme='dark'] .not-found-container {
+  background: var(--bg-primary);
+}
+
+[data-theme='dark'] .error-number {
+  background: linear-gradient(135deg, var(--gold-primary) 0%, var(--text-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+[data-theme='dark'] .suggestion-icon {
+  background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-hover) 100%);
+}
+
+[data-theme='dark'] .btn-primary {
+  background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-hover) 100%);
+  box-shadow: 0 4px 12px var(--shadow-gold);
+}
+
+[data-theme='dark'] .btn-primary:hover {
+  box-shadow: 0 8px 24px var(--shadow-gold-hover);
+  background: linear-gradient(135deg, var(--gold-hover) 0%, var(--gold-primary) 100%);
+}

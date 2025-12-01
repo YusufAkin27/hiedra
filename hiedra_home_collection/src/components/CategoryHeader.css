@@ -72,3 +72,13 @@
   }
 }
 
+/* ===========================================
+   DARK MODE - CategoryHeader
+   =========================================== */
+[data-theme='dark'] .category-title-home {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .category-subtitle-home {
+  color: var(--text-secondary);
+}

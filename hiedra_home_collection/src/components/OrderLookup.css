@@ -1837,3 +1837,243 @@
   }
 }
 
+/* ===========================================
+   DARK MODE - OrderLookup
+   =========================================== */
+[data-theme='dark'] .order-lookup-container {
+  background: var(--bg-primary);
+}
+
+[data-theme='dark'] .lookup-form-container {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .form-group input {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .form-group input:focus {
+  border-color: var(--gold-primary);
+  box-shadow: 0 0 0 3px var(--gold-light);
+}
+
+[data-theme='dark'] .order-details-container {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .order-list-container {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .order-card {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .order-card:hover {
+  border-color: var(--gold-primary);
+  box-shadow: var(--shadow-hover-dark);
+}
+
+[data-theme='dark'] .order-card-image {
+  background: var(--bg-tertiary);
+}
+
+[data-theme='dark'] .order-card-header h4 {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .order-card-body p {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .order-card-body strong {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .order-card-footer {
+  border-top-color: var(--border-color);
+}
+
+[data-theme='dark'] .order-card-arrow {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .order-status-card {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .order-section {
+  border-bottom-color: var(--border-color);
+}
+
+[data-theme='dark'] .order-section h3 {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .order-item {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .item-info h4 {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .item-customizations {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .item-customizations span {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .item-quantity {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .item-image {
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .order-total {
+  border-top-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .address-details {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .address-details p {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .shipping-info {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .empty-orders {
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .modal-content {
+  background: var(--bg-card);
+}
+
+[data-theme='dark'] .modal-content h3 {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .modal-content p {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .address-form-section {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .address-form textarea {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .address-form textarea:focus {
+  border-color: var(--gold-primary);
+  box-shadow: 0 0 0 3px var(--gold-light);
+}
+
+[data-theme='dark'] .address-form-inline {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .address-form-inline label {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .address-form-inline input {
+  border-color: var(--border-color);
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+}
+
+[data-theme='dark'] .address-form-inline input:focus {
+  border-color: var(--gold-primary);
+}
+
+[data-theme='dark'] .error-message {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border-color: var(--danger-border);
+}
+
+[data-theme='dark'] .edit-btn {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .edit-btn:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--text-secondary);
+}
+
+[data-theme='dark'] .customer-form-container .form-group label {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .customer-form-container .form-input {
+  border-color: var(--border-color);
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+}
+
+[data-theme='dark'] .customer-form-container .form-input:focus {
+  border-color: var(--gold-primary);
+  box-shadow: 0 0 0 3px var(--gold-light);
+}
+
+[data-theme='dark'] .customer-form-container .form-input.disabled {
+  background: var(--bg-disabled);
+  color: var(--text-disabled);
+}
+
+[data-theme='dark'] .customer-form-container .form-hint {
+  color: var(--text-tertiary);
+}
+
+[data-theme='dark'] .customer-form-container .form-actions {
+  border-top-color: var(--border-color);
+}
+
+[data-theme='dark'] .customer-form-container .cancel-btn {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .customer-form-container .cancel-btn:hover:not(:disabled) {
+  background: var(--bg-tertiary);
+  border-color: var(--text-secondary);
+}
+
+[data-theme='dark'] .customer-details p {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .customer-details strong {
+  color: var(--text-primary);
+}

@@ -55,7 +55,7 @@
 .section-number {
   font-size: 3rem;
   font-weight: 700;
-  color: var(--bg-header);
+  color: var(--text-tertiary);
   opacity: 0.15;
   line-height: 1;
   margin-bottom: 1rem;
@@ -121,7 +121,7 @@
 
 .features-list li:hover {
   background: var(--bg-secondary);
-  border-color: var(--bg-header);
+  border-color: var(--text-primary);
   transform: translateX(5px);
   box-shadow: 0 4px 12px var(--shadow);
 }
@@ -129,7 +129,7 @@
 .feature-icon {
   width: 6px;
   height: 6px;
-  background: var(--bg-header);
+  background: var(--text-primary);
   border-radius: 50%;
   margin-top: 0.5rem;
   flex-shrink: 0;
@@ -157,8 +157,8 @@
 }
 
 .stat-card {
-  background: var(--bg-header);
-  color: white;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
   padding: 1.75rem;
   border-radius: 12px;
   text-align: center;
@@ -409,3 +409,69 @@
   }
 }
 
+/* ===========================================
+   DARK MODE - About
+   =========================================== */
+[data-theme='dark'] .about-container {
+  background: var(--bg-primary);
+}
+
+[data-theme='dark'] .about-header h1 {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .about-subtitle {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .about-section {
+  background: var(--bg-secondary);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme='dark'] .about-section:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme='dark'] .section-number {
+  color: var(--gold-primary);
+  opacity: 0.2;
+}
+
+[data-theme='dark'] .about-section:hover .section-number {
+  opacity: 0.35;
+}
+
+[data-theme='dark'] .about-section h2 {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .about-section p {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .features-list li {
+  background: var(--bg-tertiary);
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .features-list li:hover {
+  background: var(--bg-secondary);
+  border-color: var(--gold-primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme='dark'] .feature-icon {
+  background: var(--gold-primary);
+}
+
+[data-theme='dark'] .features-list li:hover .feature-text {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .stat-card {
+  background: var(--gold-primary);
+  color: var(--text-on-gold);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}

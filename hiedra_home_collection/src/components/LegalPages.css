@@ -851,3 +851,163 @@
   opacity: 0;
 }
 
+/* ===========================================
+   DARK MODE - LegalPages
+   =========================================== */
+[data-theme='dark'] .legal-page {
+  background: var(--bg-primary);
+}
+
+[data-theme='dark'] .legal-container {
+  background: var(--bg-card);
+  box-shadow: var(--shadow-dark);
+}
+
+[data-theme='dark'] .legal-container h1 {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .legal-container h2 {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .legal-container h3 {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .legal-container p {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .legal-container li {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .legal-container strong {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .last-updated {
+  color: var(--text-tertiary);
+  border-bottom-color: var(--border-color);
+}
+
+[data-theme='dark'] .legal-header {
+  border-bottom-color: var(--border-color);
+}
+
+[data-theme='dark'] .legal-header h1 {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .legal-content {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .legal-content h1,
+[data-theme='dark'] .legal-content h2,
+[data-theme='dark'] .legal-content h3,
+[data-theme='dark'] .legal-content h4,
+[data-theme='dark'] .legal-content h5,
+[data-theme='dark'] .legal-content h6 {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .legal-content h1 {
+  border-bottom-color: var(--border-color);
+}
+
+[data-theme='dark'] .legal-content h2 {
+  border-bottom-color: var(--border-color);
+}
+
+[data-theme='dark'] .legal-content p {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .legal-content ul,
+[data-theme='dark'] .legal-content ol {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .legal-content li {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .legal-content strong,
+[data-theme='dark'] .legal-content b {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .legal-content em,
+[data-theme='dark'] .legal-content i {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .legal-content blockquote {
+  color: var(--text-secondary);
+  border-left-color: var(--gold-primary);
+}
+
+[data-theme='dark'] .legal-content table {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .legal-content table th,
+[data-theme='dark'] .legal-content table td {
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .legal-content table th {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .legal-actions {
+  border-top-color: var(--border-color);
+}
+
+[data-theme='dark'] .legal-footer {
+  border-top-color: var(--border-color);
+}
+
+[data-theme='dark'] .contracts-empty {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .contract-card {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+  box-shadow: var(--shadow-dark);
+}
+
+[data-theme='dark'] .contract-card:hover {
+  border-color: var(--gold-primary);
+  background: var(--bg-secondary);
+}
+
+[data-theme='dark'] .contract-title {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .contract-meta-item {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .contract-meta-label {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .legal-error h1 {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .btn {
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+}
+
+[data-theme='dark'] .btn:hover {
+  background: var(--btn-primary-hover);
+}

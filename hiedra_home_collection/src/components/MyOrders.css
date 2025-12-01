@@ -945,3 +945,182 @@
   }
 }
 
+/* ===========================================
+   DARK MODE - MyOrders
+   =========================================== */
+[data-theme='dark'] .my-orders-container {
+  background: var(--bg-primary);
+}
+
+[data-theme='dark'] .my-orders-header h1 {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .my-orders-header p {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .loading-state p {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .loading-spinner {
+  border-color: var(--border-color);
+  border-top-color: var(--gold-primary);
+}
+
+[data-theme='dark'] .error-state p {
+  color: var(--danger);
+}
+
+[data-theme='dark'] .retry-btn {
+  background: var(--gold-primary);
+  color: var(--text-on-gold);
+}
+
+[data-theme='dark'] .retry-btn:hover {
+  background: var(--gold-hover);
+}
+
+[data-theme='dark'] .empty-state svg {
+  color: var(--text-tertiary);
+}
+
+[data-theme='dark'] .empty-state h2 {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .empty-state p {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .shop-btn {
+  background: var(--gold-primary);
+  color: var(--text-on-gold);
+}
+
+[data-theme='dark'] .shop-btn:hover {
+  background: var(--gold-hover);
+}
+
+[data-theme='dark'] .order-card {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .order-card:hover {
+  border-color: var(--gold-primary);
+  box-shadow: var(--shadow-hover-dark);
+}
+
+[data-theme='dark'] .order-card-header {
+  border-bottom-color: var(--border-color);
+}
+
+[data-theme='dark'] .order-info h3 {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .order-date {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .order-date svg {
+  color: var(--text-tertiary);
+}
+
+[data-theme='dark'] .order-items-preview {
+  border-bottom-color: var(--border-color);
+}
+
+[data-theme='dark'] .order-item-preview:not(:last-child) {
+  border-bottom-color: var(--border-color);
+}
+
+[data-theme='dark'] .order-item-image-wrapper {
+  background: var(--bg-secondary);
+}
+
+[data-theme='dark'] .item-name {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .item-quantity {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .no-items-text {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .more-items {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .order-total span:first-child {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .total-amount {
+  color: var(--gold-primary);
+}
+
+[data-theme='dark'] .view-order-btn {
+  background: var(--gold-primary);
+  color: var(--text-on-gold);
+}
+
+[data-theme='dark'] .view-order-btn:hover {
+  background: var(--gold-hover);
+}
+
+[data-theme='dark'] .modal-overlay {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+[data-theme='dark'] .modal-content {
+  background: var(--bg-card);
+  box-shadow: var(--shadow-dark);
+}
+
+[data-theme='dark'] .modal-content h3 {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .modal-content > p {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .modal-content .form-group label {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .modal-content .form-group textarea {
+  background: var(--bg-input);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .modal-content .form-group textarea:focus {
+  border-color: var(--gold-primary);
+  box-shadow: 0 0 0 3px var(--gold-light);
+}
+
+[data-theme='dark'] .modal-actions .cancel-btn {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .modal-actions .cancel-btn:hover:not(:disabled) {
+  background: var(--bg-tertiary);
+}
+
+[data-theme='dark'] .modal-actions .confirm-btn {
+  background: var(--gold-primary);
+  color: var(--text-on-gold);
+}
+
+[data-theme='dark'] .modal-actions .confirm-btn:hover:not(:disabled) {
+  background: var(--gold-hover);
+}

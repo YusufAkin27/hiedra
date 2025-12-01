@@ -1,6 +1,6 @@
 .footer {
   background: var(--bg-secondary);
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   padding: 2rem 1rem 1rem;
   margin-top: 2rem;
   border-top: 2px solid var(--border-color);
@@ -34,7 +34,7 @@
   align-items: center;
   gap: 1rem;
   text-decoration: none;
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   margin-bottom: 1rem;
   transition: transform 0.3s;
 }
@@ -44,7 +44,7 @@
 }
 
 .footer-logo:hover .footer-logo-text h2 {
-  color: var(--gold-primary);
+  color: var(--primary-hover);
 }
 
 .footer-logo-img {
@@ -60,8 +60,8 @@
 }
 
 .footer-logo:hover .footer-logo-img {
-  border-color: var(--gold-primary);
-  box-shadow: 0 4px 12px var(--shadow-gold);
+  border-color: var(--primary-hover);
+  box-shadow: 0 4px 12px var(--shadow);
 }
 
 .footer-logo-text h2 {
@@ -69,14 +69,14 @@
   font-weight: 700;
   letter-spacing: 2px;
   margin: 0;
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   transition: color 0.3s ease;
 }
 
 .footer-description {
   font-size: 0.95rem;
   line-height: 1.6;
-  color: var(--text-light);
+  color: var(--text-secondary);
   margin: 0;
 }
 
@@ -86,7 +86,7 @@
   margin: 0 0 1rem 0;
   text-transform: uppercase;
   letter-spacing: 1px;
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   position: relative;
   padding-bottom: 0.5rem;
 }
@@ -98,7 +98,7 @@
   left: 0;
   width: 40px;
   height: 2px;
-  background: var(--gold-primary);
+  background: var(--text-primary);
   border-radius: 2px;
 }
 
@@ -116,7 +116,7 @@
 }
 
 .footer-links a {
-  color: var(--text-light);
+  color: var(--text-secondary);
   text-decoration: none;
   font-size: 0.95rem;
   transition: all 0.3s;
@@ -129,8 +129,8 @@
   content: '';
   width: 12px;
   height: 12px;
-  border-right: 2px solid var(--gold-primary);
-  border-top: 2px solid var(--gold-primary);
+  border-right: 2px solid var(--text-primary);
+  border-top: 2px solid var(--text-primary);
   transform: rotate(45deg);
   margin-right: 0.5rem;
   opacity: 0;
@@ -140,7 +140,7 @@
 }
 
 .footer-links a:hover {
-  color: var(--gold-primary);
+  color: var(--text-primary);
   padding-left: 1rem;
   transform: translateX(5px);
 }
@@ -163,24 +163,24 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  color: var(--text-light);
+  color: var(--text-secondary);
   font-size: 0.95rem;
   transition: color 0.3s ease;
 }
 
 .footer-contact li:hover {
-  color: var(--text-on-dark);
+  color: var(--text-primary);
 }
 
 .footer-contact svg {
   flex-shrink: 0;
   opacity: 0.7;
-  color: var(--text-light);
+  color: var(--icon-secondary);
   transition: all 0.3s ease;
 }
 
 .footer-contact li:hover svg {
-  color: var(--gold-primary);
+  color: var(--text-primary);
   opacity: 1;
 }
 
@@ -209,7 +209,7 @@
   transform: translateX(-50%);
   width: 100px;
   height: 2px;
-  background: linear-gradient(90deg, transparent, var(--gold-primary), transparent);
+  background: linear-gradient(90deg, transparent, var(--text-tertiary), transparent);
 }
 
 .footer-social,
@@ -226,7 +226,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 1px;
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -244,7 +244,7 @@
   justify-content: center;
   background: var(--bg-card);
   border-radius: 50%;
-  color: var(--text-light);
+  color: var(--text-secondary);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   text-decoration: none;
   border: 1px solid var(--border-color);
@@ -261,8 +261,8 @@
 .social-icon:hover {
   background: var(--bg-card);
   transform: translateY(-3px) scale(1.1);
-  box-shadow: 0 8px 20px var(--shadow-gold);
-  border-color: var(--gold-primary);
+  box-shadow: 0 8px 20px var(--shadow);
+  border-color: var(--text-primary);
 }
 
 .social-icon-facebook:hover {
@@ -328,8 +328,8 @@
 
 .payment-logo-wrapper:hover {
   transform: translateY(-2px) scale(1.05);
-  border-color: var(--gold-primary);
-  box-shadow: 0 4px 12px var(--shadow-gold);
+  border-color: var(--text-primary);
+  box-shadow: 0 4px 12px var(--shadow);
 }
 
 .payment-logo {
@@ -347,7 +347,7 @@
 .footer-copyright {
   margin: 0;
   font-size: 0.9rem;
-  color: var(--text-light);
+  color: var(--text-tertiary);
 }
 
 
@@ -631,5 +631,101 @@
   .footer-copyright {
     font-size: 0.75rem;
   }
+}
+
+/* ===========================================
+   DARK MODE
+   =========================================== */
+[data-theme='dark'] .footer {
+  background: var(--bg-secondary);
+  border-top-color: var(--border-color);
+}
+
+[data-theme='dark'] .footer-logo {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .footer-logo-text h2 {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .footer-logo:hover .footer-logo-text h2 {
+  color: var(--primary-hover);
+}
+
+[data-theme='dark'] .footer-logo-img {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .footer-description {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .footer-title {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .footer-title::after {
+  background: var(--text-tertiary);
+}
+
+[data-theme='dark'] .footer-links a {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .footer-links a:hover {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .footer-links a::before {
+  border-color: var(--text-primary);
+}
+
+[data-theme='dark'] .footer-contact li {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .footer-contact li:hover {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .footer-contact svg {
+  color: var(--icon-secondary);
+}
+
+[data-theme='dark'] .footer-contact li:hover svg {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .footer-middle {
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .footer-middle-title {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .social-icon {
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .social-icon:hover {
+  border-color: var(--text-primary);
+}
+
+[data-theme='dark'] .payment-logo-wrapper {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .payment-logo-wrapper:hover {
+  border-color: var(--text-primary);
+}
+
+[data-theme='dark'] .footer-copyright {
+  color: var(--text-tertiary);
 }
 

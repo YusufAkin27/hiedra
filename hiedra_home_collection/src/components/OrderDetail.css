@@ -1186,3 +1186,322 @@
   }
 }
 
+/* ===========================================
+   DARK MODE - OrderDetail
+   =========================================== */
+[data-theme='dark'] .order-detail-container {
+  background: var(--bg-primary);
+}
+
+[data-theme='dark'] .order-detail-header h1 {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .back-link {
+  color: var(--gold-primary);
+}
+
+[data-theme='dark'] .back-link:hover {
+  color: var(--gold-hover);
+}
+
+[data-theme='dark'] .refund-request-btn {
+  background: transparent;
+  color: var(--text-secondary);
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .refund-request-btn:hover:not(:disabled) {
+  background: var(--bg-secondary);
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .loading-spinner {
+  border-color: var(--border-color);
+  border-top-color: var(--gold-primary);
+}
+
+[data-theme='dark'] .error-message {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border-color: var(--danger-border);
+}
+
+[data-theme='dark'] .success-message {
+  background: var(--success-bg);
+  color: var(--success);
+  border-color: var(--success-border);
+}
+
+[data-theme='dark'] .tracking-section {
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+}
+
+[data-theme='dark'] .tracking-info-card {
+  background: var(--bg-card);
+  box-shadow: var(--shadow-dark);
+}
+
+[data-theme='dark'] .tracking-header-info {
+  border-bottom-color: var(--border-color);
+}
+
+[data-theme='dark'] .tracking-number-info p {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .tracking-loading {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .status-description {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .tracking-events-preview h4 {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .event-preview-item {
+  background: var(--bg-secondary);
+  border-left-color: var(--gold-primary);
+}
+
+[data-theme='dark'] .event-time-small {
+  color: var(--text-tertiary);
+}
+
+[data-theme='dark'] .event-content-small {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .event-description-small {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .view-all-events-link {
+  color: var(--gold-primary);
+  border-color: var(--gold-primary);
+}
+
+[data-theme='dark'] .view-all-events-link:hover {
+  background: var(--gold-primary);
+  color: var(--text-on-gold);
+}
+
+[data-theme='dark'] .tracking-no-data {
+  color: var(--text-tertiary);
+}
+
+[data-theme='dark'] .retry-btn {
+  background: var(--gold-primary);
+  color: var(--text-on-gold);
+}
+
+[data-theme='dark'] .retry-btn:hover {
+  background: var(--gold-hover);
+}
+
+[data-theme='dark'] .back-btn {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .back-btn:hover {
+  background: var(--bg-tertiary);
+}
+
+[data-theme='dark'] .order-summary-card {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+  box-shadow: var(--shadow-dark);
+}
+
+[data-theme='dark'] .order-info h2 {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .order-date {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .order-section {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+  box-shadow: var(--shadow-dark);
+}
+
+[data-theme='dark'] .order-section h3 {
+  color: var(--text-primary);
+  border-bottom-color: var(--border-color);
+}
+
+[data-theme='dark'] .section-header-with-action {
+  border-bottom-color: var(--border-color);
+}
+
+[data-theme='dark'] .edit-btn {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .edit-btn:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--text-secondary);
+}
+
+[data-theme='dark'] .form-group label {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .form-input {
+  border-color: var(--border-color);
+  color: var(--text-primary);
+  background: var(--bg-input);
+}
+
+[data-theme='dark'] .form-input:focus {
+  border-color: var(--gold-primary);
+  box-shadow: 0 0 0 3px var(--gold-light);
+}
+
+[data-theme='dark'] .form-input.disabled {
+  background: var(--bg-disabled);
+  color: var(--text-disabled);
+}
+
+[data-theme='dark'] .form-hint {
+  color: var(--text-tertiary);
+}
+
+[data-theme='dark'] .form-actions {
+  border-top-color: var(--border-color);
+}
+
+[data-theme='dark'] .cancel-btn {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .cancel-btn:hover:not(:disabled) {
+  background: var(--bg-tertiary);
+  border-color: var(--text-secondary);
+}
+
+[data-theme='dark'] .save-btn {
+  background: var(--gold-primary);
+  color: var(--text-on-gold);
+}
+
+[data-theme='dark'] .save-btn:hover:not(:disabled) {
+  background: var(--gold-hover);
+}
+
+[data-theme='dark'] .order-item-detail {
+  background: var(--bg-secondary);
+}
+
+[data-theme='dark'] .order-item-image-wrapper-detail {
+  background: var(--bg-tertiary);
+}
+
+[data-theme='dark'] .item-main-info h4 {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .item-specs {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .spec-item strong {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .refund-button-section {
+  border-top-color: var(--border-color);
+}
+
+[data-theme='dark'] .order-total-section {
+  border-top-color: var(--border-color);
+}
+
+[data-theme='dark'] .coupon-info-section {
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .total-row.final {
+  border-top-color: var(--border-color);
+}
+
+[data-theme='dark'] .total-amount {
+  color: var(--gold-primary);
+}
+
+[data-theme='dark'] .address-details p,
+[data-theme='dark'] .customer-details p,
+[data-theme='dark'] .cancel-info p,
+[data-theme='dark'] .refund-info p {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .address-details strong,
+[data-theme='dark'] .customer-details strong,
+[data-theme='dark'] .cancel-info strong,
+[data-theme='dark'] .refund-info strong {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .info-section {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .refund-request-info p {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .modal-overlay {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+[data-theme='dark'] .modal-content {
+  background: var(--bg-card);
+  box-shadow: var(--shadow-dark);
+}
+
+[data-theme='dark'] .modal-content h3 {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .modal-content > p {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .modal-content .form-group label {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .modal-content .form-group textarea {
+  background: var(--bg-input);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .modal-content .form-group textarea:focus {
+  border-color: var(--gold-primary);
+  box-shadow: 0 0 0 3px var(--gold-light);
+}
+
+[data-theme='dark'] .modal-actions .cancel-btn {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .modal-actions .cancel-btn:hover:not(:disabled) {
+  background: var(--bg-tertiary);
+}

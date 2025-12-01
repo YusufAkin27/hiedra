@@ -236,3 +236,63 @@
   }
 }
 
+/* ===========================================
+   DARK MODE - PromotionDetail
+   =========================================== */
+[data-theme='dark'] .promotion-detail-container {
+  background: var(--bg-primary);
+}
+
+[data-theme='dark'] .promotion-detail-content {
+  background: var(--bg-card);
+  box-shadow: var(--shadow-dark);
+}
+
+[data-theme='dark'] .promotion-header {
+  border-bottom-color: var(--gold-light-alpha);
+}
+
+[data-theme='dark'] .promotion-title {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .promotion-description {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .details-title {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .detail-item {
+  background: var(--bg-secondary);
+  border-left-color: var(--gold-primary);
+}
+
+[data-theme='dark'] .detail-item:hover {
+  background: var(--bg-tertiary);
+}
+
+[data-theme='dark'] .detail-text {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .back-home-btn {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .back-home-btn:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--text-secondary);
+}
+
+[data-theme='dark'] .shop-now-btn {
+  background: var(--gold-primary);
+  color: var(--text-on-gold);
+}
+
+[data-theme='dark'] .shop-now-btn:hover {
+  background: var(--gold-hover);
+}

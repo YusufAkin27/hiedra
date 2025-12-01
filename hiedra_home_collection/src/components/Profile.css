@@ -535,3 +535,129 @@
     height: 18px;
   }
 }
+
+/* ===========================================
+   DARK MODE - Profile
+   =========================================== */
+[data-theme='dark'] .profile-page {
+  background: var(--bg-primary);
+}
+
+[data-theme='dark'] .profile-loading p {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .loading-spinner {
+  border-color: var(--border-color);
+  border-top-color: var(--gold-primary);
+}
+
+[data-theme='dark'] .profile-header h1 {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .profile-header p {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .profile-alert-error {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+[data-theme='dark'] .profile-alert-success {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+[data-theme='dark'] .profile-card {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme='dark'] .profile-card:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+  border-color: var(--gold-primary);
+}
+
+[data-theme='dark'] .profile-avatar-wrapper {
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .profile-avatar {
+  background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-hover) 100%);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme='dark'] .avatar-initials {
+  color: var(--text-on-gold);
+}
+
+[data-theme='dark'] .profile-user-info h2 {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .profile-user-email {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .profile-form-label {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .profile-form-label svg {
+  color: var(--gold-primary);
+}
+
+[data-theme='dark'] .profile-form-input {
+  background: var(--bg-tertiary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .profile-form-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+[data-theme='dark'] .profile-form-input:focus {
+  border-color: var(--gold-primary);
+  background: var(--bg-secondary);
+  box-shadow: 0 0 0 4px rgba(193, 164, 102, 0.15);
+}
+
+[data-theme='dark'] .profile-form-input-disabled {
+  background: var(--bg-tertiary);
+  color: var(--text-tertiary);
+}
+
+[data-theme='dark'] .profile-form-hint {
+  color: var(--text-tertiary);
+}
+
+[data-theme='dark'] .profile-form-actions {
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .profile-btn-primary {
+  background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-hover) 100%);
+  color: var(--text-on-gold);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme='dark'] .profile-btn-primary:hover:not(:disabled) {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme='dark'] .profile-btn-secondary {
+  background: transparent;
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .profile-btn-secondary:hover:not(:disabled) {
+  background: var(--bg-tertiary);
+  border-color: var(--gold-primary);
+  color: var(--gold-primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}

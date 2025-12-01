@@ -145,3 +145,30 @@
   }
 }
 
+/* ===========================================
+   DARK MODE - Toast
+   =========================================== */
+[data-theme='dark'] .toast {
+  background: var(--bg-card);
+  box-shadow: var(--shadow-dark);
+}
+
+[data-theme='dark'] .toast--success {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.08) 100%);
+}
+
+[data-theme='dark'] .toast--error {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.08) 100%);
+}
+
+[data-theme='dark'] .toast--warning {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(245, 158, 11, 0.08) 100%);
+}
+
+[data-theme='dark'] .toast--info {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.08) 100%);
+}
+
+[data-theme='dark'] .toast__close:hover {
+  background: rgba(255, 255, 255, 0.1);
+}

@@ -417,8 +417,10 @@
   --btn-primary-bg: #FFFFFF;
   --btn-primary-text: #000000;
   --btn-primary-hover: #E0E0E0;
+  --btn-secondary-bg: transparent;
   --btn-secondary-border: #FFFFFF;
   --btn-secondary-text: #FFFFFF;
+  --btn-secondary-hover: rgba(255, 255, 255, 0.1);
   --btn-ghost-text: #E0E0E0;
   --btn-ghost-hover-bg: rgba(255, 255, 255, 0.08);
   
@@ -427,6 +429,11 @@
   --primary-hover: #E0E0E0;
   --gold-primary: #FFFFFF;
   --gold-hover: #E0E0E0;
+  --gold-light: rgba(255, 255, 255, 0.1);
+  --gold-light-alpha: rgba(255, 255, 255, 0.08);
+  
+  /* Buton metin renkleri - SİYAH (beyaz arka plan üzerinde) */
+  --text-on-gold: #000000;
 }
 
 /* ===========================================
@@ -450,6 +457,7 @@
   --text-light: #666666;
   --text-muted: #999999;
   --text-on-dark: #FFFFFF;
+  --text-on-gold: #FFFFFF;
   --text-heading: #000000;
   --text-body: #1A1A1A;
   

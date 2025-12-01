@@ -1022,5 +1022,110 @@
   }
 }
 
+/* ===========================================
+   DARK MODE - CouponDetail
+   =========================================== */
+[data-theme='dark'] .coupon-detail-container {
+  background: var(--bg-primary);
+}
 
+[data-theme='dark'] .back-to-coupons-btn {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .back-to-coupons-btn:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--text-secondary);
+}
+
+[data-theme='dark'] .coupon-detail-card {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+  box-shadow: var(--shadow-dark);
+}
+
+[data-theme='dark'] .coupon-detail-cover {
+  background: var(--bg-secondary);
+}
+
+[data-theme='dark'] .coupon-detail-cover img {
+  background: var(--bg-secondary);
+}
+
+[data-theme='dark'] .coupon-detail-body {
+  background: var(--bg-card);
+}
+
+[data-theme='dark'] .coupon-detail-name {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .coupon-detail-description {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .coupon-code-label-detail {
+  color: var(--text-tertiary);
+}
+
+[data-theme='dark'] .coupon-code-detail {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .code-text-detail {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .copy-btn-detail {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .copy-btn-detail:hover {
+  background: var(--bg-tertiary);
+  color: var(--gold-primary);
+}
+
+[data-theme='dark'] .coupon-detail-info {
+  border-top-color: var(--border-color);
+}
+
+[data-theme='dark'] .detail-section-title {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .detail-label-detail {
+  color: var(--text-tertiary);
+}
+
+[data-theme='dark'] .detail-value-detail {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .usage-bar-detail {
+  background: var(--bg-tertiary);
+}
+
+[data-theme='dark'] .usage-text-detail {
+  color: var(--text-tertiary);
+}
+
+[data-theme='dark'] .coupon-detail-actions {
+  border-top-color: var(--border-color);
+}
+
+[data-theme='dark'] .loading-state p {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .loading-spinner {
+  border-color: var(--border-color);
+  border-top-color: var(--gold-primary);
+}
+
+[data-theme='dark'] .error-state h2 {
+  color: var(--text-primary);
+}
 

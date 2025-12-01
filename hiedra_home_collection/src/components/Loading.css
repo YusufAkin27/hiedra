@@ -261,18 +261,21 @@
   }
 }
 
-/* Dark mode support (if needed) */
-@media (prefers-color-scheme: dark) {
-  .loading-fullscreen {
-    background: rgba(26, 26, 26, 0.95);
-  }
-
-  .loading-text {
-    color: #b0b0b0;
-  }
-
-  .loading-page .loading-text {
-    color: #e0e0e0;
-  }
+/* ===========================================
+   DARK MODE - Loading
+   =========================================== */
+[data-theme='dark'] .loading-fullscreen {
+  background: rgba(26, 26, 26, 0.95);
 }
 
+[data-theme='dark'] .loading-text {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .loading-page .loading-text {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .loading-container {
+  background: var(--bg-primary);
+}

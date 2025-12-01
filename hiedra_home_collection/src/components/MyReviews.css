@@ -309,3 +309,104 @@
   }
 }
 
+/* ===========================================
+   DARK MODE - MyReviews
+   =========================================== */
+[data-theme='dark'] .my-reviews-container {
+  background: var(--bg-primary);
+}
+
+[data-theme='dark'] .my-reviews-header h1 {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .review-count {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .loading-spinner {
+  border-color: var(--border-color);
+  border-top-color: var(--gold-primary);
+}
+
+[data-theme='dark'] .alert-error {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border-color: var(--danger-border);
+}
+
+[data-theme='dark'] .alert-success {
+  background: var(--success-bg);
+  color: var(--success);
+  border-color: var(--success-border);
+}
+
+[data-theme='dark'] .no-reviews {
+  background: var(--bg-secondary);
+}
+
+[data-theme='dark'] .no-reviews p {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .btn-browse-products {
+  background: var(--gold-primary);
+  color: var(--text-on-gold);
+}
+
+[data-theme='dark'] .btn-browse-products:hover {
+  background: var(--gold-hover);
+}
+
+[data-theme='dark'] .review-card {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .review-card:hover {
+  box-shadow: var(--shadow-hover-dark);
+}
+
+[data-theme='dark'] .review-card.inactive {
+  background: var(--bg-secondary);
+}
+
+[data-theme='dark'] .product-image {
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .product-info h3 {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .product-category {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .star {
+  color: var(--border-color);
+}
+
+[data-theme='dark'] .rating-value {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .review-comment {
+  background: var(--bg-secondary);
+}
+
+[data-theme='dark'] .review-comment p {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .review-image {
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .review-footer {
+  border-top-color: var(--border-color);
+}
+
+[data-theme='dark'] .review-date {
+  color: var(--text-secondary);
+}
