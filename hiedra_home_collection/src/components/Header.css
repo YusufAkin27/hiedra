@@ -112,8 +112,8 @@
   align-items: center;
   gap: 1rem;
   padding: 0.35rem 3rem;
-  background: #ffffff;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .header-top-links {
@@ -124,7 +124,7 @@
 }
 
 .top-link {
-  color: #1a1a1a;
+  color: var(--text-primary);
   text-decoration: none;
   font-size: 0.85rem;
   letter-spacing: 0.08em;
@@ -138,8 +138,8 @@
 }
 
 .header-benefits {
-  background: linear-gradient(135deg, rgba(193, 164, 102, 0.1) 0%, rgba(193, 164, 102, 0.05) 100%);
-  border-bottom: 1px solid rgba(193, 164, 102, 0.15);
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
   padding: 0.6rem 1rem;
   position: relative;
   overflow: hidden;
@@ -182,11 +182,10 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.5rem 1rem;
-  background: rgba(255, 255, 255, 0.6);
-  border: 1px solid rgba(193, 164, 102, 0.2);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: 50px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05),
-              inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  box-shadow: 0 2px 8px var(--shadow);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   position: relative;
@@ -206,11 +205,9 @@
 
 .header-benefit-item:hover {
   transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 4px 16px rgba(193, 164, 102, 0.2),
-              0 2px 8px rgba(0, 0, 0, 0.1),
-              inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  border-color: rgba(193, 164, 102, 0.4);
-  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 4px 16px var(--shadow-hover);
+  border-color: var(--gold-primary);
+  background: var(--bg-hover);
 }
 
 .header-benefit-item:hover::before {
@@ -295,11 +292,10 @@
 .benefit-title {
   font-size: 0.9rem;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--text-primary);
   letter-spacing: 0.3px;
   white-space: nowrap;
   transition: all 0.3s ease;
-  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
   position: relative;
 }
 
@@ -310,14 +306,14 @@
 
 .benefit-subtitle {
   font-size: 0.75rem;
-  color: #666;
+  color: var(--text-secondary);
   font-weight: 400;
   white-space: nowrap;
   transition: color 0.3s ease;
 }
 
 .header-benefit-item:hover .benefit-subtitle {
-  color: #888;
+  color: var(--text-tertiary);
 }
 
 .benefit-subtitle::before {
@@ -443,10 +439,10 @@
   position: absolute;
   top: calc(100% + 0.75rem);
   left: 0;
-  background-color: #FFFFFF;
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 24px var(--shadow);
   min-width: 220px;
   max-width: 300px;
   max-height: 400px;
@@ -471,15 +467,15 @@
 }
 
 .category-dropdown-item:hover {
-  background-color: #F6F6F6;
-  color: #C1A466;
+  background-color: var(--bg-hover);
+  color: var(--gold-primary);
 }
 
 .category-dropdown-item:focus-visible {
-  outline: 3px solid #C1A466;
+  outline: 3px solid var(--gold-primary);
   outline-offset: -2px;
-  background-color: #F6F6F6;
-  color: #C1A466;
+  background-color: var(--bg-hover);
+  color: var(--gold-primary);
 }
 
 /* Arama */
@@ -809,18 +805,20 @@
   border: none;
   background: transparent;
   text-align: left;
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   font-size: 0.95rem;
   font-weight: 500;
   padding: 0.75rem;
   border-radius: 10px;
-  transition: background 0.2s ease;
+  transition: all 0.2s ease;
   cursor: pointer;
+  text-decoration: none;
+  font-family: inherit;
 }
 
 .mobile-user-links a:hover,
 .mobile-user-links button:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--bg-hover);
   color: var(--gold-primary);
 }
 
@@ -988,10 +986,10 @@
   position: absolute;
   top: calc(100% + 0.5rem);
   right: 0;
-  background-color: #FFFFFF;
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 24px var(--shadow);
   min-width: 250px;
   z-index: 1000;
   overflow: hidden;
@@ -1002,7 +1000,8 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-secondary);
 }
 
 .user-avatar {
@@ -1035,7 +1034,7 @@
 
 .user-dropdown-divider {
   height: 1px;
-  background-color: rgba(0, 0, 0, 0.08);
+  background-color: var(--border-color);
 }
 
 .user-dropdown-item {
@@ -1058,19 +1057,24 @@
 }
 
 .user-dropdown-item:hover {
-  background-color: #F6F6F6;
-  color: #C1A466;
+  background-color: var(--bg-hover);
+  color: var(--gold-primary);
 }
 
 .user-dropdown-item:focus-visible {
-  outline: 3px solid #C1A466;
+  outline: 3px solid var(--gold-primary);
   outline-offset: -2px;
-  background-color: #F6F6F6;
-  color: #C1A466;
+  background-color: var(--bg-hover);
+  color: var(--gold-primary);
 }
 
 .user-dropdown-item svg {
   flex-shrink: 0;
+  color: var(--text-secondary);
+}
+
+.user-dropdown-item:hover svg {
+  color: var(--gold-primary);
 }
 
 .cart-count {

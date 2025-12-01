@@ -95,5 +95,59 @@ public class InvoiceController {
         ResponseMessage response = invoiceService.getInvoicesByCustomerEmail(email);
         return ResponseEntity.ok(response);
     }
+
+    /**
+     * Fatura PDF görüntüle (tarayıcıda aç - inline)
+     */
+    @GetMapping("/{invoiceNumber}/view")
+    public ResponseEntity<byte[]> viewInvoicePdf(@PathVariable String invoiceNumber) {
+        log.info("Fatura PDF görüntüleniyor: {}", invoiceNumber);
+        
+        try {
+            byte[] pdfBytes = invoiceService.generateInvoicePdf(invoiceNumber);
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.add(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=fatura-" + invoiceNumber + ".pdf");
+            headers.setContentLength(pdfBytes.length);
+            
+            return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            log.error("Fatura PDF görüntüleme hatası: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+    }
+
+    /**
+     * Fatura PDF görüntüle (sipariş numarası ile - inline)
+     */
+    @GetMapping("/order/{orderNumber}/view")
+    public ResponseEntity<byte[]> viewInvoicePdfByOrder(@PathVariable String orderNumber) {
+        log.info("Sipariş numarasına göre fatura PDF görüntüleniyor: {}", orderNumber);
+        
+        try {
+            byte[] pdfBytes = invoiceService.generateInvoicePdfByOrderNumber(orderNumber);
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.add(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=fatura-" + orderNumber + ".pdf");
+            headers.setContentLength(pdfBytes.length);
+            
+            return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            log.error("Fatura PDF görüntüleme hatası: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+    }
+
+    /**
+     * Faturayı müşteriye e-posta ile gönder
+     */
+    @PostMapping("/order/{orderNumber}/send-email")
+    public ResponseEntity<ResponseMessage> sendInvoiceByEmail(@PathVariable String orderNumber) {
+        log.info("Fatura e-posta ile gönderiliyor: {}", orderNumber);
+        ResponseMessage response = invoiceService.sendInvoiceByEmail(orderNumber);
+        return ResponseEntity.ok(response);
+    }
 }
 

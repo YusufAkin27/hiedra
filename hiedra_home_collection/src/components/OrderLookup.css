@@ -2077,3 +2077,184 @@
 [data-theme='dark'] .customer-details strong {
   color: var(--text-primary);
 }
+
+/* Fatura İşlemleri Bölümü */
+.invoice-section-lookup {
+  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+  box-shadow: 0 4px 20px var(--shadow);
+}
+
+.invoice-section-lookup .order-section-header h3 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--gold-primary);
+}
+
+.invoice-section-lookup .invoice-description {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin: 1rem 0;
+}
+
+.invoice-buttons-lookup {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+
+.invoice-btn-lookup {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.875rem 1.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  flex: 1;
+  min-width: 160px;
+  text-decoration: none;
+  font-family: inherit;
+}
+
+.invoice-btn-lookup svg {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.invoice-btn-lookup:hover svg {
+  transform: scale(1.1);
+}
+
+.invoice-btn-view-lookup {
+  background: transparent;
+  color: var(--gold-primary);
+  border: 2px solid var(--gold-primary);
+}
+
+.invoice-btn-view-lookup:hover {
+  background: var(--gold-light);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(176, 141, 73, 0.25);
+}
+
+.invoice-btn-email-lookup {
+  background: var(--gold-primary);
+  color: var(--text-on-gold);
+  border: 2px solid var(--gold-primary);
+}
+
+.invoice-btn-email-lookup:hover:not(:disabled) {
+  background: var(--gold-hover);
+  border-color: var(--gold-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(176, 141, 73, 0.35);
+}
+
+.invoice-btn-email-lookup:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.invoice-btn-lookup .spinner-icon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Dark mode fatura stilleri */
+[data-theme='dark'] .invoice-section-lookup {
+  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-tertiary) 100%);
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .invoice-section-lookup .order-section-header h3 {
+  color: var(--text-primary);
+  border-bottom-color: var(--gold-primary);
+}
+
+[data-theme='dark'] .invoice-section-lookup .invoice-description {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .invoice-btn-view-lookup {
+  background: transparent;
+  color: var(--gold-primary);
+  border-color: var(--gold-primary);
+}
+
+[data-theme='dark'] .invoice-btn-view-lookup:hover {
+  background: rgba(176, 141, 73, 0.15);
+}
+
+[data-theme='dark'] .invoice-btn-email-lookup {
+  background: var(--gold-primary);
+  color: var(--text-on-gold);
+  border-color: var(--gold-primary);
+}
+
+[data-theme='dark'] .invoice-btn-email-lookup:hover:not(:disabled) {
+  background: var(--gold-hover);
+  border-color: var(--gold-hover);
+}
+
+/* Mobil responsive */
+@media (max-width: 768px) {
+  .invoice-section-lookup {
+    padding: 1.25rem;
+  }
+
+  .invoice-section-lookup .order-section-header h3 {
+    font-size: 1.1rem;
+  }
+
+  .invoice-buttons-lookup {
+    flex-direction: column;
+  }
+
+  .invoice-btn-lookup {
+    width: 100%;
+    min-width: auto;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .invoice-section-lookup {
+    padding: 1rem;
+    margin-top: 1rem;
+    border-radius: 12px;
+  }
+
+  .invoice-section-lookup .invoice-description {
+    font-size: 0.875rem;
+  }
+
+  .invoice-btn-lookup {
+    padding: 0.7rem 1rem;
+    font-size: 0.8rem;
+    gap: 0.5rem;
+  }
+
+  .invoice-btn-lookup svg {
+    width: 16px;
+    height: 16px;
+  }
+}

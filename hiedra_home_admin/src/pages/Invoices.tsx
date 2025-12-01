@@ -771,19 +771,41 @@ function InvoicesPage({ session }: InvoicesPageProps) {
         .modal-overlay {
           position: fixed;
           inset: 0;
-          background: rgba(0, 0, 0, 0.5);
+          background: rgba(0, 0, 0, 0.6);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
           display: flex;
           align-items: center;
           justify-content: center;
           z-index: 1000;
           padding: 1rem;
+          animation: fadeIn 0.2s ease-out;
+        }
+        
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+          from { 
+            opacity: 0;
+            transform: translateY(20px) scale(0.98);
+          }
+          to { 
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
         }
         
         .modal {
           background: var(--bg-card);
-          border-radius: 16px;
+          border-radius: 20px;
           width: 100%;
-          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+          box-shadow: 
+            0 25px 50px -12px rgba(0, 0, 0, 0.4),
+            0 0 0 1px rgba(255, 255, 255, 0.1);
+          animation: slideUp 0.3s ease-out;
         }
         
         .modal--lg {
@@ -796,6 +818,7 @@ function InvoicesPage({ session }: InvoicesPageProps) {
           justify-content: space-between;
           padding: 1.25rem 1.5rem;
           border-bottom: 1px solid var(--border-color);
+          background: linear-gradient(135deg, rgba(176, 141, 73, 0.1), transparent);
         }
         
         .modal__title {
@@ -803,6 +826,11 @@ function InvoicesPage({ session }: InvoicesPageProps) {
           font-weight: 600;
           display: flex;
           align-items: center;
+          color: var(--text-primary);
+        }
+        
+        .modal__title svg {
+          color: #B08D49;
         }
         
         .modal__close {
@@ -817,8 +845,9 @@ function InvoicesPage({ session }: InvoicesPageProps) {
         }
         
         .modal__close:hover {
-          background: var(--bg-secondary);
-          color: var(--text-primary);
+          background: rgba(239, 68, 68, 0.1);
+          color: #ef4444;
+          transform: rotate(90deg);
         }
         
         .modal__body {
@@ -831,6 +860,8 @@ function InvoicesPage({ session }: InvoicesPageProps) {
           gap: 0.75rem;
           padding: 1rem 1.5rem;
           border-top: 1px solid var(--border-color);
+          background: var(--bg-secondary);
+          border-radius: 0 0 20px 20px;
         }
         
         @media (max-width: 768px) {

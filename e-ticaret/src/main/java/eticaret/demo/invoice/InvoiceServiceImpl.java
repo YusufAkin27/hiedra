@@ -20,6 +20,9 @@ import eticaret.demo.common.response.ResponseMessage;
 import eticaret.demo.order.Order;
 import eticaret.demo.order.OrderItem;
 import eticaret.demo.order.OrderItemRepository;
+import eticaret.demo.mail.EmailAttachment;
+import eticaret.demo.mail.EmailMessage;
+import eticaret.demo.mail.MailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ClassPathResource;
@@ -43,6 +46,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     private final InvoiceRepository invoiceRepository;
     private final OrderItemRepository orderItemRepository;
     private final AdresRepository adresRepository;
+    private final MailService mailService;
 
     // Firma sabit bilgileri
     private static final String COMPANY_NAME = "HIEDRA HOME COLLECTION";
@@ -242,15 +246,135 @@ public class InvoiceServiceImpl implements InvoiceService {
         return String.format("%s%06d", prefix, nextNumber);
     }
 
+    @Override
+    public ResponseMessage sendInvoiceByEmail(String orderNumber) {
+        log.info("Fatura e-posta ile gönderiliyor: {}", orderNumber);
+
+        try {
+            // Faturayı bul
+            Invoice invoice = invoiceRepository.findByOrderNumber(orderNumber)
+                    .orElseThrow(() -> new RuntimeException("Bu sipariş için fatura bulunamadı: " + orderNumber));
+
+            // PDF oluştur
+            byte[] pdfBytes = generatePdf(invoice);
+
+            // E-posta oluştur
+            String emailBody = buildInvoiceEmailBody(invoice);
+
+            EmailAttachment pdfAttachment = new EmailAttachment();
+            pdfAttachment.setName("Fatura-" + invoice.getInvoiceNumber() + ".pdf");
+            pdfAttachment.setContent(pdfBytes);
+            pdfAttachment.setContentType("application/pdf");
+
+            EmailMessage emailMessage = new EmailMessage();
+            emailMessage.setToEmail(invoice.getCustomerEmail());
+            emailMessage.setSubject("Faturanız - " + invoice.getInvoiceNumber() + " | Hiedra Home Collection");
+            emailMessage.setBody(emailBody);
+            emailMessage.setHtml(true);
+            emailMessage.setAttachments(List.of(pdfAttachment));
+
+            // E-postayı gönder
+            mailService.sendEmailDirectly(emailMessage);
+
+            log.info("Fatura e-posta ile gönderildi: {} -> {}", invoice.getInvoiceNumber(), invoice.getCustomerEmail());
+            return new DataResponseMessage<>("Fatura e-posta adresinize gönderildi.", true, null);
+        } catch (Exception e) {
+            log.error("Fatura e-posta gönderim hatası: {}", e.getMessage(), e);
+            return new ResponseMessage("Fatura gönderilemedi: " + e.getMessage(), false);
+        }
+    }
+
     /**
-     * PDF oluştur
+     * Fatura e-posta içeriği oluştur
+     */
+    private String buildInvoiceEmailBody(Invoice invoice) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
+        
+        return """
+            <!DOCTYPE html>
+            <html lang="tr">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            </head>
+            <body style="margin:0;padding:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#f4f4f4;">
+                <div style="max-width:600px;margin:0 auto;background:#ffffff;padding:40px;">
+                    <div style="text-align:center;margin-bottom:30px;">
+                        <h1 style="color:#B08D49;margin:0;font-size:24px;letter-spacing:2px;">HIEDRA</h1>
+                        <p style="color:#666;margin:5px 0 0 0;font-size:12px;">HOME COLLECTION</p>
+                    </div>
+                    
+                    <div style="border-bottom:2px solid #B08D49;margin-bottom:25px;"></div>
+                    
+                    <p style="color:#333;font-size:16px;margin-bottom:20px;">
+                        Sayın <strong>%s</strong>,
+                    </p>
+                    
+                    <p style="color:#555;font-size:14px;line-height:1.6;margin-bottom:20px;">
+                        Siparişinize ait faturanız ekte yer almaktadır.
+                    </p>
+                    
+                    <div style="background:#f9f9f9;border-radius:8px;padding:20px;margin-bottom:25px;">
+                        <table style="width:100%%;border-collapse:collapse;">
+                            <tr>
+                                <td style="padding:8px 0;color:#666;font-size:14px;">Fatura No:</td>
+                                <td style="padding:8px 0;color:#333;font-size:14px;font-weight:600;text-align:right;">%s</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:8px 0;color:#666;font-size:14px;">Sipariş No:</td>
+                                <td style="padding:8px 0;color:#333;font-size:14px;text-align:right;">%s</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:8px 0;color:#666;font-size:14px;">Fatura Tarihi:</td>
+                                <td style="padding:8px 0;color:#333;font-size:14px;text-align:right;">%s</td>
+                            </tr>
+                            <tr style="border-top:1px solid #ddd;">
+                                <td style="padding:12px 0 8px 0;color:#333;font-size:16px;font-weight:600;">Toplam Tutar:</td>
+                                <td style="padding:12px 0 8px 0;color:#B08D49;font-size:18px;font-weight:700;text-align:right;">%s</td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <p style="color:#555;font-size:14px;line-height:1.6;margin-bottom:25px;">
+                        Fatura PDF dosyasını bu e-postanın ekinde bulabilirsiniz. Herhangi bir sorunuz olursa bizimle iletişime geçebilirsiniz.
+                    </p>
+                    
+                    <div style="border-top:1px solid #eee;padding-top:25px;text-align:center;">
+                        <p style="color:#B08D49;font-weight:600;margin:0 0 10px 0;font-size:14px;">
+                            Bizi tercih ettiğiniz için teşekkür ederiz!
+                        </p>
+                        <p style="color:#888;font-size:12px;margin:0;">
+                            %s | %s
+                        </p>
+                        <p style="color:#aaa;font-size:11px;margin:10px 0 0 0;">
+                            %s
+                        </p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """.formatted(
+                invoice.getCustomerName(),
+                invoice.getInvoiceNumber(),
+                invoice.getOrderNumber(),
+                invoice.getInvoiceDate().format(formatter),
+                formatCurrency(invoice.getTotalAmount()),
+                COMPANY_PHONE,
+                COMPANY_EMAIL,
+                COMPANY_ADDRESS
+        );
+    }
+
+    /**
+     * PDF oluştur - Kompakt tek sayfa tasarım
      */
     private byte[] generatePdf(Invoice invoice) {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             PdfWriter writer = new PdfWriter(baos);
             PdfDocument pdfDoc = new PdfDocument(writer);
             Document document = new Document(pdfDoc, PageSize.A4);
-            document.setMargins(30, 30, 30, 30);
+            // Daha dar marginler
+            document.setMargins(20, 25, 20, 25);
 
             // Sipariş kalemlerini al
             List<OrderItem> orderItems = orderItemRepository.findByOrderId(invoice.getOrder().getId());
@@ -287,7 +411,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     }
 
     /**
-     * Logo ekle
+     * Logo ekle - Kompakt
      */
     private void addLogo(Document document) {
         try {
@@ -298,7 +422,7 @@ public class InvoiceServiceImpl implements InvoiceService {
                     byte[] logoBytes = is.readAllBytes();
                     ImageData imageData = ImageDataFactory.create(logoBytes);
                     Image logo = new Image(imageData);
-                    logo.setWidth(80);
+                    logo.setWidth(50);
                     logo.setHorizontalAlignment(HorizontalAlignment.CENTER);
                     document.add(logo);
                 }
@@ -309,27 +433,18 @@ public class InvoiceServiceImpl implements InvoiceService {
     }
 
     /**
-     * Başlık ekle
+     * Başlık ekle - Kompakt versiyon
      */
     private void addTitle(Document document, Invoice invoice) {
-        // Firma adı
-        Paragraph companyName = new Paragraph(COMPANY_NAME)
-                .setFontSize(18)
-                .setBold()
-                .setFontColor(GOLD_COLOR)
+        // Firma adı ve Fatura başlığı tek satırda
+        Paragraph header = new Paragraph()
+                .add(new Text(COMPANY_NAME).setBold().setFontColor(GOLD_COLOR))
+                .add(new Text(" - FATURA").setBold().setFontColor(DARK_COLOR))
+                .setFontSize(16)
                 .setTextAlignment(TextAlignment.CENTER)
-                .setMarginTop(10);
-        document.add(companyName);
-
-        // Fatura başlığı
-        Paragraph title = new Paragraph("FATURA")
-                .setFontSize(24)
-                .setBold()
-                .setFontColor(DARK_COLOR)
-                .setTextAlignment(TextAlignment.CENTER)
-                .setMarginTop(15)
+                .setMarginTop(5)
                 .setMarginBottom(5);
-        document.add(title);
+        document.add(header);
 
         // Fatura numarası ve tarihi
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
@@ -338,60 +453,57 @@ public class InvoiceServiceImpl implements InvoiceService {
                 .add(new Text(invoice.getInvoiceNumber()).setFontColor(GOLD_COLOR))
                 .add(new Text("  |  Tarih: ").setBold())
                 .add(new Text(invoice.getInvoiceDate().format(formatter)))
-                .setFontSize(11)
+                .setFontSize(9)
                 .setTextAlignment(TextAlignment.CENTER)
-                .setMarginBottom(20);
+                .setMarginBottom(10);
         document.add(invoiceInfo);
 
         // Ayırıcı çizgi
         document.add(new Paragraph("")
-                .setBorderBottom(new SolidBorder(GOLD_COLOR, 2))
-                .setMarginBottom(15));
+                .setBorderBottom(new SolidBorder(GOLD_COLOR, 1))
+                .setMarginBottom(10));
     }
 
     /**
-     * Firma ve Müşteri bilgileri ekle
+     * Firma ve Müşteri bilgileri ekle - Kompakt versiyon
      */
     private void addCompanyAndCustomerInfo(Document document, Invoice invoice) {
         // İki sütunlu tablo
         Table infoTable = new Table(UnitValue.createPercentArray(new float[]{1, 1}))
                 .setWidth(UnitValue.createPercentValue(100))
-                .setMarginBottom(20);
+                .setMarginBottom(10);
 
         // Firma bilgileri
         Cell companyCell = new Cell()
                 .setBorder(Border.NO_BORDER)
-                .setPadding(10)
+                .setPadding(6)
                 .setBackgroundColor(LIGHT_GRAY);
 
-        companyCell.add(new Paragraph("SATICI BİLGİLERİ")
+        companyCell.add(new Paragraph("SATICI")
                 .setBold()
-                .setFontSize(12)
+                .setFontSize(9)
                 .setFontColor(GOLD_COLOR)
-                .setMarginBottom(10));
-        companyCell.add(new Paragraph(invoice.getCompanyName()).setBold().setFontSize(11));
-        companyCell.add(new Paragraph(invoice.getCompanyAddress()).setFontSize(10));
-        companyCell.add(new Paragraph("Tel: " + invoice.getCompanyPhone()).setFontSize(10));
-        companyCell.add(new Paragraph("E-posta: " + invoice.getCompanyEmail()).setFontSize(10));
+                .setMarginBottom(3));
+        companyCell.add(new Paragraph(invoice.getCompanyName()).setBold().setFontSize(9));
+        companyCell.add(new Paragraph(invoice.getCompanyAddress()).setFontSize(7));
+        companyCell.add(new Paragraph("Tel: " + invoice.getCompanyPhone() + " | " + invoice.getCompanyEmail()).setFontSize(7));
 
         infoTable.addCell(companyCell);
 
         // Müşteri bilgileri
         Cell customerCell = new Cell()
                 .setBorder(Border.NO_BORDER)
-                .setPadding(10)
+                .setPadding(6)
                 .setBackgroundColor(LIGHT_GRAY);
 
-        customerCell.add(new Paragraph("ALICI BİLGİLERİ")
+        customerCell.add(new Paragraph("ALICI")
                 .setBold()
-                .setFontSize(12)
+                .setFontSize(9)
                 .setFontColor(GOLD_COLOR)
-                .setMarginBottom(10));
-        customerCell.add(new Paragraph(invoice.getCustomerName()).setBold().setFontSize(11));
-        customerCell.add(new Paragraph("TC: " + invoice.getCustomerTc()).setFontSize(10));
-        customerCell.add(new Paragraph("Tel: " + invoice.getCustomerPhone()).setFontSize(10));
-        customerCell.add(new Paragraph("E-posta: " + invoice.getCustomerEmail()).setFontSize(10));
-        customerCell.add(new Paragraph("Adres: " + invoice.getBillingAddress()).setFontSize(10));
+                .setMarginBottom(3));
+        customerCell.add(new Paragraph(invoice.getCustomerName() + " (TC: " + invoice.getCustomerTc() + ")").setBold().setFontSize(9));
+        customerCell.add(new Paragraph("Tel: " + invoice.getCustomerPhone() + " | " + invoice.getCustomerEmail()).setFontSize(7));
+        customerCell.add(new Paragraph("Adres: " + invoice.getBillingAddress()).setFontSize(7));
 
         infoTable.addCell(customerCell);
 
@@ -399,29 +511,29 @@ public class InvoiceServiceImpl implements InvoiceService {
     }
 
     /**
-     * Ürün tablosu ekle
+     * Ürün tablosu ekle - Kompakt versiyon
      */
     private void addProductTable(Document document, List<OrderItem> orderItems) {
         // Tablo başlığı
-        document.add(new Paragraph("ÜRÜN DETAYLARI")
+        document.add(new Paragraph("ÜRÜNLER")
                 .setBold()
-                .setFontSize(12)
+                .setFontSize(9)
                 .setFontColor(GOLD_COLOR)
-                .setMarginBottom(10));
+                .setMarginBottom(5));
 
-        // Ürün tablosu
-        Table productTable = new Table(UnitValue.createPercentArray(new float[]{3, 1, 1, 1, 1, 1.5f}))
+        // Ürün tablosu - daha az sütun
+        Table productTable = new Table(UnitValue.createPercentArray(new float[]{3, 1.2f, 0.8f, 1.2f}))
                 .setWidth(UnitValue.createPercentValue(100))
-                .setMarginBottom(20);
+                .setMarginBottom(10);
 
         // Başlık satırı
-        String[] headers = {"Ürün Adı", "Genişlik", "Yükseklik", "Pilaj", "Adet", "Tutar"};
+        String[] headers = {"Ürün Adı", "Ölçü", "Adet", "Tutar"};
         for (String header : headers) {
             productTable.addHeaderCell(new Cell()
-                    .add(new Paragraph(header).setBold().setFontSize(9).setFontColor(WHITE_COLOR))
+                    .add(new Paragraph(header).setBold().setFontSize(8).setFontColor(WHITE_COLOR))
                     .setBackgroundColor(GOLD_COLOR)
                     .setTextAlignment(TextAlignment.CENTER)
-                    .setPadding(8)
+                    .setPadding(4)
                     .setBorder(Border.NO_BORDER));
         }
 
@@ -430,10 +542,17 @@ public class InvoiceServiceImpl implements InvoiceService {
             OrderItem item = orderItems.get(i);
             DeviceRgb rowBg = (i % 2 == 0) ? WHITE_COLOR : LIGHT_GRAY;
 
-            productTable.addCell(createProductCell(item.getProductName(), rowBg, TextAlignment.LEFT));
-            productTable.addCell(createProductCell(String.format("%.2f m", item.getWidth()), rowBg, TextAlignment.CENTER));
-            productTable.addCell(createProductCell(String.format("%.2f m", item.getHeight()), rowBg, TextAlignment.CENTER));
-            productTable.addCell(createProductCell(item.getPleatType(), rowBg, TextAlignment.CENTER));
+            // Ürün adı ve pilaj birlikte
+            String productInfo = item.getProductName();
+            if (item.getPleatType() != null && !item.getPleatType().isEmpty()) {
+                productInfo += " (" + item.getPleatType() + ")";
+            }
+            productTable.addCell(createProductCell(productInfo, rowBg, TextAlignment.LEFT));
+            
+            // Ölçü
+            String measurement = String.format("%.0fx%.0f cm", item.getWidth() * 100, item.getHeight() * 100);
+            productTable.addCell(createProductCell(measurement, rowBg, TextAlignment.CENTER));
+            
             productTable.addCell(createProductCell(String.valueOf(item.getQuantity()), rowBg, TextAlignment.CENTER));
             productTable.addCell(createProductCell(formatCurrency(item.getTotalPrice()), rowBg, TextAlignment.RIGHT));
         }
@@ -442,25 +561,25 @@ public class InvoiceServiceImpl implements InvoiceService {
     }
 
     /**
-     * Ürün hücresi oluştur
+     * Ürün hücresi oluştur - Kompakt
      */
     private Cell createProductCell(String text, DeviceRgb bgColor, TextAlignment alignment) {
         return new Cell()
-                .add(new Paragraph(text).setFontSize(9))
+                .add(new Paragraph(text).setFontSize(8))
                 .setBackgroundColor(bgColor)
                 .setTextAlignment(alignment)
-                .setPadding(6)
+                .setPadding(4)
                 .setBorder(new SolidBorder(BORDER_COLOR, 0.5f));
     }
 
     /**
-     * Özet tablosu ekle
+     * Özet tablosu ekle - Kompakt
      */
     private void addSummaryTable(Document document, Invoice invoice) {
-        Table summaryTable = new Table(UnitValue.createPercentArray(new float[]{3, 1}))
-                .setWidth(UnitValue.createPercentValue(50))
+        Table summaryTable = new Table(UnitValue.createPercentArray(new float[]{2, 1}))
+                .setWidth(UnitValue.createPercentValue(45))
                 .setHorizontalAlignment(HorizontalAlignment.RIGHT)
-                .setMarginBottom(30);
+                .setMarginBottom(15);
 
         // Alt Toplam
         addSummaryRow(summaryTable, "Alt Toplam:", formatCurrency(invoice.getSubtotal()), false);
@@ -482,77 +601,69 @@ public class InvoiceServiceImpl implements InvoiceService {
         addSummaryRow(summaryTable, "KDV (%" + invoice.getTaxRate().intValue() + "):", formatCurrency(invoice.getTaxAmount()), false);
 
         // Genel Toplam
-        addSummaryRow(summaryTable, "GENEL TOPLAM:", formatCurrency(invoice.getTotalAmount()), true);
+        addSummaryRow(summaryTable, "TOPLAM:", formatCurrency(invoice.getTotalAmount()), true);
 
         document.add(summaryTable);
     }
 
     /**
-     * Özet satırı ekle
+     * Özet satırı ekle - Kompakt
      */
     private void addSummaryRow(Table table, String label, String value, boolean isTotal) {
         DeviceRgb bgColor = isTotal ? GOLD_COLOR : LIGHT_GRAY;
         DeviceRgb textColor = isTotal ? WHITE_COLOR : DARK_COLOR;
 
-        Paragraph labelParagraph = new Paragraph(label).setFontSize(10).setFontColor(textColor);
+        Paragraph labelParagraph = new Paragraph(label).setFontSize(8).setFontColor(textColor);
         if (isTotal) {
             labelParagraph.setBold();
         }
         table.addCell(new Cell()
                 .add(labelParagraph)
                 .setBackgroundColor(bgColor)
-                .setPadding(8)
+                .setPadding(5)
                 .setBorder(Border.NO_BORDER)
                 .setTextAlignment(TextAlignment.RIGHT));
 
         table.addCell(new Cell()
-                .add(new Paragraph(value).setBold().setFontSize(isTotal ? 12 : 10).setFontColor(textColor))
+                .add(new Paragraph(value).setBold().setFontSize(isTotal ? 10 : 8).setFontColor(textColor))
                 .setBackgroundColor(bgColor)
-                .setPadding(8)
+                .setPadding(5)
                 .setBorder(Border.NO_BORDER)
                 .setTextAlignment(TextAlignment.RIGHT));
     }
 
     /**
-     * Alt bilgi ekle
+     * Alt bilgi ekle - Kompakt
      */
     private void addFooter(Document document) {
         // Ayırıcı çizgi
         document.add(new Paragraph("")
-                .setBorderTop(new SolidBorder(BORDER_COLOR, 1))
-                .setMarginTop(20)
-                .setMarginBottom(10));
+                .setBorderTop(new SolidBorder(BORDER_COLOR, 0.5f))
+                .setMarginTop(10)
+                .setMarginBottom(5));
 
         // Teşekkür mesajı
         Paragraph thanks = new Paragraph("Bizi tercih ettiğiniz için teşekkür ederiz!")
-                .setFontSize(11)
+                .setFontSize(9)
                 .setFontColor(GOLD_COLOR)
                 .setBold()
                 .setTextAlignment(TextAlignment.CENTER)
-                .setMarginBottom(5);
+                .setMarginBottom(3);
         document.add(thanks);
 
-        // İletişim
-        Paragraph contact = new Paragraph("İletişim: " + COMPANY_PHONE + " | " + COMPANY_EMAIL)
-                .setFontSize(9)
-                .setFontColor(DARK_COLOR)
+        // İletişim ve Adres tek satır
+        Paragraph contactAddress = new Paragraph(COMPANY_PHONE + " | " + COMPANY_EMAIL + " | " + COMPANY_ADDRESS)
+                .setFontSize(7)
+                .setFontColor(new DeviceRgb(100, 100, 100))
                 .setTextAlignment(TextAlignment.CENTER)
-                .setMarginBottom(5);
-        document.add(contact);
-
-        // Adres
-        Paragraph address = new Paragraph(COMPANY_ADDRESS)
-                .setFontSize(8)
-                .setFontColor(new DeviceRgb(128, 128, 128))
-                .setTextAlignment(TextAlignment.CENTER);
-        document.add(address);
+                .setMarginBottom(3);
+        document.add(contactAddress);
 
         // Legal not
-        Paragraph legal = new Paragraph("Bu fatura elektronik ortamda oluşturulmuştur ve geçerlidir.")
-                .setFontSize(7)
+        Paragraph legal = new Paragraph("Bu fatura elektronik ortamda oluşturulmuştur.")
+                .setFontSize(6)
                 .setFontColor(new DeviceRgb(160, 160, 160))
-                .setTextAlignment(TextAlignment.CENTER)
-                .setMarginTop(10);
+                .setTextAlignment(TextAlignment.CENTER);
         document.add(legal);
     }
 

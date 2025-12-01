@@ -52,5 +52,10 @@ public interface InvoiceService {
      * Yeni fatura numarası oluştur
      */
     String generateInvoiceNumber();
+
+    /**
+     * Faturayı müşteriye e-posta ile gönder
+     */
+    ResponseMessage sendInvoiceByEmail(String orderNumber);
 }
 

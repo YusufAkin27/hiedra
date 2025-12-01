@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { FaBox, FaChartBar, FaCheckCircle, FaTable, FaCalendar, FaDollarSign, FaCog, FaExclamationTriangle, FaEdit, FaSync, FaUser, FaEnvelope, FaPrint } from 'react-icons/fa'
+import { FaBox, FaChartBar, FaCheckCircle, FaTable, FaCalendar, FaDollarSign, FaCog, FaExclamationTriangle, FaEdit, FaSync, FaUser, FaEnvelope, FaPrint, FaDownload, FaFileInvoice } from 'react-icons/fa'
 import type { AuthResponse } from '../services/authService'
 import { getAdminHeaders } from '../services/authService'
 import { useToast } from '../components/Toast'
@@ -508,6 +508,73 @@ function OrdersPage({ session, onNavigate }: OrdersPageProps) {
     printWindow.focus()
     printWindow.print()
     printWindow.close()
+  }
+
+  // Backend'den gerçek faturayı indir
+  const handleDownloadRealInvoice = async (orderNumber: string) => {
+    if (!session?.accessToken) {
+      toast.error('Oturum bulunamadı.')
+      return
+    }
+
+    try {
+      toast.info('Fatura indiriliyor...')
+      const response = await fetch(`${apiBaseUrl}/admin/invoices/order/${orderNumber}/download`, {
+        headers: getAdminHeaders(session.accessToken),
+      })
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          toast.warning('Bu sipariş için henüz fatura oluşturulmamış.')
+          return
+        }
+        throw new Error(`HTTP ${response.status}`)
+      }
+
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `fatura-${orderNumber}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+      
+      toast.success('Fatura başarıyla indirildi!')
+    } catch (err) {
+      console.error('Fatura indirme hatası:', err)
+      toast.error('Fatura indirilemedi. Lütfen tekrar deneyin.')
+    }
+  }
+
+  // Backend'den gerçek faturayı görüntüle
+  const handleViewRealInvoice = async (orderNumber: string) => {
+    if (!session?.accessToken) {
+      toast.error('Oturum bulunamadı.')
+      return
+    }
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/admin/invoices/order/${orderNumber}/view`, {
+        headers: getAdminHeaders(session.accessToken),
+      })
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          toast.warning('Bu sipariş için henüz fatura oluşturulmamış.')
+          return
+        }
+        throw new Error(`HTTP ${response.status}`)
+      }
+
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      window.open(url, '_blank')
+    } catch (err) {
+      console.error('Fatura görüntüleme hatası:', err)
+      toast.error('Fatura görüntülenemedi. Lütfen tekrar deneyin.')
+    }
   }
 
   const handleSubmitApproval = async () => {
@@ -1643,11 +1710,18 @@ function OrdersPage({ session, onNavigate }: OrdersPageProps) {
                 Kapat
               </button>
               <button
-                className="btn btn--primary"
-                onClick={handlePrintInvoice}
-                disabled={isInvoiceLoading || !!invoiceError}
+                className="btn btn--success"
+                onClick={() => handleViewRealInvoice(selectedOrder.orderNumber)}
+                title="Backend'den oluşturulan gerçek faturayı görüntüle"
               >
-                <FaPrint style={{ marginRight: '0.5rem' }} /> Yazdır
+                <FaFileInvoice style={{ marginRight: '0.5rem' }} /> Fatura Görüntüle
+              </button>
+              <button
+                className="btn btn--primary"
+                onClick={() => handleDownloadRealInvoice(selectedOrder.orderNumber)}
+                title="Backend'den oluşturulan gerçek faturayı indir"
+              >
+                <FaDownload style={{ marginRight: '0.5rem' }} /> Fatura İndir
               </button>
             </div>
           </div>

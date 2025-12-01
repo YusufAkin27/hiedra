@@ -30,6 +30,7 @@ const OrderDetail = () => {
   const [showAddressForm, setShowAddressForm] = useState(false)
   const [showCustomerForm, setShowCustomerForm] = useState(false)
   const [isUpdatingAddress, setIsUpdatingAddress] = useState(false)
+  const [isSendingInvoice, setIsSendingInvoice] = useState(false)
   const [addressForm, setAddressForm] = useState({
     fullName: '',
     phone: '',
@@ -641,6 +642,94 @@ const OrderDetail = () => {
     }
   }
 
+  // Faturayı görüntüle
+  const handleViewInvoice = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/invoices/order/${orderNumber}/view`, {
+        headers: {
+          ...(accessToken && { 'Authorization': `Bearer ${accessToken}` })
+        }
+      })
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          setError('Bu sipariş için henüz fatura oluşturulmamış.')
+          return
+        }
+        throw new Error('Fatura görüntülenemedi')
+      }
+      
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      window.open(url, '_blank')
+    } catch (err) {
+      console.error('Fatura görüntüleme hatası:', err)
+      setError('Fatura görüntülenirken bir hata oluştu.')
+    }
+  }
+
+  // Faturayı indir
+  const handleDownloadInvoice = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/invoices/order/${orderNumber}/download`, {
+        headers: {
+          ...(accessToken && { 'Authorization': `Bearer ${accessToken}` })
+        }
+      })
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          setError('Bu sipariş için henüz fatura oluşturulmamış.')
+          return
+        }
+        throw new Error('Fatura indirilemedi')
+      }
+      
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `fatura-${orderNumber}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error('Fatura indirme hatası:', err)
+      setError('Fatura indirilirken bir hata oluştu.')
+    }
+  }
+
+  // Faturayı e-posta ile gönder
+  const handleSendInvoiceEmail = async () => {
+    setIsSendingInvoice(true)
+    setError('')
+    setSuccess('')
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/invoices/order/${orderNumber}/send-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(accessToken && { 'Authorization': `Bearer ${accessToken}` })
+        }
+      })
+      
+      const data = await response.json()
+      
+      if (!response.ok || !(data.isSuccess || data.success)) {
+        throw new Error(data.message || 'Fatura gönderilemedi')
+      }
+      
+      setSuccess('Fatura e-posta adresinize gönderildi!')
+    } catch (err) {
+      console.error('Fatura e-posta hatası:', err)
+      setError(err.message || 'Fatura gönderilirken bir hata oluştu.')
+    } finally {
+      setIsSendingInvoice(false)
+    }
+  }
+
   if (!isAuthenticated) {
     return null
   }
@@ -1197,6 +1286,64 @@ const OrderDetail = () => {
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* Fatura İşlemleri */}
+            <div className="order-section invoice-section">
+              <h3>Fatura İşlemleri</h3>
+              <div className="invoice-actions-container">
+                <p className="invoice-description">
+                  Siparişinizin faturasını görüntüleyebilir, indirebilir veya e-posta adresinize gönderebilirsiniz.
+                </p>
+                <div className="invoice-buttons">
+                  <button
+                    onClick={handleViewInvoice}
+                    className="invoice-btn invoice-btn-view"
+                    type="button"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    <span>Faturayı Görüntüle</span>
+                  </button>
+                  <button
+                    onClick={handleDownloadInvoice}
+                    className="invoice-btn invoice-btn-download"
+                    type="button"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                      <polyline points="7 10 12 15 17 10"/>
+                      <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    <span>Faturayı İndir</span>
+                  </button>
+                  <button
+                    onClick={handleSendInvoiceEmail}
+                    disabled={isSendingInvoice}
+                    className="invoice-btn invoice-btn-email"
+                    type="button"
+                  >
+                    {isSendingInvoice ? (
+                      <>
+                        <svg className="spinner-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                        </svg>
+                        <span>Gönderiliyor...</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                          <polyline points="22,6 12,13 2,6"/>
+                        </svg>
+                        <span>E-posta Gönder</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* İptal/İade Bilgileri */}
