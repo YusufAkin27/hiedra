@@ -53,6 +53,8 @@ const ProductDetail = () => {
   const [modalImageSrc, setModalImageSrc] = useState(null)
   const [detailModalPosition, setDetailModalPosition] = useState(null)
   const [isImageBlurred, setIsImageBlurred] = useState(false)
+  const [isReviewImageModalOpen, setIsReviewImageModalOpen] = useState(false)
+  const [currentReviewImageIndex, setCurrentReviewImageIndex] = useState(0)
   const galleryImages = useMemo(() => {
     if (!product) return []
     const images = []
@@ -71,6 +73,76 @@ const ProductDetail = () => {
 
   const currentImage = galleryImages[activeImageIndex] || galleryImages[0] || product?.image || '/images/perde1kapak.jpg'
   const detailImage = galleryImages.length > 1 ? galleryImages[1] : null
+
+  // Tüm yorum görsellerini topla
+  const allReviewImages = useMemo(() => {
+    if (!reviews || reviews.length === 0) return []
+    const images = []
+    reviews.forEach(review => {
+      if (review.imageUrls && Array.isArray(review.imageUrls)) {
+        review.imageUrls.forEach(url => {
+          if (url) images.push(url)
+        })
+      }
+    })
+    return images
+  }, [reviews])
+
+  // Yorum görseli modal açma
+  const handleReviewImageClick = useCallback((clickedImageUrl) => {
+    const imageIndex = allReviewImages.findIndex(url => url === clickedImageUrl)
+    if (imageIndex !== -1) {
+      setCurrentReviewImageIndex(imageIndex)
+      setIsReviewImageModalOpen(true)
+      document.body.style.overflow = 'hidden'
+    }
+  }, [allReviewImages])
+
+  // Yorum görseli modal kapatma
+  const closeReviewImageModal = useCallback(() => {
+    setIsReviewImageModalOpen(false)
+    document.body.style.overflow = ''
+  }, [])
+
+  // Önceki görsel
+  const goToPreviousReviewImage = useCallback(() => {
+    setCurrentReviewImageIndex(prev => {
+      if (prev > 0) {
+        return prev - 1
+      }
+      return allReviewImages.length - 1
+    })
+  }, [allReviewImages.length])
+
+  // Sonraki görsel
+  const goToNextReviewImage = useCallback(() => {
+    setCurrentReviewImageIndex(prev => {
+      if (prev < allReviewImages.length - 1) {
+        return prev + 1
+      }
+      return 0
+    })
+  }, [allReviewImages.length])
+
+  // Klavye ile navigasyon
+  useEffect(() => {
+    if (!isReviewImageModalOpen) return
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        closeReviewImageModal()
+      } else if (e.key === 'ArrowLeft') {
+        goToPreviousReviewImage()
+      } else if (e.key === 'ArrowRight') {
+        goToNextReviewImage()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isReviewImageModalOpen, closeReviewImageModal, goToPreviousReviewImage, goToNextReviewImage])
 
   const handleDetailPreviewClick = useCallback((event, imageSrc) => {
     if (event && typeof event.stopPropagation === 'function') {
@@ -1419,6 +1491,8 @@ const ProductDetail = () => {
                             key={`${review.id}-img-${idx}`}
                             className="review-image-thumb"
                             aria-label={`Yorum görseli ${idx + 1}`}
+                            onClick={() => handleReviewImageClick(url)}
+                            style={{ cursor: 'pointer' }}
                           >
                             <LazyImage src={url} alt={`Yorum görseli ${idx + 1}`} />
                           </div>
@@ -1444,6 +1518,70 @@ const ProductDetail = () => {
             </div>
           )}
         </section>
+      )}
+
+      {/* Yorum Görseli Modal */}
+      {isReviewImageModalOpen && allReviewImages.length > 0 && (
+        <div 
+          className="review-image-modal-overlay"
+          onClick={closeReviewImageModal}
+        >
+          <button
+            className="review-image-modal-close"
+            onClick={closeReviewImageModal}
+            aria-label="Kapat"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+          
+          {allReviewImages.length > 1 && (
+            <>
+              <button
+                className="review-image-modal-nav review-image-modal-prev"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  goToPreviousReviewImage()
+                }}
+                aria-label="Önceki görsel"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+              </button>
+              <button
+                className="review-image-modal-nav review-image-modal-next"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  goToNextReviewImage()
+                }}
+                aria-label="Sonraki görsel"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </button>
+            </>
+          )}
+
+          <div 
+            className="review-image-modal-content"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <LazyImage
+              src={allReviewImages[currentReviewImageIndex]}
+              alt={`Yorum görseli ${currentReviewImageIndex + 1} / ${allReviewImages.length}`}
+              className="review-image-modal-image"
+            />
+            {allReviewImages.length > 1 && (
+              <div className="review-image-modal-counter">
+                {currentReviewImageIndex + 1} / {allReviewImages.length}
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   )
