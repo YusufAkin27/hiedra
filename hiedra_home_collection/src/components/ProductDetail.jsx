@@ -2,9 +2,11 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
+import { useToast } from './Toast'
 import LazyImage from './LazyImage'
 import SEO from './SEO'
 import './ProductDetail.css'
+import './CategoriesShowcase.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
 
@@ -13,6 +15,7 @@ const ProductDetail = () => {
   const navigate = useNavigate()
   const { refreshCart } = useCart()
   const { accessToken } = useAuth()
+  const toast = useToast()
   const location = useLocation()
   const reviewSectionRef = useRef(null)
   const loadMoreReviewsRef = useRef(null)
@@ -55,6 +58,12 @@ const ProductDetail = () => {
   const [isImageBlurred, setIsImageBlurred] = useState(false)
   const [isReviewImageModalOpen, setIsReviewImageModalOpen] = useState(false)
   const [currentReviewImageIndex, setCurrentReviewImageIndex] = useState(0)
+  const [isPricingModalOpen, setIsPricingModalOpen] = useState(false)
+  const [modalMeasurements, setModalMeasurements] = useState({ en: '', boy: '', pileSikligi: '1x1' })
+  const [modalCalculatedPrice, setModalCalculatedPrice] = useState(0)
+  const [isModalCalculatingPrice, setIsModalCalculatingPrice] = useState(false)
+  const [isModalDropdownOpen, setIsModalDropdownOpen] = useState(false)
+  const [modalErrors, setModalErrors] = useState({ en: '', boy: '' })
   const galleryImages = useMemo(() => {
     if (!product) return []
     const images = []
@@ -188,6 +197,222 @@ const ProductDetail = () => {
     { value: '1x2', label: '1x2'  },
     { value: '1x3', label: '1x3' }
   ]
+
+  // Modal aç/kapat
+  const openPricingModal = () => {
+    setModalMeasurements({ en: '', boy: '', pileSikligi: '1x1' })
+    setModalCalculatedPrice(0)
+    setModalErrors({ en: '', boy: '' })
+    setIsPricingModalOpen(true)
+  }
+
+  const closePricingModal = () => {
+    setIsPricingModalOpen(false)
+    setModalMeasurements({ en: '', boy: '', pileSikligi: '1x1' })
+    setModalCalculatedPrice(0)
+    setModalErrors({ en: '', boy: '' })
+  }
+
+  // Modal ölçü değişikliği
+  const handleModalMeasurementChange = (field, value) => {
+    setModalMeasurements(prev => ({
+      ...prev,
+      [field]: value
+    }))
+    
+    // Hata temizle
+    setModalErrors(prev => {
+      const newErrors = { ...prev }
+      delete newErrors[field]
+      return newErrors
+    })
+  }
+
+  // Modal fiyat hesaplama
+  const calculateModalPrice = useCallback(async () => {
+    const { en, boy, pileSikligi } = modalMeasurements
+    if (!en || !boy || !pileSikligi || !product || !product.id) {
+      setModalCalculatedPrice(0)
+      return
+    }
+    
+    const enNum = parseFloat(en)
+    const boyNum = parseFloat(boy)
+    
+    if (isNaN(enNum) || isNaN(boyNum)) {
+      setModalCalculatedPrice(0)
+      return
+    }
+
+    setIsModalCalculatingPrice(true)
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/products/${product.id}/calculate-price`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          width: enNum,
+          height: boyNum,
+          pleatType: pileSikligi,
+          price: product.price
+        })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.isSuccess || data.success) {
+          const calculatedPriceValue = parseFloat(data.data.calculatedPrice)
+          setModalCalculatedPrice(isNaN(calculatedPriceValue) ? 0 : calculatedPriceValue)
+        } else {
+          // Fallback hesaplama
+          let pileMultiplier = 1
+          try {
+            const parts = pileSikligi.split('x')
+            if (parts.length === 2) {
+              pileMultiplier = parseFloat(parts[1])
+              if (isNaN(pileMultiplier)) pileMultiplier = 1
+            }
+          } catch (e) {
+            pileMultiplier = 1
+          }
+          const enMetre = enNum / 100.0
+          const price = typeof product.price === 'number' ? product.price : parseFloat(product.price) || 0
+          setModalCalculatedPrice(Math.round(price * enMetre * pileMultiplier * 100) / 100)
+        }
+      } else {
+        // Fallback hesaplama
+        let pileMultiplier = 1
+        try {
+          const parts = pileSikligi.split('x')
+          if (parts.length === 2) {
+            pileMultiplier = parseFloat(parts[1])
+            if (isNaN(pileMultiplier)) pileMultiplier = 1
+          }
+        } catch (e) {
+          pileMultiplier = 1
+        }
+        const enMetre = enNum / 100.0
+        const price = typeof product.price === 'number' ? product.price : parseFloat(product.price) || 0
+        setModalCalculatedPrice(Math.round(price * enMetre * pileMultiplier * 100) / 100)
+      }
+    } catch (error) {
+      console.error('Fiyat hesaplama hatası:', error)
+      // Fallback hesaplama
+      let pileMultiplier = 1
+      try {
+        const parts = pileSikligi.split('x')
+        if (parts.length === 2) {
+          pileMultiplier = parseFloat(parts[1])
+          if (isNaN(pileMultiplier)) pileMultiplier = 1
+        }
+      } catch (e) {
+        pileMultiplier = 1
+      }
+      const enMetre = enNum / 100.0
+      const price = typeof product.price === 'number' ? product.price : parseFloat(product.price) || 0
+      setModalCalculatedPrice(Math.round(price * enMetre * pileMultiplier * 100) / 100)
+    } finally {
+      setIsModalCalculatingPrice(false)
+    }
+  }, [modalMeasurements, product])
+
+  // Modal fiyat hesaplama useEffect
+  useEffect(() => {
+    if (modalMeasurements.en && modalMeasurements.boy && modalMeasurements.pileSikligi && product?.id) {
+      const timeoutId = setTimeout(() => {
+        calculateModalPrice()
+      }, 500)
+      return () => clearTimeout(timeoutId)
+    } else {
+      setModalCalculatedPrice(0)
+    }
+  }, [modalMeasurements, product?.id, calculateModalPrice])
+
+  // Modal'dan sepete ekle
+  const handleModalAddToCart = async () => {
+    const { en, boy, pileSikligi } = modalMeasurements
+    
+    if (!en || !boy) {
+      setModalErrors({ en: 'Lütfen genişlik giriniz.', boy: 'Lütfen yükseklik giriniz.' })
+      toast.warning('Lütfen en ve boy değerlerini girin!')
+      return
+    }
+    
+    const enNum = parseFloat(en)
+    const boyNum = parseFloat(boy)
+    
+    if (isNaN(enNum) || isNaN(boyNum)) {
+      setModalErrors({ en: 'Geçerli sayı giriniz.', boy: 'Geçerli sayı giriniz.' })
+      toast.warning('Lütfen geçerli sayısal değerler giriniz.')
+      return
+    }
+    
+    if (enNum < 50 || enNum > 1000) {
+      setModalErrors(prev => ({ ...prev, en: 'Genişlik 50-1000 cm arasında olmalıdır.' }))
+      toast.warning('Genişlik değeri 50 ile 1000 cm arasında olmalıdır.')
+      return
+    }
+    
+    if (boyNum < 30 || boyNum > 270) {
+      setModalErrors(prev => ({ ...prev, boy: 'Yükseklik 30-270 cm arasında olmalıdır.' }))
+      toast.warning('Yükseklik değeri 30 ile 270 cm arasında olmalıdır.')
+      return
+    }
+    
+    if (!product || !product.id) {
+      toast.error('Ürün bilgisi bulunamadı.')
+      return
+    }
+
+    setIsAddingToCart(true)
+
+    try {
+      let guestUserId = null
+      if (!accessToken) {
+        guestUserId = localStorage.getItem('guestUserId')
+        if (!guestUserId) {
+          guestUserId = 'guest_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+          localStorage.setItem('guestUserId', guestUserId)
+        }
+      }
+
+      const response = await fetch(`${API_BASE_URL}/cart/items${guestUserId ? `?guestUserId=${guestUserId}` : ''}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(accessToken && { 'Authorization': `Bearer ${accessToken}` })
+        },
+        body: JSON.stringify({
+          productId: product.id,
+          quantity: 1,
+          width: enNum,
+          height: boyNum,
+          pleatType: pileSikligi
+        })
+      })
+
+      const data = await response.json()
+
+      if (response.ok && (data.isSuccess || data.success)) {
+        if (refreshCart) {
+          await refreshCart()
+        }
+        toast.success('Ürün sepete başarıyla eklendi!')
+        closePricingModal()
+      } else {
+        throw new Error(data.message || 'Ürün sepete eklenemedi')
+      }
+    } catch (error) {
+      console.error('Sepete ekleme hatası:', error)
+      const errorMessage = error.message || 'Sepete eklenirken hata oluştu.'
+      setModalErrors(prev => ({ ...prev, general: errorMessage }))
+      toast.error(errorMessage)
+    } finally {
+      setIsAddingToCart(false)
+    }
+  }
 
   // Renk hex kodunu parse et
   const getColorHex = (colorValue) => {
@@ -845,6 +1070,196 @@ const ProductDetail = () => {
                   )}
                 </div>
               </div>
+              
+              {/* Sepete Ekle Butonu - Fotoğrafın Altında */}
+              <div className="product-actions-home">
+                <button
+                  className="open-pricing-modal-btn-home"
+                  onClick={openPricingModal}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="9" cy="21" r="1" />
+                    <circle cx="20" cy="21" r="1" />
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                  </svg>
+                  Sepete Ekle
+                </button>
+              </div>
+              
+              {/* Fiyatlandırma Modal */}
+              {isPricingModalOpen && product && (
+                  <div 
+                    className="pricing-modal-overlay-home"
+                    onClick={closePricingModal}
+                  >
+                    <div 
+                      className="pricing-modal-content-home"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button 
+                        className="pricing-modal-close-home"
+                        onClick={closePricingModal}
+                        aria-label="Kapat"
+                      >
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <line x1="18" y1="6" x2="6" y2="18" />
+                          <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                      </button>
+                      
+                      <div className="pricing-modal-header-home">
+                        <h3 className="pricing-modal-title-home">Özel Fiyatlandırma</h3>
+                        <p className="pricing-modal-subtitle-home">{product.name}</p>
+                      </div>
+                      
+                      <div className="pricing-modal-form-home">
+                        <div className="measurement-inputs-home">
+                          <div className="measurement-input-group-home">
+                            <label htmlFor="modal-en">
+                              Genişlik (cm) <span className="required">*</span>
+                              <span className="form-hint">Min: 50 cm, Max: 1000 cm</span>
+                            </label>
+                            <input
+                              id="modal-en"
+                              type="number"
+                              min="50"
+                              max="1000"
+                              step="0.1"
+                              placeholder="Örn: 200"
+                              value={modalMeasurements.en || ''}
+                              onChange={(e) => handleModalMeasurementChange('en', e.target.value)}
+                              className={`measurement-input-home ${modalErrors.en ? 'input-error' : ''}`}
+                              required
+                            />
+                            {modalErrors.en && (
+                              <span className="error-message-home">{modalErrors.en}</span>
+                            )}
+                          </div>
+                          <div className="measurement-input-group-home">
+                            <label htmlFor="modal-boy">
+                              Yükseklik (cm) <span className="required">*</span>
+                              <span className="form-hint">Min: 30 cm, Max: 270 cm</span>
+                            </label>
+                            <input
+                              id="modal-boy"
+                              type="number"
+                              min="30"
+                              max="270"
+                              step="0.1"
+                              placeholder="Örn: 250"
+                              value={modalMeasurements.boy || ''}
+                              onChange={(e) => handleModalMeasurementChange('boy', e.target.value)}
+                              className={`measurement-input-home ${modalErrors.boy ? 'input-error' : ''}`}
+                              required
+                            />
+                            {modalErrors.boy && (
+                              <span className="error-message-home">{modalErrors.boy}</span>
+                            )}
+                          </div>
+                          <div className="measurement-input-group-home">
+                            <label htmlFor="modal-pile">
+                              Pile Sıklığı <span className="required">*</span>
+                            </label>
+                            <div className="custom-dropdown-home">
+                              <button
+                                type="button"
+                                className="dropdown-trigger-home"
+                                onClick={() => setIsModalDropdownOpen(!isModalDropdownOpen)}
+                                onBlur={() => setTimeout(() => setIsModalDropdownOpen(false), 200)}
+                              >
+                                <span className="dropdown-selected-home">
+                                  {pileOptions.find(opt => opt.value === (modalMeasurements.pileSikligi || '1x1'))?.label || pileOptions[0].label}
+                                </span>
+                                <svg 
+                                  className={`dropdown-arrow-home ${isModalDropdownOpen ? 'open' : ''}`}
+                                  width="20" 
+                                  height="20" 
+                                  viewBox="0 0 24 24" 
+                                  fill="none" 
+                                  stroke="currentColor" 
+                                  strokeWidth="2"
+                                >
+                                  <polyline points="6 9 12 15 18 9" />
+                                </svg>
+                              </button>
+                              {isModalDropdownOpen && (
+                                <div className="dropdown-menu-home">
+                                  {pileOptions.map(option => (
+                                    <button
+                                      key={option.value}
+                                      type="button"
+                                      className="dropdown-option-home"
+                                      onClick={() => {
+                                        handleModalMeasurementChange('pileSikligi', option.value)
+                                        setIsModalDropdownOpen(false)
+                                      }}
+                                    >
+                                      {option.label}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {isModalCalculatingPrice && (
+                          <div className="price-calculating-home">
+                            <span>Fiyat hesaplanıyor...</span>
+                          </div>
+                        )}
+                        
+                        {modalCalculatedPrice > 0 && (
+                          <div className="calculated-price-section-home">
+                            <div className="price-breakdown-home">
+                              <span>Toplam Fiyat:</span>
+                              <span className="price-value-home">{modalCalculatedPrice.toFixed(2)} ₺</span>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {modalErrors.general && (
+                          <div className="error-message-home" style={{ marginTop: '1rem' }}>
+                            {modalErrors.general}
+                          </div>
+                        )}
+                        
+                        <button
+                          className="add-to-cart-btn-home"
+                          onClick={handleModalAddToCart}
+                          disabled={
+                            !modalMeasurements.en || 
+                            !modalMeasurements.boy || 
+                            !!modalErrors.en ||
+                            !!modalErrors.boy ||
+                            isAddingToCart
+                          }
+                        >
+                          {isAddingToCart ? (
+                            <>
+                              <svg className="spinner" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{
+                                animation: 'spin 1s linear infinite',
+                                marginRight: '0.5rem'
+                              }}>
+                                <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                              </svg>
+                              Ekleniyor...
+                            </>
+                          ) : (
+                            <>
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <circle cx="9" cy="21" r="1" />
+                                <circle cx="20" cy="21" r="1" />
+                                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                              </svg>
+                              Sepete Ekle
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
             </div>
             
             {/* Ürün Açıklaması - Fotoğrafların Altında */}
@@ -1072,231 +1487,6 @@ const ProductDetail = () => {
                 <span>Uygun Fiyat</span>
               </div>
             </div>
-
-          {/* Fiyatlandırma Formu */}
-          <div className="pricing-form-wrapper">
-            <button
-              type="button"
-              className="pricing-form-toggle"
-              onClick={() => setIsFormOpen(!isFormOpen)}
-            >
-              <h2 className="form-title">Özel Fiyatlandırma</h2>
-              <svg 
-                className={`form-toggle-arrow ${isFormOpen ? 'open' : ''}`}
-                width="24" 
-                height="24" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth="2"
-              >
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-            </button>
-            
-            <form 
-              className={`pricing-form ${isFormOpen ? 'open' : ''}`}
-              onSubmit={handleAddToCart}
-            >
-              <div className="form-section">
-              
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="en">
-                    Genişlik (cm) <span className="required">*</span>
-                    <span className="form-hint">Min: 50 cm, Max: 1000 cm</span>
-                  </label>
-                  <input
-                    type="number"
-                    id="en"
-                    value={en}
-                    onChange={(e) => {
-                      const value = e.target.value
-                      setEn(value)
-                    }}
-                    min="50"
-                    max="1000"
-                    step="0.1"
-                    placeholder="Örn: 200"
-                    className={formErrors.en ? 'input-error' : ''}
-                    required
-                  />
-                  {formErrors.en && (
-                    <span className="error-message">{formErrors.en}</span>
-                  )}
-                </div>
-                
-                <div className="form-group">
-                  <label htmlFor="boy">
-                    Yükseklik (cm) <span className="required">*</span>
-                    <span className="form-hint">Min: 30 cm, Max: 270 cm</span>
-                  </label>
-                  <input
-                    type="number"
-                    id="boy"
-                    value={boy}
-                    onChange={(e) => {
-                      const value = e.target.value
-                      setBoy(value)
-                    }}
-                    min="30"
-                    max="270"
-                    step="0.1"
-                    placeholder="Örn: 250"
-                    className={formErrors.boy ? 'input-error' : ''}
-                    required
-                  />
-                  {formErrors.boy && (
-                    <span className="error-message">{formErrors.boy}</span>
-                  )}
-                </div>
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="pileSikligi">
-                  Pile Sıklığı <span className="required">*</span>
-                </label>
-                <div className="custom-dropdown">
-                  <button
-                    type="button"
-                    className="dropdown-trigger"
-                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    onBlur={() => setTimeout(() => setIsDropdownOpen(false), 200)}
-                  >
-                    <span className="dropdown-selected">
-                      {pileOptions.find(opt => opt.value === pileSikligi)?.label}
-                    </span>
-                    <svg 
-                      className={`dropdown-arrow ${isDropdownOpen ? 'open' : ''}`}
-                      width="20" 
-                      height="20" 
-                      viewBox="0 0 24 24" 
-                      fill="none" 
-                      stroke="currentColor" 
-                      strokeWidth="2.5"
-                    >
-                      <polyline points="6 9 12 15 18 9" />
-                    </svg>
-                  </button>
-                  {isDropdownOpen && (
-                    <div className="dropdown-menu">
-                      {pileOptions.map((option) => (
-                        <button
-                          key={option.value}
-                          type="button"
-                          className={`dropdown-option ${pileSikligi === option.value ? 'selected' : ''}`}
-                          onClick={() => {
-                            setPileSikligi(option.value)
-                            setIsDropdownOpen(false)
-                          }}
-                        >
-                          <span className="option-label">{option.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <p className="form-info">
-                  Pile sıklığı fiyatlandırmayı etkiler: 1x1 (x1), 1x2 (x2), 1x3 (x3)
-                </p>
-              </div>
-              
-              {calculatedPrice > 0 && (
-                <div className="calculated-price-section">
-                  <div className="price-breakdown">
-                    <div className="breakdown-item">
-                      <span>Metre Fiyatı:</span>
-                      <span>{product.price} ₺</span>
-                    </div>
-                    <div className="breakdown-item">
-                      <span>En:</span>
-                      <span>{en} cm ({parseFloat(en) / 100} m)</span>
-                    </div>
-                    <div className="breakdown-item">
-                      <span>Pile Çarpanı:</span>
-                      <span>{pileSikligi}</span>
-                    </div>
-                    <div className="breakdown-item total">
-                      <span>Toplam Fiyat:</span>
-                      <span className="total-price">
-                        {isCalculatingPrice ? (
-                          <>
-                            <svg className="spinner" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{
-                              animation: 'spin 1s linear infinite',
-                              display: 'inline-block',
-                              marginRight: '0.5rem',
-                              verticalAlign: 'middle'
-                            }}>
-                              <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                            </svg>
-                            Hesaplanıyor...
-                          </>
-                        ) : (
-                          `${calculatedPrice.toFixed(2)} ₺`
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            <div className="quantity-section">
-              <label>Adet:</label>
-              <div className="quantity-controls">
-                <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))}>-</button>
-                <span>{quantity}</span>
-                <button type="button" onClick={() => setQuantity(quantity + 1)}>+</button>
-              </div>
-            </div>
-
-            {addToCartError && (
-              <div className="error-message" style={{
-                padding: '1rem',
-                backgroundColor: '#fee',
-                color: '#c33',
-                borderRadius: '8px',
-                marginBottom: '1rem',
-                border: '1px solid #fcc'
-              }}>
-                {addToCartError}
-              </div>
-            )}
-            
-            {addToCartSuccess && (
-              <div className="success-message" style={{
-                padding: '1rem',
-                backgroundColor: '#efe',
-                color: '#3c3',
-                borderRadius: '8px',
-                marginBottom: '1rem',
-                border: '1px solid #cfc'
-              }}>
-                ✓ Ürün sepete başarıyla eklendi!
-              </div>
-            )}
-
-            <button 
-              type="submit" 
-              className="add-to-cart-btn" 
-              disabled={!en || !boy || calculatedPrice === 0 || isAddingToCart || !!formErrors.en || !!formErrors.boy}
-            >
-              {isAddingToCart ? (
-                <>
-                  <svg className="spinner" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{
-                    animation: 'spin 1s linear infinite',
-                    marginRight: '0.5rem'
-                  }}>
-                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                  </svg>
-                  Ekleniyor...
-                </>
-              ) : (
-                'Sepete Ekle'
-              )}
-            </button>
-          </form>
-          </div>
         </article>
       </div>
       {isDetailModalOpen && modalImageSrc && (
@@ -1381,7 +1571,6 @@ const ProductDetail = () => {
         >
           <div className="reviews-header">
             <h2 className="reviews-title">Ürün Yorumları</h2>
-            <p className="reviews-subtitle">Gerçek müşteri deneyimleri ve puanlamalar</p>
           </div>
             <div className="reviews-summary-card">
               <div className="reviews-score">
@@ -1411,9 +1600,7 @@ const ProductDetail = () => {
               {imageReviewCount > 0 && (
                 <span className="reviews-image-count">{imageReviewCount} fotoğraflı yorum</span>
               )}
-              <button type="button" className="reviews-anchor-btn secondary" onClick={handleScrollToReviews}>
-                Başa Dön
-              </button>
+            
             </div>
           </div>
             <div className="reviews-summary-extras">
@@ -1507,7 +1694,7 @@ const ProductDetail = () => {
                   <span>Daha fazla yorum yükleniyor...</span>
                 )}
                 {!reviewPageMeta.hasNext && reviews.length > 0 && (
-                  <span>Tüm yorumlar yüklendi.</span>
+                  <span></span>
                 )}
               </div>
             </div>
