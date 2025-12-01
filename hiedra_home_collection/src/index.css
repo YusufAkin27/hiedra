@@ -493,7 +493,7 @@ h1, h2, h3, h4, h5, h6 {
   font-family: 'Playfair Display', serif;
   font-weight: 700;
   line-height: 1.2;
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -551,7 +551,7 @@ p {
   font-family: 'Montserrat', sans-serif;
   font-size: 1rem;
   line-height: 1.6;
-  color: var(--text-on-dark);
+  color: var(--text-secondary);
   margin: 0;
 }
 
@@ -566,13 +566,13 @@ small, .text-small {
 /* Links */
 a {
   font-family: 'Montserrat', sans-serif;
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   text-decoration: none;
   transition: color 0.3s ease;
 }
 
 a:hover {
-  color: var(--gold-primary);
+  color: var(--text-tertiary);
 }
 
 /* Buttons - Premium Gold Theme */
@@ -721,5 +721,112 @@ button.btn-secondary:active {
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+/* ===========================================
+   DARK MODE GLOBAL STİLLERİ
+   =========================================== */
+
+/* Dark mode için container ve card stilleri */
+[data-theme='dark'] .container,
+[data-theme='dark'] .card,
+[data-theme='dark'] .box,
+[data-theme='dark'] .panel,
+[data-theme='dark'] .wrapper,
+[data-theme='dark'] .content,
+[data-theme='dark'] .section,
+[data-theme='dark'] .modal-content,
+[data-theme='dark'] .dropdown,
+[data-theme='dark'] .menu {
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+}
+
+/* Dark mode için input stilleri */
+[data-theme='dark'] input,
+[data-theme='dark'] textarea,
+[data-theme='dark'] select {
+  background-color: var(--bg-input);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] input::placeholder,
+[data-theme='dark'] textarea::placeholder {
+  color: var(--text-muted);
+}
+
+/* Dark mode için tablo stilleri */
+[data-theme='dark'] table,
+[data-theme='dark'] th,
+[data-theme='dark'] td {
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] th {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] td {
+  color: var(--text-secondary);
+}
+
+/* Dark mode için border stilleri */
+[data-theme='dark'] hr {
+  border-color: var(--border-color);
+}
+
+/* Dark mode smooth transition */
+*, *::before, *::after {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Dark mode için sabit renkli elementleri override et */
+[data-theme='dark'] [style*="background: #fff"],
+[data-theme='dark'] [style*="background: #ffffff"],
+[data-theme='dark'] [style*="background: white"],
+[data-theme='dark'] [style*="background-color: #fff"],
+[data-theme='dark'] [style*="background-color: #ffffff"],
+[data-theme='dark'] [style*="background-color: white"] {
+  background-color: var(--bg-card) !important;
+}
+
+[data-theme='dark'] [style*="color: #000"],
+[data-theme='dark'] [style*="color: #1a1a1a"],
+[data-theme='dark'] [style*="color: black"] {
+  color: var(--text-primary) !important;
+}
+
+/* Dark mode butonlar - beyaz arka plan, siyah metin */
+[data-theme='dark'] .btn-primary,
+[data-theme='dark'] button.btn-primary,
+[data-theme='dark'] .add-to-cart-btn,
+[data-theme='dark'] .add-to-cart-btn-home,
+[data-theme='dark'] .open-pricing-modal-btn-home {
+  background-color: #FFFFFF !important;
+  color: #000000 !important;
+  border-color: #FFFFFF !important;
+}
+
+[data-theme='dark'] .btn-primary:hover,
+[data-theme='dark'] button.btn-primary:hover,
+[data-theme='dark'] .add-to-cart-btn:hover,
+[data-theme='dark'] .add-to-cart-btn-home:hover,
+[data-theme='dark'] .open-pricing-modal-btn-home:hover {
+  background-color: #E0E0E0 !important;
+  color: #000000 !important;
+}
+
+[data-theme='dark'] .btn-secondary,
+[data-theme='dark'] button.btn-secondary {
+  background-color: transparent !important;
+  color: #FFFFFF !important;
+  border-color: #FFFFFF !important;
+}
+
+[data-theme='dark'] .btn-secondary:hover,
+[data-theme='dark'] button.btn-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
 }
 

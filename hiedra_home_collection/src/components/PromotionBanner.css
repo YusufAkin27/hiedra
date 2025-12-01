@@ -217,3 +217,26 @@ body.menu-open .promotion-banner-wrapper {
   animation-play-state: paused;
 }
 
+/* ===========================================
+   DARK MODE
+   =========================================== */
+[data-theme='dark'] .promotion-banner-wrapper {
+  background: var(--bg-secondary) !important;
+  border-top-color: var(--border-color);
+  border-bottom-color: var(--border-color);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3),
+              inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+[data-theme='dark'] .promotion-text {
+  color: var(--text-primary) !important;
+}
+
+[data-theme='dark'] .promotion-item:hover .promotion-text {
+  color: #E0E0E0 !important;
+}
+
+[data-theme='dark'] .promotion-item::after {
+  background: var(--border-color);
+}
+
