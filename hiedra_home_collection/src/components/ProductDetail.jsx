@@ -16,6 +16,8 @@ const ProductDetail = () => {
   const location = useLocation()
   const reviewSectionRef = useRef(null)
   const loadMoreReviewsRef = useRef(null)
+  const detailWrapperRef = useRef(null)
+  const mainImageWrapperRef = useRef(null)
   const [quantity, setQuantity] = useState(1)
   const [product, setProduct] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -49,6 +51,8 @@ const ProductDetail = () => {
   const [reviewError, setReviewError] = useState('')
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
   const [modalImageSrc, setModalImageSrc] = useState(null)
+  const [detailModalPosition, setDetailModalPosition] = useState(null)
+  const [isImageBlurred, setIsImageBlurred] = useState(false)
   const galleryImages = useMemo(() => {
     if (!product) return []
     const images = []
@@ -68,26 +72,43 @@ const ProductDetail = () => {
   const currentImage = galleryImages[activeImageIndex] || galleryImages[0] || product?.image || '/images/perde1kapak.jpg'
   const detailImage = galleryImages.length > 1 ? galleryImages[1] : null
 
-  useEffect(() => {
-    if (isDetailModalOpen) {
-      document.body.style.overflow = 'hidden'
+  const handleDetailPreviewClick = useCallback((event, imageSrc) => {
+    if (event && typeof event.stopPropagation === 'function') {
+      event.stopPropagation()
+    }
+    const imageWrapper = mainImageWrapperRef.current
+    const wrapper = detailWrapperRef.current
+    
+    if (typeof window === 'undefined') {
+      setDetailModalPosition(null)
+    } else if (imageWrapper && wrapper) {
+      const imageRect = imageWrapper.getBoundingClientRect()
+      const wrapperRect = wrapper.getBoundingClientRect()
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0
+      const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft || 0
+      const wrapperTop = wrapperRect.top + scrollTop
+      const wrapperLeft = wrapperRect.left + scrollLeft
+      
+      setDetailModalPosition({
+        top: imageRect.top + scrollTop - wrapperTop + (imageRect.height * 0.075),
+        left: imageRect.left + scrollLeft - wrapperLeft + (imageRect.width * 0.075),
+        width: imageRect.width * 0.85,
+        height: imageRect.height * 0.85
+      })
     } else {
-      document.body.style.overflow = ''
+      setDetailModalPosition(null)
     }
-    return () => {
-      document.body.style.overflow = ''
-    }
-  }, [isDetailModalOpen])
-
-  const openDetailModal = useCallback((imageSrc) => {
-    if (!imageSrc) return
-    setModalImageSrc(imageSrc)
+    
+    setModalImageSrc(imageSrc || detailImage || currentImage)
     setIsDetailModalOpen(true)
-  }, [])
+    setIsImageBlurred(true)
+  }, [currentImage, detailImage])
 
   const closeDetailModal = useCallback(() => {
     setIsDetailModalOpen(false)
     setModalImageSrc(null)
+    setDetailModalPosition(null)
+    setIsImageBlurred(false)
   }, [])
 
   const pileOptions = [
@@ -707,7 +728,7 @@ const ProductDetail = () => {
         />
       )}
       {product && (
-        <div className="product-detail-wrapper">
+        <div className="product-detail-wrapper" ref={detailWrapperRef}>
           {/* Kategori Adı - Sayfanın En Üstü */}
           <div className="product-category-top">
             <span className="product-category-top-text">{product.category || 'Genel'}</span>
@@ -721,8 +742,11 @@ const ProductDetail = () => {
         <div className="product-detail-content">
           <section className="product-detail-images">
             <div className="product-image-section-home">
-              <div className="product-image-wrapper">
-                <div className="main-product-image-wrapper-home fade-in">
+                  <div className="product-image-wrapper">
+                <div 
+                  className={`main-product-image-wrapper-home fade-in ${isImageBlurred ? 'detail-modal-blurred' : ''}`}
+                  ref={mainImageWrapperRef}
+                >
                   <LazyImage
                     src={currentImage || ''}
                     alt={`${product.name} - ${product.category} perde modeli - Görsel ${activeImageIndex + 1}`}
@@ -733,19 +757,19 @@ const ProductDetail = () => {
                     width={800}
                     height={800}
                   />
+                  {/* Detay fotoğraf önizleme */}
                   {detailImage && (
-                    <button
-                      type="button"
-                      className="product-image-thumb"
-                      onClick={() => openDetailModal(detailImage)}
-                      aria-label="Detay fotoğrafını görüntüle"
+                    <div 
+                      className="detail-image-preview-home"
+                      onClick={(e) => handleDetailPreviewClick(e, detailImage)}
+                      title="Detay fotoğrafını görüntüle"
                     >
                       <LazyImage
                         src={detailImage}
                         alt={`${product.name} detay fotoğrafı`}
-                        className="product-image-thumb-img"
+                        className="detail-image-preview-img-home"
                       />
-                    </button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -753,8 +777,9 @@ const ProductDetail = () => {
             
             {/* Ürün Açıklaması - Fotoğrafların Altında */}
             {product.description && (
-              <div className="product-description-section">
-                <p className="product-description">
+              <div className="product-description-section-detail">
+                <h3 className="product-description-title">Ürün Açıklaması</h3>
+                <p className="product-description-text">
                   {product.description}
                 </p>
               </div>
@@ -764,57 +789,54 @@ const ProductDetail = () => {
             {(product.mountingType || product.material || product.lightTransmittance || 
               product.pieceCount || product.color || product.usageArea || product.pleatType || 
               (product.width && product.height)) && (
-              <div className="product-specifications-below-images">
-                <h3 className="specifications-title-below">
-                  <span className="spec-category-name">{product.category || 'Genel'}</span>
-                  <span className="spec-title-text">Ürün Özellikleri</span>
-                </h3>
-                <div className="specifications-grid-below">
+              <div className="product-specifications-detail">
+                <h3 className="specifications-title-detail">Ürün Özellikleri</h3>
+                <div className="specifications-grid-detail">
                   {product.mountingType && (
-                    <div className="spec-item-below">
-                      <div className="spec-icon-wrapper">
+                    <div className="spec-item-detail">
+                      <div className="spec-icon-wrapper-detail">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                           <polyline points="9 22 9 12 15 12 15 22" />
                         </svg>
                       </div>
-                      <div className="spec-content-below">
-                        <span className="spec-label-below">Takma Şekli</span>
-                        <span className="spec-value-below">{product.mountingType}</span>
+                      <div className="spec-content-detail">
+                        <span className="spec-label-detail">Takma Şekli</span>
+                        <span className="spec-value-detail">{product.mountingType}</span>
                       </div>
                     </div>
                   )}
                   {product.material && (
-                    <div className="spec-item-below">
-                      <div className="spec-icon-wrapper">
+                    <div className="spec-item-detail">
+                      <div className="spec-icon-wrapper-detail">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <rect x="3" y="3" width="18" height="18" rx="2" />
                           <line x1="3" y1="9" x2="21" y2="9" />
                           <line x1="9" y1="21" x2="9" y2="9" />
                         </svg>
                       </div>
-                      <div className="spec-content-below">
-                        <span className="spec-label-below">Materyal</span>
-                        <span className="spec-value-below">{product.material}</span>
+                      <div className="spec-content-detail">
+                        <span className="spec-label-detail">Materyal</span>
+                        <span className="spec-value-detail">{product.material}</span>
                       </div>
                     </div>
                   )}
                   {product.pleatType && (
-                    <div className="spec-item-below">
-                      <div className="spec-icon-wrapper">
+                    <div className="spec-item-detail">
+                      <div className="spec-icon-wrapper-detail">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M3 12h18M3 6h18M3 18h18" />
                         </svg>
                       </div>
-                      <div className="spec-content-below">
-                        <span className="spec-label-below">Pile</span>
-                        <span className="spec-value-below">{product.pleatType}</span>
+                      <div className="spec-content-detail">
+                        <span className="spec-label-detail">Pile</span>
+                        <span className="spec-value-detail">{product.pleatType}</span>
                       </div>
                     </div>
                   )}
                   {product.lightTransmittance && (
-                    <div className="spec-item-below">
-                      <div className="spec-icon-wrapper">
+                    <div className="spec-item-detail">
+                      <div className="spec-icon-wrapper-detail">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <circle cx="12" cy="12" r="5" />
                           <line x1="12" y1="1" x2="12" y2="3" />
@@ -827,15 +849,15 @@ const ProductDetail = () => {
                           <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
                         </svg>
                       </div>
-                      <div className="spec-content-below">
-                        <span className="spec-label-below">Işık Geçirgenliği</span>
-                        <span className="spec-value-below">{product.lightTransmittance}</span>
+                      <div className="spec-content-detail">
+                        <span className="spec-label-detail">Işık Geçirgenliği</span>
+                        <span className="spec-value-detail">{product.lightTransmittance}</span>
                       </div>
                     </div>
                   )}
                   {product.pieceCount && (
-                    <div className="spec-item-below">
-                      <div className="spec-icon-wrapper">
+                    <div className="spec-item-detail">
+                      <div className="spec-icon-wrapper-detail">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <rect x="3" y="3" width="7" height="7" />
                           <rect x="14" y="3" width="7" height="7" />
@@ -843,25 +865,25 @@ const ProductDetail = () => {
                           <rect x="3" y="14" width="7" height="7" />
                         </svg>
                       </div>
-                      <div className="spec-content-below">
-                        <span className="spec-label-below">Parça Sayısı</span>
-                        <span className="spec-value-below">{product.pieceCount} Adet</span>
+                      <div className="spec-content-detail">
+                        <span className="spec-label-detail">Parça Sayısı</span>
+                        <span className="spec-value-detail">{product.pieceCount} Adet</span>
                       </div>
                     </div>
                   )}
                   {product.color && (
-                    <div className="spec-item-below">
-                      <div className="spec-icon-wrapper">
+                    <div className="spec-item-detail">
+                      <div className="spec-icon-wrapper-detail">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <circle cx="12" cy="12" r="10" />
                           <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
                         </svg>
                       </div>
-                      <div className="spec-content-below">
-                        <span className="spec-label-below">Renk</span>
-                        <div className="spec-color-display-below">
+                      <div className="spec-content-detail">
+                        <span className="spec-label-detail">Renk</span>
+                        <div className="spec-color-display-detail">
                           <div 
-                            className="color-swatch-below"
+                            className="color-swatch-detail"
                             style={{ 
                               backgroundColor: getColorHex(product.color) || '#ccc',
                               border: `2px solid ${getColorHex(product.color) || '#ccc'}`
@@ -873,29 +895,29 @@ const ProductDetail = () => {
                     </div>
                   )}
                   {product.width && product.height && (
-                    <div className="spec-item-below">
-                      <div className="spec-icon-wrapper">
+                    <div className="spec-item-detail">
+                      <div className="spec-icon-wrapper-detail">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <rect x="3" y="3" width="18" height="18" rx="2" />
                         </svg>
                       </div>
-                      <div className="spec-content-below">
-                        <span className="spec-label-below">Beden</span>
-                        <span className="spec-value-below">{product.width} x {product.height} cm</span>
+                      <div className="spec-content-detail">
+                        <span className="spec-label-detail">Beden</span>
+                        <span className="spec-value-detail">{product.width} x {product.height} cm</span>
                       </div>
                     </div>
                   )}
                   {product.usageArea && (
-                    <div className="spec-item-below">
-                      <div className="spec-icon-wrapper">
+                    <div className="spec-item-detail">
+                      <div className="spec-icon-wrapper-detail">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                           <circle cx="12" cy="10" r="3" />
                         </svg>
                       </div>
-                      <div className="spec-content-below">
-                        <span className="spec-label-below">Kullanım Alanı</span>
-                        <span className="spec-value-below">{product.usageArea}</span>
+                      <div className="spec-content-detail">
+                        <span className="spec-label-detail">Kullanım Alanı</span>
+                        <span className="spec-value-detail">{product.usageArea}</span>
                       </div>
                     </div>
                   )}
@@ -1205,6 +1227,40 @@ const ProductDetail = () => {
           </div>
         </article>
       </div>
+      {isDetailModalOpen && modalImageSrc && (
+        <div 
+          className="detail-modal-overlay-home"
+          onClick={closeDetailModal}
+        >
+          <div 
+            className="detail-modal-content-home"
+            onClick={(e) => e.stopPropagation()}
+            style={detailModalPosition ? {
+              position: 'absolute',
+              top: `${detailModalPosition.top}px`,
+              left: `${detailModalPosition.left}px`,
+              width: `${detailModalPosition.width}px`,
+              height: `${detailModalPosition.height}px`
+            } : {}}
+          >
+            <button 
+              className="detail-modal-close-home"
+              onClick={closeDetailModal}
+              aria-label="Kapat"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+            <LazyImage
+              src={modalImageSrc}
+              alt="Ürün detay"
+              className="detail-modal-image-home"
+            />
+          </div>
+        </div>
+      )}
     </div>
     )}
 
@@ -1388,28 +1444,6 @@ const ProductDetail = () => {
             </div>
           )}
         </section>
-      )}
-      {isDetailModalOpen && (
-        <div className="image-modal-backdrop" onClick={closeDetailModal}>
-          <div className="image-modal-content" onClick={(e) => e.stopPropagation()}>
-            <button
-              type="button"
-              className="image-modal-close"
-              onClick={closeDetailModal}
-              aria-label="Modalı kapat"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
-            <LazyImage
-              src={modalImageSrc || detailImage || currentImage}
-              alt="Detay görsel"
-              className="image-modal-photo"
-            />
-          </div>
-        </div>
       )}
     </div>
   )
