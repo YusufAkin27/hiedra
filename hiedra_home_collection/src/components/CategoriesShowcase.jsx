@@ -31,6 +31,7 @@ const CategoriesShowcase = ({
   const [transitioningCategories, setTransitioningCategories] = useState({})
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
   const [selectedDetailImage, setSelectedDetailImage] = useState(null)
+  const [detailModalPosition, setDetailModalPosition] = useState(null)
   
   // Modal state'leri
   const [isPricingModalOpen, setIsPricingModalOpen] = useState({})
@@ -512,6 +513,20 @@ const CategoriesShowcase = ({
                       className="detail-image-preview-home"
                       onClick={(e) => {
                         e.stopPropagation()
+                        // Ürün fotoğrafı alanının pozisyonunu al
+                        const imageWrapper = e.currentTarget.closest('.main-product-image-wrapper-home')
+                        if (imageWrapper) {
+                          const rect = imageWrapper.getBoundingClientRect()
+                          setDetailModalPosition({
+                            top: rect.top,
+                            left: rect.left,
+                            width: rect.width * 0.9, // %10 küçük
+                            height: rect.height * 0.9 // %10 küçük
+                          })
+                        } else {
+                          // Eğer wrapper bulunamazsa varsayılan pozisyon
+                          setDetailModalPosition(null)
+                        }
                         setSelectedDetailImage(selectedProduct.detailImages[0])
                         setIsDetailModalOpen(true)
                       }}
@@ -803,15 +818,32 @@ const CategoriesShowcase = ({
       {isDetailModalOpen && selectedDetailImage && (
         <div 
           className="detail-modal-overlay-home"
-          onClick={() => setIsDetailModalOpen(false)}
+          onClick={() => {
+            setIsDetailModalOpen(false)
+            setDetailModalPosition(null)
+          }}
         >
           <div 
             className="detail-modal-content-home"
             onClick={(e) => e.stopPropagation()}
+            style={detailModalPosition ? {
+              position: 'fixed',
+              top: `${detailModalPosition.top + (detailModalPosition.height * 0.05)}px`,
+              left: `${detailModalPosition.left + (detailModalPosition.width * 0.05)}px`,
+              width: `${detailModalPosition.width}px`,
+              height: `${detailModalPosition.height}px`,
+              maxWidth: 'none',
+              maxHeight: 'none',
+              margin: 0,
+              transform: 'none'
+            } : {}}
           >
             <button 
               className="detail-modal-close-home"
-              onClick={() => setIsDetailModalOpen(false)}
+              onClick={() => {
+                setIsDetailModalOpen(false)
+                setDetailModalPosition(null)
+              }}
               aria-label="Kapat"
             >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

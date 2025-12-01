@@ -2697,15 +2697,16 @@
   transform: scale(1.1);
 }
 
-/* Detay FotoÄŸraf Modal */
+/* Detay Fotoğraf Modal */
 .detail-modal-overlay-home {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2728,12 +2729,15 @@
   width: calc(100% - 4rem);
   max-width: 800px;
   max-height: 75vh;
-  background: var(--bg-secondary);
+  background: #FFFFFF;
   border-radius: 16px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   overflow: hidden;
   animation: slideUpHome 0.3s ease;
   margin-top: -10vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 @keyframes slideUpHome {
@@ -2777,10 +2781,29 @@
 
 .detail-modal-image-home {
   width: 100%;
-  height: auto;
-  max-height: 80vh;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
   display: block;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.detail-modal-content-home .lazy-image-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.detail-modal-content-home .lazy-image-wrapper .lazy-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  max-width: 100%;
+  max-height: 100%;
 }
 
 /* Responsive */
@@ -2902,9 +2925,21 @@
     gap: 0.5rem;
   }
 
+  .detail-modal-overlay-home {
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    padding: 1rem;
+  }
+  
   .detail-modal-content-home {
     max-width: 95%;
     max-height: 90vh;
+    border-radius: 12px;
+  }
+  
+  .detail-modal-image-home {
+    padding: 0.75rem;
   }
 
   .detail-modal-close-home {
@@ -2912,6 +2947,8 @@
     right: 0.5rem;
     width: 32px;
     height: 32px;
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   }
 }
 
