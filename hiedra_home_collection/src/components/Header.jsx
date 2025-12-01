@@ -17,6 +17,7 @@ const Header = () => {
   const lastScrollY = useRef(0)
   const scrollThreshold = 5 // Minimum scroll miktarı (piksel) - daha hassas algılama
   const guestQuickLinks = [
+    { path: '/', label: 'Ana Sayfa' },
     { path: '/iletisim', label: 'İletişim' },
     { path: '/sss', label: 'SSS' },
     { path: '/kuponlar', label: 'Kuponlar' },
@@ -25,6 +26,7 @@ const Header = () => {
   ]
 
   const authQuickLinks = [
+    { path: '/', label: 'Ana Sayfa' },
     { path: '/iletisim', label: 'İletişim' },
     { path: '/sss', label: 'SSS' },
     { path: '/kuponlar', label: 'Kuponlar' },
