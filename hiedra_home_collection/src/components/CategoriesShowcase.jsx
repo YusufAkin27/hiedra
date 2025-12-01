@@ -520,8 +520,8 @@ const CategoriesShowcase = ({
                           setDetailModalPosition({
                             top: rect.top,
                             left: rect.left,
-                            width: rect.width * 0.9, // %10 küçük
-                            height: rect.height * 0.9 // %10 küçük
+                            width: rect.width * 0.85, // %15 küçük
+                            height: rect.height * 0.85 // %15 küçük
                           })
                         } else {
                           // Eğer wrapper bulunamazsa varsayılan pozisyon
@@ -828,14 +828,17 @@ const CategoriesShowcase = ({
             onClick={(e) => e.stopPropagation()}
             style={detailModalPosition ? {
               position: 'fixed',
-              top: `${detailModalPosition.top + (detailModalPosition.height * 0.05)}px`,
-              left: `${detailModalPosition.left + (detailModalPosition.width * 0.05)}px`,
+              top: `${detailModalPosition.top + (detailModalPosition.height * 0.075)}px`,
+              left: `${detailModalPosition.left + (detailModalPosition.width * 0.075)}px`,
               width: `${detailModalPosition.width}px`,
               height: `${detailModalPosition.height}px`,
               maxWidth: 'none',
               maxHeight: 'none',
               margin: 0,
-              transform: 'none'
+              transform: 'none',
+              border: 'none',
+              boxShadow: 'none',
+              padding: 0
             } : {}}
           >
             <button 

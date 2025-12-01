@@ -2705,8 +2705,8 @@
   right: 0;
   bottom: 0;
   background: rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2729,15 +2729,17 @@
   width: calc(100% - 4rem);
   max-width: 800px;
   max-height: 75vh;
-  background: #FFFFFF;
-  border-radius: 16px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
   overflow: hidden;
-  animation: slideUpHome 0.3s ease;
+  animation: fadeInScale 0.25s ease-out;
   margin-top: -10vh;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0;
 }
 
 @keyframes slideUpHome {
@@ -2748,6 +2750,17 @@
   to {
     transform: translateY(0) scale(1);
     opacity: 1;
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
@@ -2786,8 +2799,10 @@
   max-height: 100%;
   object-fit: contain;
   display: block;
-  padding: 1rem;
+  padding: 0;
   box-sizing: border-box;
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 .detail-modal-content-home .lazy-image-wrapper {
@@ -2796,6 +2811,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 .detail-modal-content-home .lazy-image-wrapper .lazy-image {
@@ -2804,6 +2821,7 @@
   object-fit: contain;
   max-width: 100%;
   max-height: 100%;
+  border-radius: 12px;
 }
 
 /* Responsive */
@@ -2927,19 +2945,34 @@
 
   .detail-modal-overlay-home {
     background: rgba(255, 255, 255, 0.25);
-    backdrop-filter: blur(2px);
-    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
     padding: 1rem;
+  }
+  
+  .detail-modal-image-home {
+    border-radius: 10px;
+  }
+  
+  .detail-modal-content-home .lazy-image-wrapper {
+    border-radius: 10px;
+  }
+  
+  .detail-modal-content-home .lazy-image-wrapper .lazy-image {
+    border-radius: 10px;
   }
   
   .detail-modal-content-home {
     max-width: 95%;
     max-height: 90vh;
-    border-radius: 12px;
+    border-radius: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
   }
   
   .detail-modal-image-home {
-    padding: 0.75rem;
+    padding: 0;
   }
 
   .detail-modal-close-home {
