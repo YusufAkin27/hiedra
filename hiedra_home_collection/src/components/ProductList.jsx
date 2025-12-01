@@ -449,7 +449,7 @@ const ProductList = () => {
         categories={categories}
         onProductClick={(productId) => handleProductClick(productId)}
       />
-    </div>
+                        </div>
   )
 }
 

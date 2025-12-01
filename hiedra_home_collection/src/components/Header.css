@@ -68,9 +68,9 @@
 
 .header {
   background: var(--bg-secondary);
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   padding: 0;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   position: fixed;
   top: 0;
   left: 0;
@@ -375,7 +375,7 @@
   font-size: 0.9rem;
   text-transform: none;
   letter-spacing: 0.3px;
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   text-decoration: none;
   font-weight: 600;
   transition: color 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
@@ -404,7 +404,7 @@
   gap: 0.5rem;
   background: none;
   border: none;
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   font-size: 0.95rem;
   cursor: pointer;
   padding: 0.5rem 0.75rem;
@@ -553,7 +553,7 @@
   font-weight: 600;
   letter-spacing: 1.5px;
   margin: 0;
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   line-height: 1.2;
   text-align: center;
   transition: color 0.3s ease;
@@ -616,7 +616,7 @@
   font-weight: 700;
   letter-spacing: 1.5px;
   margin: 0;
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   line-height: 1.2;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -632,7 +632,7 @@
   font-weight: 500;
   letter-spacing: 1.2px;
   margin: 0;
-  color: var(--text-light);
+  color: var(--text-tertiary);
   text-transform: uppercase;
   line-height: 1.4;
   transition: color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -827,7 +827,7 @@
 .nav-icon-btn {
   background: none;
   border: none;
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   cursor: pointer;
   padding: 0.5rem;
   border-radius: 8px;
@@ -861,7 +861,7 @@
 }
 
 .nav-link {
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   text-decoration: none;
   font-weight: 500;
   font-size: 0.95rem;
@@ -897,7 +897,7 @@
   padding: 0.5rem;
   border-radius: 8px;
   transition: background 0.3s, color 0.3s;
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   outline: none;
   text-decoration: none;
   display: flex;
@@ -932,7 +932,7 @@
   gap: 0.5rem;
   background: none;
   border: none;
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   font-size: 0.95rem;
   cursor: pointer;
   padding: 0.5rem 1rem;
@@ -976,7 +976,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   transition: color 0.3s ease;
 }
 
@@ -1113,7 +1113,7 @@
 .menu-toggle span {
   width: 25px;
   height: 3px;
-  background: var(--text-on-dark);
+  background: var(--text-primary);
   border-radius: 3px;
   transition: all 0.3s;
   display: block;
