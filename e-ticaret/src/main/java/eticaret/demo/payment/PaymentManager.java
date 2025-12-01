@@ -31,6 +31,7 @@ import eticaret.demo.order.Order;
 import eticaret.demo.order.OrderItem;
 import eticaret.demo.order.OrderRepository;
 import eticaret.demo.order.OrderStatus;
+import eticaret.demo.invoice.InvoiceService;
 import eticaret.demo.cart.Cart;
 import eticaret.demo.cart.CartService;
 import eticaret.demo.cart.CartStatus;
@@ -67,6 +68,7 @@ public class PaymentManager implements PaymentService {
     private final AdminNotificationService adminNotificationService;
     private final PaymentRecordRepository paymentRecordRepository;
     private final RefundRecordRepository refundRecordRepository;
+    private final InvoiceService invoiceService;
 
 
 
@@ -441,6 +443,15 @@ public class PaymentManager implements PaymentService {
             
             log.info("Sipariş kaydedildi - OrderNumber: {}, ItemCount: {}, TotalAmount: {} TL", 
                     orderNumber, orderItems.size(), order.getTotalAmount());
+
+            // 🔹 Fatura oluştur
+            try {
+                invoiceService.createInvoiceForOrder(order);
+                log.info("Fatura oluşturuldu - OrderNumber: {}", orderNumber);
+            } catch (Exception e) {
+                log.error("Fatura oluşturulurken hata (ödeme devam eder): {}", e.getMessage(), e);
+                // Fatura hatası ödeme işlemini engellemez
+            }
 
             // 🔹 Kupon kullanımını KULLANILDI olarak işaretle (3D Secure başarılı)
             if (sessionData.getCouponCode() != null && sessionData.getUserId() != null) {

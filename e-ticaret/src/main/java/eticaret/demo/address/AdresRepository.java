@@ -10,6 +10,10 @@ import java.util.Optional;
 
 public interface AdresRepository extends JpaRepository<Address, Long> {
     
+    // Siparişe ait adresleri getir
+    @Query("SELECT a FROM Address a WHERE a.order.id = :orderId")
+    List<Address> findByOrderId(@Param("orderId") Long orderId);
+    
     // Kullanıcıya ait tüm adresleri getir
     List<Address> findByUser_IdOrderByIsDefaultDescCreatedAtDesc(Long userId);
     

@@ -265,16 +265,16 @@
    DARK MODE - Loading
    =========================================== */
 [data-theme='dark'] .loading-fullscreen {
-  background: rgba(26, 26, 26, 0.95);
-}
+    background: rgba(26, 26, 26, 0.95);
+  }
 
 [data-theme='dark'] .loading-text {
   color: var(--text-secondary);
-}
+  }
 
 [data-theme='dark'] .loading-page .loading-text {
   color: var(--text-primary);
-}
+  }
 
 [data-theme='dark'] .loading-container {
   background: var(--bg-primary);
