@@ -318,6 +318,18 @@
   justify-content: center;
 }
 
+.main-product-image-wrapper-home.detail-modal-blurred {
+  filter: blur(18px);
+  -webkit-filter: blur(18px);
+  transition: filter 0.3s ease;
+}
+
+.main-product-image-wrapper-home.detail-modal-blurred .lazy-image-wrapper,
+.main-product-image-wrapper-home.detail-modal-blurred .main-product-image-home {
+  filter: blur(18px);
+  -webkit-filter: blur(18px);
+}
+
 @media (max-width: 1200px) {
   .main-product-image-wrapper-home {
     height: 550px;
@@ -2699,14 +2711,14 @@
 
 /* Detay Fotoğraf Modal */
 .detail-modal-overlay-home {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2726,20 +2738,20 @@
 
 .detail-modal-content-home {
   position: relative;
-  width: calc(100% - 4rem);
-  max-width: 800px;
+  width: min(420px, 90vw);
   max-height: 75vh;
-  background: transparent;
+  background: rgba(255, 255, 255, 0.9);
   border: none;
-  border-radius: 0;
-  box-shadow: none;
+  border-radius: 24px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25);
   overflow: hidden;
   animation: fadeInScale 0.25s ease-out;
-  margin-top: -10vh;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 @keyframes slideUpHome {
@@ -2801,7 +2813,7 @@
   display: block;
   padding: 0;
   box-sizing: border-box;
-  border-radius: 12px;
+  border-radius: 20px;
   overflow: hidden;
 }
 
@@ -2811,7 +2823,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 12px;
+  border-radius: 20px;
   overflow: hidden;
 }
 
@@ -2821,7 +2833,7 @@
   object-fit: contain;
   max-width: 100%;
   max-height: 100%;
-  border-radius: 12px;
+  border-radius: 20px;
 }
 
 /* Responsive */
@@ -2944,31 +2956,28 @@
   }
 
   .detail-modal-overlay-home {
-    background: rgba(255, 255, 255, 0.25);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     padding: 1rem;
   }
   
   .detail-modal-image-home {
-    border-radius: 10px;
+    border-radius: 16px;
   }
   
   .detail-modal-content-home .lazy-image-wrapper {
-    border-radius: 10px;
+    border-radius: 16px;
   }
   
   .detail-modal-content-home .lazy-image-wrapper .lazy-image {
-    border-radius: 10px;
+    border-radius: 16px;
   }
   
   .detail-modal-content-home {
-    max-width: 95%;
-    max-height: 90vh;
-    border-radius: 0;
-    background: transparent;
-    border: none;
-    box-shadow: none;
+    width: 90vw;
+    max-width: 90vw;
+    border-radius: 18px;
   }
   
   .detail-modal-image-home {

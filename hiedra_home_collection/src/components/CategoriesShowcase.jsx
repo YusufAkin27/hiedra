@@ -32,6 +32,7 @@ const CategoriesShowcase = ({
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
   const [selectedDetailImage, setSelectedDetailImage] = useState(null)
   const [detailModalPosition, setDetailModalPosition] = useState(null)
+  const [blurredCategoryName, setBlurredCategoryName] = useState(null)
   
   // Modal state'leri
   const [isPricingModalOpen, setIsPricingModalOpen] = useState({})
@@ -492,7 +493,7 @@ const CategoriesShowcase = ({
               {/* Sol taraf - Büyük fotoğraf */}
               <div className="product-image-section-home">
                 <div 
-                  className={`main-product-image-wrapper-home ${transitioningCategories[category.name] ? 'fade-out' : 'fade-in'}`}
+                  className={`main-product-image-wrapper-home ${transitioningCategories[category.name] ? 'fade-out' : 'fade-in'} ${blurredCategoryName === category.name ? 'detail-modal-blurred' : ''}`}
                   onClick={() => handleProductClick(selectedProduct.id)}
                   style={{ cursor: 'pointer' }}
                   title={`${selectedProduct.name} - Ürün detayını görüntüle`}
@@ -513,20 +514,30 @@ const CategoriesShowcase = ({
                       className="detail-image-preview-home"
                       onClick={(e) => {
                         e.stopPropagation()
-                        // Ürün fotoğrafı alanının pozisyonunu al
                         const imageWrapper = e.currentTarget.closest('.main-product-image-wrapper-home')
-                        if (imageWrapper) {
-                          const rect = imageWrapper.getBoundingClientRect()
+                        const showcase = document.querySelector('.categories-showcase-home')
+                        
+                        if (imageWrapper && showcase) {
+                          const imageRect = imageWrapper.getBoundingClientRect()
+                          const showcaseRect = showcase.getBoundingClientRect()
+                          const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+                          const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft
+                          const showcaseTop = showcaseRect.top + scrollTop
+                          const showcaseLeft = showcaseRect.left + scrollLeft
+                          
                           setDetailModalPosition({
-                            top: rect.top,
-                            left: rect.left,
-                            width: rect.width * 0.85, // %15 küçük
-                            height: rect.height * 0.85 // %15 küçük
+                            top: imageRect.top + scrollTop - showcaseTop + (imageRect.height * 0.075),
+                            left: imageRect.left + scrollLeft - showcaseLeft + (imageRect.width * 0.075),
+                            width: imageRect.width * 0.85,
+                            height: imageRect.height * 0.85
                           })
+                          // Blur için kategori adını kaydet
+                          setBlurredCategoryName(category.name)
                         } else {
-                          // Eğer wrapper bulunamazsa varsayılan pozisyon
                           setDetailModalPosition(null)
+                          setBlurredCategoryName(null)
                         }
+                        
                         setSelectedDetailImage(selectedProduct.detailImages[0])
                         setIsDetailModalOpen(true)
                       }}
@@ -821,32 +832,27 @@ const CategoriesShowcase = ({
           onClick={() => {
             setIsDetailModalOpen(false)
             setDetailModalPosition(null)
+            setBlurredCategoryName(null)
           }}
         >
           <div 
             className="detail-modal-content-home"
             onClick={(e) => e.stopPropagation()}
             style={detailModalPosition ? {
-              position: 'fixed',
-              top: `${detailModalPosition.top + (detailModalPosition.height * 0.075)}px`,
-              left: `${detailModalPosition.left + (detailModalPosition.width * 0.075)}px`,
+              position: 'absolute',
+              top: `${detailModalPosition.top}px`,
+              left: `${detailModalPosition.left}px`,
               width: `${detailModalPosition.width}px`,
-              height: `${detailModalPosition.height}px`,
-              maxWidth: 'none',
-              maxHeight: 'none',
-              margin: 0,
-              transform: 'none',
-              border: 'none',
-              boxShadow: 'none',
-              padding: 0
+              height: `${detailModalPosition.height}px`
             } : {}}
           >
             <button 
               className="detail-modal-close-home"
-              onClick={() => {
-                setIsDetailModalOpen(false)
-                setDetailModalPosition(null)
-              }}
+          onClick={() => {
+            setIsDetailModalOpen(false)
+            setDetailModalPosition(null)
+            setBlurredCategoryName(null)
+          }}
               aria-label="Kapat"
             >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

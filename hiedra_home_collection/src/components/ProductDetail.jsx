@@ -220,10 +220,20 @@ const ProductDetail = () => {
 
   useEffect(() => {
     if (!product) return
-    if (location.hash === '#reviews' && reviewSectionRef.current) {
-      reviewSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    if (location.hash === '#reviews') {
+      // Yorumlar yüklendikten sonra scroll yap
+      if (reviewSectionRef.current && !isFetchingReviews && reviews.length > 0) {
+        setTimeout(() => {
+          reviewSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }, 100)
+      } else if (reviewSectionRef.current && !isFetchingReviews) {
+        // Yorumlar yoksa bile scroll yap
+        setTimeout(() => {
+          reviewSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }, 100)
+      }
     }
-  }, [location.hash, product])
+  }, [location.hash, product, isFetchingReviews, reviews.length])
 
   const handleScrollToReviews = useCallback(() => {
     if (reviewSectionRef.current) {
@@ -239,7 +249,7 @@ const ProductDetail = () => {
   }, [])
 
   const fetchReviews = useCallback(async ({ page = 0, reset = false } = {}) => {
-    if (!product?.id) return
+    if (!product?.id) return Promise.resolve()
     setIsFetchingReviews(true)
     if (reset) {
       setReviewError('')
@@ -273,9 +283,11 @@ const ProductDetail = () => {
         totalElements: pageData.totalElements ?? 0,
         totalPages: pageData.totalPages ?? 0
       })
+      return Promise.resolve()
     } catch (error) {
       console.error('Yorumlar yüklenirken hata:', error)
       setReviewError(error.message || 'Yorumlar yüklenirken bir hata oluştu.')
+      return Promise.reject(error)
     } finally {
       setIsFetchingReviews(false)
     }
@@ -292,8 +304,22 @@ const ProductDetail = () => {
       totalElements: 0,
       totalPages: 0
     }))
-    fetchReviews({ page: 0, reset: true })
-  }, [product?.id, reviewSortOption, withImageReviewsOnly, fetchReviews])
+    fetchReviews({ page: 0, reset: true }).then(() => {
+      // Yorumlar yüklendikten sonra, eğer #reviews hash'i varsa scroll yap
+      if (location.hash === '#reviews' && reviewSectionRef.current) {
+        setTimeout(() => {
+          reviewSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }, 300)
+      }
+    }).catch(() => {
+      // Hata olsa bile scroll yap
+      if (location.hash === '#reviews' && reviewSectionRef.current) {
+        setTimeout(() => {
+          reviewSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }, 300)
+      }
+    })
+  }, [product?.id, reviewSortOption, withImageReviewsOnly, fetchReviews, location.hash])
 
   useEffect(() => {
     const observerTarget = loadMoreReviewsRef.current
