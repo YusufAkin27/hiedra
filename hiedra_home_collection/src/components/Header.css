@@ -1075,9 +1075,9 @@
 
 .cart-count {
   position: absolute;
-  top: 0;
-  right: 0;
-  background: var(--danger);
+  top: -2px;
+  right: -2px;
+  background: #dc2626;
   color: white;
   border-radius: 50%;
   width: 20px;
@@ -1087,7 +1087,8 @@
   justify-content: center;
   font-size: 0.75rem;
   font-weight: bold;
-  border: 2px solid #e8edf3;
+  border: 2px solid var(--bg-secondary);
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.3);
 }
 
 /* Mobil Menü Toggle */
