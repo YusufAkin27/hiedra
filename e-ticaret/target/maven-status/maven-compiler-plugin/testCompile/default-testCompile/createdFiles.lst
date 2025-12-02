@@ -1,0 +1,7 @@
+eticaret\demo\ETicaretApplicationTests.class
+eticaret\demo\controller\BaseControllerTest.class
+eticaret\demo\controller\CartControllerTest.class
+eticaret\demo\controller\RecommendationControllerTest.class
+eticaret\demo\controller\AdminProductControllerTest.class
+eticaret\demo\controller\PaymentControllerTest.class
+eticaret\demo\controller\ProductControllerTest.class
