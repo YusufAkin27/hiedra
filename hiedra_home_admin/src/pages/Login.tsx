@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState, useRef, type FormEvent } from 'react'
 import {
   checkAdminEmail,
-  checkAdminIp,
   requestLoginCode,
   resendLoginCode,
   verifyLoginCode,
@@ -33,40 +32,7 @@ function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
   const [cooldownEndsAt, setCooldownEndsAt] = useState<number | null>(null)
   const [remainingSeconds, setRemainingSeconds] = useState(0)
-  const [networkStatus, setNetworkStatus] = useState<'pending' | 'allowed' | 'blocked'>('pending')
-  const [networkMessage, setNetworkMessage] = useState<string>('Ağ yetkiniz doğrulanıyor...')
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
-
-  useEffect(() => {
-    let isMounted = true
-
-    const verifyNetwork = async () => {
-      try {
-        await checkAdminIp()
-        if (!isMounted) {
-          return
-        }
-        setNetworkStatus('allowed')
-        setNetworkMessage('')
-      } catch (error) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : 'Bu ağdan yönetici paneline erişim yetkisi bulunmuyor.'
-        if (!isMounted) {
-          return
-        }
-        setNetworkStatus('blocked')
-        setNetworkMessage(message)
-      }
-    }
-
-    verifyNetwork()
-
-    return () => {
-      isMounted = false
-    }
-  }, [])
 
   useEffect(() => {
     if (!cooldownEndsAt) {
@@ -194,10 +160,6 @@ function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
-    if (networkStatus !== 'allowed') {
-      return
-    }
-
     if (!email) {
       setErrorMessage('E-posta adresi gereklidir.')
       return
@@ -249,7 +211,7 @@ function LoginPage({ onLoginSuccess }: LoginPageProps) {
   }
 
   const handleResend = async () => {
-    if (!email || !canResend || networkStatus !== 'allowed') {
+    if (!email || !canResend) {
       return
     }
 
@@ -281,18 +243,6 @@ function LoginPage({ onLoginSuccess }: LoginPageProps) {
           ) : null}
         </header>
 
-        {networkStatus !== 'allowed' ? (
-          <div className="login-network">
-            <p className="login-network__title">
-              {networkStatus === 'pending' ? 'Ağ doğrulaması yapılıyor…' : 'Erişim engellendi'}
-            </p>
-            <p className="login-network__message">{networkMessage}</p>
-            <p className="login-network__hint">
-              Lütfen yetkili ağ üzerinden bağlanın veya sistem yöneticinizle iletişime geçin.
-            </p>
-          </div>
-        ) : null}
-
         <form className="login-form" onSubmit={handleSubmit} noValidate>
           <label htmlFor="email">E-posta</label>
           <input
@@ -304,7 +254,7 @@ function LoginPage({ onLoginSuccess }: LoginPageProps) {
             autoComplete="email"
             aria-describedby={errorMessage ? 'login-error' : undefined}
             required
-            disabled={isSubmitting || step === 'verify' || networkStatus !== 'allowed'}
+            disabled={isSubmitting || step === 'verify'}
           />
 
           {step === 'verify' && (
@@ -329,7 +279,7 @@ function LoginPage({ onLoginSuccess }: LoginPageProps) {
                     onKeyDown={(event) => handleCodeKeyDown(index, event)}
                     onPaste={handleCodePaste}
                     autoComplete="off"
-                    disabled={isSubmitting || networkStatus !== 'allowed'}
+                    disabled={isSubmitting}
                     required
                     className="login-form__code-input"
                     aria-label={`Kod hanesi ${index + 1}`}
@@ -357,7 +307,7 @@ function LoginPage({ onLoginSuccess }: LoginPageProps) {
           <button
             className="login-form__submit"
             type="submit"
-            disabled={isSubmitting || networkStatus !== 'allowed'}
+            disabled={isSubmitting}
           >
             {isSubmitting
               ? step === 'request'
@@ -374,7 +324,7 @@ function LoginPage({ onLoginSuccess }: LoginPageProps) {
                 type="button"
                 className={`login-form__resend-button ${isSubmitting ? 'login-form__resend-button--loading' : ''}`}
                 onClick={handleResend}
-                disabled={isSubmitting || !canResend || networkStatus !== 'allowed'}
+                disabled={isSubmitting || !canResend}
               >
                 <span className="login-form__resend-button-text">
                   {isSubmitting ? 'Gönderiliyor...' : 'Yeniden Gönder'}

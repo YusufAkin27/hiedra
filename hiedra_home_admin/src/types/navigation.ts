@@ -32,7 +32,6 @@ export type AdminPage =
   | 'adminManagement'
   | 'payments'
   | 'invoices'
-  | 'ipAccess'
   | 'storePreview'
 
 export type AdminNavigationState = {

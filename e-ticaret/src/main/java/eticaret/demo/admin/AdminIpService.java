@@ -2,6 +2,7 @@ package eticaret.demo.admin;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.web.util.matcher.IpAddressMatcher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -153,76 +154,32 @@ public class AdminIpService {
     
     /**
      * IP'nin belirli bir subnet içinde olup olmadığını kontrol eder
+     * Spring'in IpAddressMatcher'ını kullanarak hem tam IP hem de CIDR formatını destekler
      */
     private boolean isIpInSubnet(String ip, String subnet) {
-        // CIDR formatı kontrolü (örn: 192.168.1.0/24)
-        if (subnet.contains("/")) {
-            try {
-                String[] parts = subnet.split("/");
-                if (parts.length != 2) {
-                    return false;
-                }
-                
-                String networkIp = parts[0].trim();
-                int prefixLength = Integer.parseInt(parts[1].trim());
-                
-                if (prefixLength < 0 || prefixLength > 32) {
-                    return false;
-                }
-                
-                // IPv4 subnet kontrolü
-                if (isValidIpv4(ip) && isValidIpv4(networkIp)) {
-                    return isIpv4InSubnet(ip, networkIp, prefixLength);
-                }
-                
-                // IPv6 subnet kontrolü (basit)
-                if (isValidIpv6(ip) && isValidIpv6(networkIp)) {
-                    // IPv6 için basit prefix kontrolü
-                    return ip.startsWith(networkIp.substring(0, networkIp.lastIndexOf(":")));
-                }
-            } catch (Exception e) {
-                log.debug("Subnet kontrolü hatası: {} - {}", subnet, e.getMessage());
-                return false;
-            }
-        }
-        
-        return false;
-    }
-    
-    /**
-     * IPv4 IP'nin subnet içinde olup olmadığını kontrol eder
-     */
-    private boolean isIpv4InSubnet(String ip, String networkIp, int prefixLength) {
-        try {
-            long ipLong = ipToLong(ip);
-            long networkLong = ipToLong(networkIp);
-            long mask = (0xFFFFFFFFL << (32 - prefixLength)) & 0xFFFFFFFFL;
-            
-            return (ipLong & mask) == (networkLong & mask);
-        } catch (Exception e) {
-            log.debug("IPv4 subnet kontrolü hatası: {} - {}", ip, e.getMessage());
+        if (ip == null || ip.isBlank() || subnet == null || subnet.isBlank()) {
             return false;
         }
-    }
-    
-    /**
-     * IP adresini long değere çevirir
-     */
-    private long ipToLong(String ip) {
-        String[] parts = ip.split("\\.");
-        if (parts.length != 4) {
-            throw new IllegalArgumentException("Geçersiz IPv4 adresi: " + ip);
-        }
         
-        long result = 0;
-        for (int i = 0; i < 4; i++) {
-            int part = Integer.parseInt(parts[i]);
-            if (part < 0 || part > 255) {
-                throw new IllegalArgumentException("Geçersiz IPv4 adresi: " + ip);
+        try {
+            // Spring'in IpAddressMatcher'ı hem tam IP hem de CIDR formatını destekler
+            // Örnek: "192.168.1.1" (tam IP) veya "192.168.1.0/24" (CIDR)
+            IpAddressMatcher matcher = new IpAddressMatcher(subnet.trim());
+            boolean matches = matcher.matches(ip.trim());
+            
+            if (matches) {
+                log.debug("IP {} subnet {} ile eşleşti", ip, subnet);
             }
-            result = (result << 8) + part;
+            
+            return matches;
+        } catch (IllegalArgumentException e) {
+            // Geçersiz subnet formatı (örn: eksik IP adresi)
+            log.debug("Geçersiz subnet formatı: {} - {}", subnet, e.getMessage());
+            return false;
+        } catch (Exception e) {
+            log.debug("Subnet kontrolü hatası: {} - {}", subnet, e.getMessage());
+            return false;
         }
-        return result;
     }
 
     private boolean isValidIp(String ip) {

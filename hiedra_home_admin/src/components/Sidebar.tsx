@@ -30,8 +30,7 @@ import {
   FaCookie,
   FaUserCircle,
   FaUserShield,
-  FaDollarSign,
-  FaShieldAlt
+  FaDollarSign
 } from 'react-icons/fa'
 import type { AuthUser } from '../services/authService'
 import type { AdminPage } from '../types/navigation'
@@ -411,14 +410,6 @@ function Sidebar({ user, currentPage, onNavigate, isOpen, onToggle, notification
                 >
                   <FaUserShield className="sidebar__nav-icon sidebar__nav-icon--sub" />
                   Admin Yönetimi
-                </button>
-                <button
-                  type="button"
-                  className={`sidebar__nav-subitem ${isActive('ipAccess') ? 'sidebar__nav-subitem--active' : ''}`}
-                  onClick={() => onNavigate('ipAccess')}
-                >
-                  <FaShieldAlt className="sidebar__nav-icon sidebar__nav-icon--sub" />
-                  IP Erişim Kontrolü
                 </button>
               </div>
             )}

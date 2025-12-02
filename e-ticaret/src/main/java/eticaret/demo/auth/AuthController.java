@@ -158,8 +158,6 @@ public class AuthController {
         String userAgent = Optional.ofNullable(httpServletRequest.getHeader("User-Agent")).orElse("unknown");
         
         try {
-            assertAdminIp(clientIp);
-
             authService.requestAdminLoginCode(request.getEmail(), clientIp, userAgent);
 
             auditLogService.logSuccess(
@@ -209,8 +207,6 @@ public class AuthController {
         String userAgent = Optional.ofNullable(httpServletRequest.getHeader("User-Agent")).orElse("unknown");
         
         try {
-            assertAdminIp(clientIp);
-
             authService.resendAdminLoginCode(request.getEmail(), clientIp, userAgent);
 
             auditLogService.logSuccess(
@@ -321,8 +317,6 @@ public class AuthController {
         String userAgent = Optional.ofNullable(httpServletRequest.getHeader("User-Agent")).orElse("unknown");
         
         try {
-            assertAdminIp(clientIp);
-
             AuthResponse response = authService.verifyAdminLoginCode(
                     request.getEmail(),
                     request.getCode(),
@@ -600,17 +594,6 @@ public class AuthController {
         String remoteAddr = request.getRemoteAddr();
         log.debug("RemoteAddr'den IP alındı: {}", remoteAddr);
         return remoteAddr;
-    }
-
-    private void assertAdminIp(String clientIp) {
-        log.info("Admin IP kontrolü yapılıyor. Gelen IP: {}, İzin verilen IP'ler: {}", clientIp, getAllowedAdminIps());
-        
-        if (!isAllowedAdminIp(clientIp)) {
-            log.warn("Admin IP kontrolü başarısız. Gelen IP: {}, İzin verilen IP'ler: {}", clientIp, getAllowedAdminIps());
-            throw new AuthException("Bu ağ adresinden yönetici paneline erişim yetkisi bulunmuyor.");
-        }
-        
-        log.info("Admin IP kontrolü başarılı. IP: {}", clientIp);
     }
 
     private boolean isAllowedAdminIp(String clientIp) {

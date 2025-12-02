@@ -3,7 +3,7 @@ import LoginPage from './pages/Login'
 import Header from './components/Header'
 import Sidebar from './components/Sidebar'
 import { ToastContainer, useToast } from './components/Toast'
-import { loadSession, saveSession, clearSession, type AuthResponse, getClientIpInfo } from './services/authService'
+import { loadSession, saveSession, clearSession, type AuthResponse } from './services/authService'
 import SessionHeartbeat from './components/SessionHeartbeat'
 import { ThemeProvider } from './context/ThemeContext'
 import type { AdminPage, AdminNavigationState } from './types/navigation'
@@ -43,7 +43,6 @@ const CategoriesPage = lazy(() => import('./pages/Categories'))
 const AdminManagementPage = lazy(() => import('./pages/AdminManagement'))
 const PaymentsPage = lazy(() => import('./pages/Payments'))
 const InvoicesPage = lazy(() => import('./pages/Invoices'))
-const IpAccessControlPage = lazy(() => import('./pages/IpAccessControl'))
 const StorePreviewPage = lazy(() => import('./pages/StorePreview'))
 
 // Loading fallback component
@@ -105,13 +104,6 @@ function App() {
 
   useEffect(() => {
     const initializeApp = async () => {
-      // IP adresini al ve kaydet (tüm API çağrıları için)
-      try {
-        await getClientIpInfo()
-      } catch (error) {
-        console.warn('IP adresi alınamadı:', error)
-      }
-      
       const savedSession = loadSession()
       if (savedSession) {
         setSession(savedSession)
@@ -514,9 +506,8 @@ function App() {
         {currentPage === 'adminManagement' && <AdminManagementPage session={session} />}
         {currentPage === 'payments' && <PaymentsPage session={session} />}
         {currentPage === 'invoices' && <InvoicesPage session={session} />}
-        {currentPage === 'ipAccess' && <IpAccessControlPage session={session} />}
         {currentPage === 'storePreview' && <StorePreviewPage />}
-        {!['home', 'profile', 'system', 'users', 'userDetail', 'userLogs', 'orders', 'orderDetail', 'products', 'productDetail', 'productEdit', 'productAdd', 'shipping', 'messages', 'bulkMail', 'carts', 'reviews', 'productViews', 'guests', 'visitors', 'addresses', 'auditLogs', 'coupons', 'couponAdd', 'cookiePreferences', 'settings', 'userAnalytics', 'contracts', 'contractAcceptances', 'categories', 'adminManagement', 'payments', 'invoices', 'ipAccess', 'storePreview'].includes(currentPage) && (
+        {!['home', 'profile', 'system', 'users', 'userDetail', 'userLogs', 'orders', 'orderDetail', 'products', 'productDetail', 'productEdit', 'productAdd', 'shipping', 'messages', 'bulkMail', 'carts', 'reviews', 'productViews', 'guests', 'visitors', 'addresses', 'auditLogs', 'coupons', 'couponAdd', 'cookiePreferences', 'settings', 'userAnalytics', 'contracts', 'contractAcceptances', 'categories', 'adminManagement', 'payments', 'invoices', 'storePreview'].includes(currentPage) && (
           <NotFoundPage onNavigate={handleNavigate} />
         )}
       </Suspense>

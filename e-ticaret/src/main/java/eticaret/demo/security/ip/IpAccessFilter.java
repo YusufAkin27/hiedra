@@ -38,12 +38,7 @@ public class IpAccessFilter extends OncePerRequestFilter {
             return;
         }
 
-        if (path.startsWith("/api/admin/") && !ipAccessControlService.isAdminAllowed(clientIp)) {
-            log.warn("Admin IP izinsiz erişim denemesi: {} - path: {}", clientIp, path);
-            reject(response, HttpStatus.FORBIDDEN, "Bu alana erişmek için yetkili IP adresi gereklidir.");
-            return;
-        }
-
+        // Admin IP kontrolü kaldırıldı - tüm admin endpoint'leri JWT authentication ile korunuyor
         filterChain.doFilter(request, response);
     }
 
